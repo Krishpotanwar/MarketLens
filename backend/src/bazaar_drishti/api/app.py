@@ -26,6 +26,16 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
         allow_headers=["*"],
     )
 
+    @app.get("/", summary="Root Welcome & Service Status")
+    def root() -> dict[str, Any]:
+        return {
+            "service": "MarketLens API",
+            "status": "online",
+            "health": "/healthz",
+            "documentation": "/docs",
+            "active_run": "/api/v1/runs/current",
+        }
+
     @app.get("/healthz", summary="Process Health Check")
     def healthz() -> dict[str, str]:
         return {"status": "ok"}

@@ -121,6 +121,13 @@ class ApiEndpointsTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.conn.close()
 
+    def test_root(self) -> None:
+        resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["service"], "MarketLens API")
+        self.assertEqual(data["status"], "online")
+
     def test_healthz(self) -> None:
         resp = self.client.get("/healthz")
         self.assertEqual(resp.status_code, 200)
