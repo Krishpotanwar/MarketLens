@@ -7,6 +7,7 @@ import { RunReceiptPage } from "./pages/RunReceiptPage";
 import { TrendAnalysisPage } from "./pages/TrendAnalysisPage";
 import { PaperTradingPage } from "./pages/PaperTradingPage";
 import { StocksExplorerPage } from "./pages/StocksExplorerPage";
+import { MutualFundsPage } from "./pages/MutualFundsPage";
 import { calculateIndianCharges } from "./types/paper";
 import { calculateSIP } from "./types/funds";
 import { TOP_INDIAN_MUTUAL_FUNDS } from "./data/mutualFundsData";
@@ -164,5 +165,16 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("Most Active");
     expect(markup).toContain("ZOMATO");
     expect(markup).toContain("DIXON");
+  });
+
+  it("renders Indian mutual funds explorer with interactive SIP calculator", () => {
+    const markup = renderToStaticMarkup(<MutualFundsPage />);
+    expect(markup).toContain("Indian Mutual Funds &amp; SIP Studio");
+    expect(markup).toContain("Systematic Investment Plan (SIP) Calculator");
+    expect(markup).toContain("Projected Maturity Corpus");
+    expect(markup).toContain("Parag Parikh Flexi Cap Fund");
+    expect(markup).toContain("Quant Small Cap Fund");
+    expect(markup).toContain("UTI Nifty 50 Index Fund");
+    expect(markup).toContain("Min SIP:");
   });
 });
