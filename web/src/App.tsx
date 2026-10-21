@@ -9,6 +9,7 @@ import { PaperTradingPage } from "./pages/PaperTradingPage";
 import { StocksExplorerPage } from "./pages/StocksExplorerPage";
 import { MutualFundsPage } from "./pages/MutualFundsPage";
 import { AIStrategyLabPage } from "./pages/AIStrategyLabPage";
+import { DotBackground } from "./components/DotBackground";
 import type { RunMetadataResponse } from "./types/api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
@@ -64,6 +65,7 @@ export default function App() {
 
   return (
     <div className={`page-shell ${darkMode ? "dark-terminal" : "light-desk"}`}>
+      <DotBackground darkMode={darkMode} />
       <Header
         currentTab={currentTab}
         onSelectTab={setCurrentTab}
