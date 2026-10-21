@@ -166,6 +166,7 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("Most Active");
     expect(markup).toContain("ZOMATO");
     expect(markup).toContain("DIXON");
+    expect(markup).toContain("Search ANY Indian stock");
   });
 
   it("renders Indian mutual funds explorer with interactive SIP calculator", () => {
@@ -179,14 +180,14 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("Min SIP:");
   });
 
-  it("renders Hybrid AI Strategy Lab with strategy presets and Grok reasoning stream", () => {
+  it("renders Hybrid AI Strategy Lab with multi-timeline simulation, news ticker, and concall sandbox", () => {
     const markup = renderToStaticMarkup(<AIStrategyLabPage onExecuteAITrade={() => {}} />);
-    expect(markup).toContain("Hybrid AI Strategy Lab &amp; Grok Reasoning Sandbox");
+    expect(markup).toContain("Hybrid AI Strategy Lab");
+    expect(markup).toContain("Target Indian Equity (NSE)");
+    expect(markup).toContain("AI Reasoning Engine");
+    expect(markup).toContain("Indian News Feed &amp; Sentiment Ticker");
+    expect(markup).toContain("Earnings Concall &amp; Filings Sandbox");
     expect(markup).toContain("Strategy Rules &amp; Prompt Sandbox");
-    expect(markup).toContain("20/50 SMA Crossover");
-    expect(markup).toContain("RSI Dip &amp; VWAP");
-    expect(markup).toContain("Volume Breakout");
-    expect(markup).toContain("Custom Prompt Sandbox");
     expect(markup).toContain("Run AI Analysis on");
   });
 });
