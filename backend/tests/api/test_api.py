@@ -149,6 +149,21 @@ class ApiEndpointsTests(unittest.TestCase):
         self.assertIn("results", data)
         self.assertGreater(data["count"], 0)
 
+    def test_get_live_mutual_funds(self) -> None:
+        resp = self.client.get("/api/v1/market/funds")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("funds", data)
+        self.assertGreater(data["count"], 0)
+        self.assertIn("nav", data["funds"][0])
+
+    def test_get_live_stock_news(self) -> None:
+        resp = self.client.get("/api/v1/market/news?symbol=RELIANCE")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["symbol"], "RELIANCE")
+        self.assertIn("news", data)
+
     def test_get_market_chart(self) -> None:
         resp = self.client.get("/api/v1/market/chart/TCS?interval=5m&range=1d")
         self.assertEqual(resp.status_code, 200)

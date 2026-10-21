@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from bazaar_drishti.market.live_feed import (
     fetch_all_nse_quotes,
     fetch_intraday_chart,
+    fetch_live_indian_mutual_funds,
+    fetch_live_stock_news,
     fetch_symbol_quote,
     search_nse_stocks,
 )
@@ -68,6 +70,18 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
     ) -> dict[str, Any]:
         results = await search_nse_stocks(q)
         return {"query": q, "count": len(results), "results": results}
+
+    @app.get("/api/v1/market/funds", summary="Get Live Indian Mutual Funds with AMFI Live NAVs")
+    async def get_live_mutual_funds() -> dict[str, Any]:
+        funds = await fetch_live_indian_mutual_funds()
+        return {"funds": funds, "count": len(funds), "provider": "AMFI India Live Feed"}
+
+    @app.get("/api/v1/market/news", summary="Get Live Indian Financial News and Sentiment")
+    async def get_live_stock_news(
+        symbol: str = Query("RELIANCE", description="Stock ticker symbol to search breaking news for")
+    ) -> dict[str, Any]:
+        news_items = await fetch_live_stock_news(symbol)
+        return {"symbol": symbol.strip().upper(), "count": len(news_items), "news": news_items}
 
     @app.get("/api/v1/market/quote/{symbol}", summary="Get Single Symbol Quote")
     async def get_symbol_quote(symbol: str) -> dict[str, Any]:

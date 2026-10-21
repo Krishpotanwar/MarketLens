@@ -1,11 +1,62 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { TOP_INDIAN_MUTUAL_FUNDS } from "../data/mutualFundsData";
-import { calculateSIP } from "../types/funds";
+import { calculateSIP, type MutualFundInfo } from "../types/funds";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export function MutualFundsPage() {
-  const [funds] = useState(TOP_INDIAN_MUTUAL_FUNDS);
+  const [funds, setFunds] = useState<MutualFundInfo[]>(TOP_INDIAN_MUTUAL_FUNDS);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLiveLoading, setIsLiveLoading] = useState(false);
+  const [liveProvider, setLiveProvider] = useState<string>("AMFI India Live Feed");
+  const [lastSyncDate, setLastSyncDate] = useState<string>("");
+
+  // Fetch live mutual funds from AMFI / MFAPI live telemetry
+  const fetchLiveFunds = useCallback(async () => {
+    setIsLiveLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/market/funds`);
+      if (res.ok) {
+        const data = await res.json();
+        const liveList = data.funds || [];
+        if (liveList.length > 0) {
+          setLiveProvider(data.provider || "AMFI India Live Feed");
+          if (liveList[0].navDate) {
+            setLastSyncDate(liveList[0].navDate);
+          }
+          setFunds((prev) => {
+            const mapped = prev.map((f) => {
+              const live = liveList.find(
+                (l: any) =>
+                  l.name.toLowerCase().includes(f.name.split(" ")[0].toLowerCase()) ||
+                  f.name.toLowerCase().includes(l.name.split(" ")[0].toLowerCase())
+              );
+              if (live && live.nav > 0) {
+                return {
+                  ...f,
+                  nav: live.nav,
+                  cagr1y: live.cagr1Y || f.cagr1y,
+                  cagr3y: live.cagr3Y || f.cagr3y,
+                  cagr5y: live.cagr5Y || f.cagr5y,
+                };
+              }
+              return f;
+            });
+            return mapped;
+          });
+        }
+      }
+    } catch {
+      setLiveProvider("AMFI Verified Local Baseline");
+    } finally {
+      setIsLiveLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveFunds();
+  }, [fetchLiveFunds]);
 
   // SIP Calculator State
   const [monthlyAmount, setMonthlyAmount] = useState<number>(10000);
@@ -47,10 +98,30 @@ export function MutualFundsPage() {
   return (
     <div className="page-content" tabIndex={-1}>
       <header className="page-header">
-        <h1>Indian Mutual Funds & SIP Studio</h1>
-        <p className="status-copy">
-          Explore top-performing Indian mutual funds across Flexi Cap, Small Cap, and Index categories with verified CAGR returns, AUM, and an interactive wealth compound calculator.
-        </p>
+        <div className="page-header-split">
+          <div>
+            <h1>Indian Mutual Funds & SIP Studio</h1>
+            <p className="status-copy">
+              Explore top-performing Indian mutual funds across Flexi Cap, Small Cap, and Index categories with verified CAGR returns, AUM, and an interactive wealth compound calculator.
+            </p>
+          </div>
+          <div className="live-telemetry-status-card" role="status">
+            <span className="live-telemetry-dot" aria-hidden="true" />
+            <div className="live-telemetry-info">
+              <span className="live-telemetry-provider">{liveProvider}</span>
+              {lastSyncDate && <span className="live-telemetry-time">Latest NAV: {lastSyncDate}</span>}
+            </div>
+            <button
+              type="button"
+              className="live-sync-btn"
+              onClick={fetchLiveFunds}
+              disabled={isLiveLoading}
+              aria-label="Refresh live mutual fund NAVs"
+            >
+              {isLiveLoading ? "Syncing..." : "↻ Refresh"}
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Interactive SIP Compound Calculator Card */}

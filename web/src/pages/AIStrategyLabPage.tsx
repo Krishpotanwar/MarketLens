@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import {
   INDIAN_NEWS_FEEDS,
@@ -38,6 +38,8 @@ export type StrategyPresetId =
   | "MEAN_REVERSION"
   | "BREAKOUT_MOMENTUM"
   | "CUSTOM";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 const AI_PROVIDERS: { id: AIEngineProvider; label: string; desc: string }[] = [
   {
@@ -103,15 +105,56 @@ export function AIStrategyLabPage({ onExecuteAITrade }: AIStrategyLabPageProps) 
   const [activeTimelineId, setActiveTimelineId] = useState<TimelineScenarioId>("BULL");
   const [tradeExecuted, setTradeExecuted] = useState<boolean>(false);
   const [analysisTimestamp, setAnalysisTimestamp] = useState<string>("");
+  const [liveStockQuotes, setLiveStockQuotes] = useState<Record<string, number>>({});
+  const [liveNewsMap, setLiveNewsMap] = useState<Record<string, IndianNewsItem[]>>({});
+  const [isFetchingLiveNews, setIsFetchingLiveNews] = useState<boolean>(false);
+
+  // Fetch real-time live news and live quote from the web whenever active symbol changes
+  useEffect(() => {
+    let isMounted = true;
+    setIsFetchingLiveNews(true);
+
+    fetch(`${API_BASE}/api/v1/market/news?symbol=${encodeURIComponent(selectedSymbol)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.news && data.news.length > 0 && isMounted) {
+          setLiveNewsMap((prev) => ({ ...prev, [selectedSymbol]: data.news }));
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setIsFetchingLiveNews(false);
+      });
+
+    fetch(`${API_BASE}/api/v1/market/quote/${encodeURIComponent(selectedSymbol)}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data && data.ltp > 0 && isMounted) {
+          setLiveStockQuotes((prev) => ({ ...prev, [selectedSymbol]: data.ltp }));
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedSymbol]);
 
   const activeStock = useMemo(() => {
-    return stocks.find((s) => s.symbol === selectedSymbol) ?? stocks[0];
-  }, [stocks, selectedSymbol]);
+    const base = stocks.find((s) => s.symbol === selectedSymbol) ?? stocks[0];
+    const livePrice = liveStockQuotes[selectedSymbol];
+    if (livePrice && livePrice > 0) {
+      return { ...base, ltp: livePrice };
+    }
+    return base;
+  }, [stocks, selectedSymbol, liveStockQuotes]);
 
   const stockNewsList = useMemo(() => {
+    const live = liveNewsMap[selectedSymbol];
+    if (live && live.length > 0) return live;
     const matched = getNewsForStock(selectedSymbol);
     return matched.length > 0 ? matched : INDIAN_NEWS_FEEDS.slice(0, 5);
-  }, [selectedSymbol]);
+  }, [selectedSymbol, liveNewsMap]);
 
   const activeNewsItem = useMemo(() => {
     return (
@@ -397,7 +440,18 @@ export function AIStrategyLabPage({ onExecuteAITrade }: AIStrategyLabPageProps) 
           {/* Indian News Headlines Ticker */}
           <div className="form-group">
             <div className="ticker-label-row">
-              <label>Indian News Feed & Sentiment Ticker</label>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                <label>Indian News Feed & Sentiment Ticker</label>
+                {liveNewsMap[selectedSymbol]?.length ? (
+                  <span className="live-telemetry-badge">
+                    ● Live Web Feed
+                  </span>
+                ) : isFetchingLiveNews ? (
+                  <span className="live-telemetry-badge" style={{ opacity: 0.7 }}>
+                    Fetching Live...
+                  </span>
+                ) : null}
+              </div>
               <span className="ticker-count-tag">{stockNewsList.length} Headlines</span>
             </div>
             <div className="news-feed-ticker" role="listbox" aria-label="Indian News Headlines">

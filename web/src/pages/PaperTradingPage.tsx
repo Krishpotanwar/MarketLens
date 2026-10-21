@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import {
   calculateIndianCharges,
@@ -7,7 +7,10 @@ import {
   type PaperPosition,
   type PaperTradeRecord,
   type ProductType,
+  type StockTrendInfo,
 } from "../types/paper";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 interface PaperTradingPageProps {
   initialSymbol?: string;
@@ -19,13 +22,66 @@ const STORAGE_KEY_CASH = "marketlens_paper_cash";
 const INITIAL_CASH = 1000000; // 10 Lakhs INR
 
 export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPageProps) {
-  const [stocks] = useState(INITIAL_INDIAN_STOCKS);
+  const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
   const [symbol, setSymbol] = useState(initialSymbol);
   const [side, setSide] = useState<OrderSide>("BUY");
   const [product, setProduct] = useState<ProductType>("CNC");
   const [orderType, setOrderType] = useState<OrderType>("MARKET");
   const [quantity, setQuantity] = useState<number>(10);
   const [limitPrice, setLimitPrice] = useState<number>(2950);
+  const [liveProvider, setLiveProvider] = useState<string>("NSE Live Telemetry");
+  const [lastSyncTime, setLastSyncTime] = useState<string>("");
+  const [isLiveLoading, setIsLiveLoading] = useState(false);
+
+  // Sync live quotes from backend telemetry
+  const fetchLiveQuotes = useCallback(async () => {
+    setIsLiveLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/market/quotes`);
+      if (res.ok) {
+        const data = await res.json();
+        const quotes: Array<{
+          symbol: string;
+          ltp: number;
+          change: number;
+          change_percent: number;
+          volume: number;
+          provider?: string;
+        }> = data.quotes || [];
+
+        if (quotes.length > 0) {
+          setLiveProvider(quotes[0].provider || "NSE Live Telemetry");
+          setLastSyncTime(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+
+          setStocks((prev) =>
+            prev.map((s) => {
+              const match = quotes.find((q) => q.symbol === s.symbol);
+              if (match && match.ltp > 0) {
+                return {
+                  ...s,
+                  ltp: match.ltp,
+                  change: match.change,
+                  changePercent: match.change_percent,
+                  volume: match.volume > 0 ? match.volume : s.volume,
+                };
+              }
+              return s;
+            })
+          );
+        }
+      }
+    } catch {
+      // Fallback
+    } finally {
+      setIsLiveLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveQuotes();
+    const interval = setInterval(fetchLiveQuotes, 15000);
+    return () => clearInterval(interval);
+  }, [fetchLiveQuotes]);
 
   // Portfolio State (persisted in localStorage)
   const [cashBalance, setCashBalance] = useState<number>(() => {
@@ -236,10 +292,30 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
   return (
     <div className="page-content" tabIndex={-1}>
       <header className="page-header">
-        <h1>Indian Stock Paper Trading Terminal</h1>
-        <p className="status-copy">
-          Real-time virtual order execution for NSE equities with live statutory taxes (STT, GST, SEBI, Stamp Duty, Brokerage) and execution slippage deduction.
-        </p>
+        <div className="page-header-split">
+          <div>
+            <h1>Indian Stock Paper Trading Terminal</h1>
+            <p className="status-copy">
+              Real-time virtual order execution for NSE equities with live statutory taxes (STT, GST, SEBI, Stamp Duty, Brokerage) and execution slippage deduction.
+            </p>
+          </div>
+          <div className="live-telemetry-status-card" role="status">
+            <span className="live-telemetry-dot" aria-hidden="true" />
+            <div className="live-telemetry-info">
+              <span className="live-telemetry-provider">{liveProvider}</span>
+              {lastSyncTime && <span className="live-telemetry-time">Synced at {lastSyncTime}</span>}
+            </div>
+            <button
+              type="button"
+              className="live-sync-btn"
+              onClick={fetchLiveQuotes}
+              disabled={isLiveLoading}
+              aria-label="Refresh live quotes"
+            >
+              {isLiveLoading ? "Syncing..." : "↻ Refresh"}
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Portfolio Performance Banner */}

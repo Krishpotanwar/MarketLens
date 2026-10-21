@@ -1,15 +1,69 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import type { StockTrendInfo } from "../types/paper";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 interface TrendAnalysisPageProps {
   onSelectForTrade: (symbol: string) => void;
 }
 
 export function TrendAnalysisPage({ onSelectForTrade }: TrendAnalysisPageProps) {
-  const [stocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
+  const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
   const [selectedSymbol, setSelectedSymbol] = useState<string>("RELIANCE");
   const [sectorFilter, setSectorFilter] = useState<string>("ALL");
+  const [liveProvider, setLiveProvider] = useState<string>("Connecting to NSE...");
+  const [lastSyncTime, setLastSyncTime] = useState<string>("");
+  const [isLiveLoading, setIsLiveLoading] = useState(false);
+
+  const fetchLiveQuotes = useCallback(async () => {
+    setIsLiveLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/v1/market/quotes`);
+      if (res.ok) {
+        const data = await res.json();
+        const quotes: Array<{
+          symbol: string;
+          ltp: number;
+          change: number;
+          change_percent: number;
+          volume: number;
+          provider?: string;
+        }> = data.quotes || [];
+
+        if (quotes.length > 0) {
+          setLiveProvider(quotes[0].provider || "NSE Live Telemetry");
+          setLastSyncTime(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+
+          setStocks((prev) =>
+            prev.map((s) => {
+              const match = quotes.find((q) => q.symbol === s.symbol);
+              if (match && match.ltp > 0) {
+                return {
+                  ...s,
+                  ltp: match.ltp,
+                  change: match.change,
+                  changePercent: match.change_percent,
+                  volume: match.volume > 0 ? match.volume : s.volume,
+                };
+              }
+              return s;
+            })
+          );
+        }
+      }
+    } catch {
+      setLiveProvider("Offline Baseline");
+    } finally {
+      setIsLiveLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLiveQuotes();
+    const interval = setInterval(fetchLiveQuotes, 15000);
+    return () => clearInterval(interval);
+  }, [fetchLiveQuotes]);
 
   const activeStock = stocks.find((s) => s.symbol === selectedSymbol) ?? stocks[0];
 
@@ -25,10 +79,30 @@ export function TrendAnalysisPage({ onSelectForTrade }: TrendAnalysisPageProps) 
   return (
     <div className="page-content" tabIndex={-1}>
       <header className="page-header">
-        <h1>Indian Stock Market Trends & Signals</h1>
-        <p className="status-copy">
-          Real-time algorithmic trend screening and causal directional forecasts across NSE/BSE cash equities. Calibrated for paper trading validation.
-        </p>
+        <div className="page-header-split">
+          <div>
+            <h1>Indian Stock Market Trends & Signals</h1>
+            <p className="status-copy">
+              Real-time algorithmic trend screening and causal directional forecasts across NSE/BSE cash equities. Calibrated for paper trading validation.
+            </p>
+          </div>
+          <div className="live-telemetry-status-card" role="status">
+            <span className="live-telemetry-dot" aria-hidden="true" />
+            <div className="live-telemetry-info">
+              <span className="live-telemetry-provider">{liveProvider}</span>
+              {lastSyncTime && <span className="live-telemetry-time">Synced at {lastSyncTime}</span>}
+            </div>
+            <button
+              type="button"
+              className="live-sync-btn"
+              onClick={fetchLiveQuotes}
+              disabled={isLiveLoading}
+              aria-label="Refresh live quotes"
+            >
+              {isLiveLoading ? "Syncing..." : "↻ Refresh"}
+            </button>
+          </div>
+        </div>
       </header>
 
       {/* Market Breadth & Session Banner */}
