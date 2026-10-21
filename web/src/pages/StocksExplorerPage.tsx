@@ -7,6 +7,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "";
 interface StocksExplorerPageProps {
   onSelectForTrend: (symbol: string) => void;
   onSelectForTrade: (symbol: string) => void;
+  initialSearchQuery?: string;
 }
 
 interface IndexTapeItem {
@@ -19,9 +20,16 @@ interface IndexTapeItem {
 export function StocksExplorerPage({
   onSelectForTrend,
   onSelectForTrade,
+  initialSearchQuery = "",
 }: StocksExplorerPageProps) {
   const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+
+  useEffect(() => {
+    if (initialSearchQuery) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
   const [selectedCap, setSelectedCap] = useState<string>("ALL");
   const [selectedSector, setSelectedSector] = useState<string>("ALL");
   const [isLiveLoading, setIsLiveLoading] = useState(false);

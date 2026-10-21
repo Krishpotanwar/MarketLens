@@ -1,3 +1,5 @@
+import { GlobalSearchBar } from "./GlobalSearchBar";
+
 export type PageTab =
   | "stocks"
   | "funds"
@@ -14,6 +16,7 @@ interface HeaderProps {
   synthetic?: boolean | null;
   darkMode?: boolean;
   onToggleTheme?: () => void;
+  onSelectStock?: (symbol: string, action: "trade" | "ai" | "trends" | "stocks") => void;
 }
 
 export function Header({
@@ -22,6 +25,7 @@ export function Header({
   synthetic = true,
   darkMode = true,
   onToggleTheme,
+  onSelectStock,
 }: HeaderProps) {
   return (
     <header className="topbar">
@@ -105,6 +109,12 @@ export function Header({
           </button>
         </nav>
       </div>
+
+      {onSelectStock && (
+        <div className="topbar-center">
+          <GlobalSearchBar onSelectStock={onSelectStock} />
+        </div>
+      )}
 
       <div className="topbar-right">
         {onToggleTheme && (

@@ -20,6 +20,9 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
   const [tradeSelectedSymbol, setTradeSelectedSymbol] = useState("RELIANCE");
+  const [aiSelectedSymbol, setAiSelectedSymbol] = useState("RELIANCE");
+  const [trendSelectedSymbol, setTrendSelectedSymbol] = useState("RELIANCE");
+  const [stocksSearchQuery, setStocksSearchQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -50,6 +53,7 @@ export default function App() {
 
   function handleSelectForTrend(symbol: string) {
     setTradeSelectedSymbol(symbol);
+    setTrendSelectedSymbol(symbol);
     setCurrentTab("trends");
   }
 
@@ -63,6 +67,23 @@ export default function App() {
     setCurrentTab("paper");
   }
 
+  function handleSelectStock(symbol: string, action: "trade" | "ai" | "trends" | "stocks") {
+    if (action === "trade") {
+      setTradeSelectedSymbol(symbol);
+      setCurrentTab("paper");
+    } else if (action === "ai") {
+      setAiSelectedSymbol(symbol);
+      setCurrentTab("ai-strategy");
+    } else if (action === "trends") {
+      setTrendSelectedSymbol(symbol);
+      setTradeSelectedSymbol(symbol);
+      setCurrentTab("trends");
+    } else if (action === "stocks") {
+      setStocksSearchQuery(symbol);
+      setCurrentTab("stocks");
+    }
+  }
+
   return (
     <div className={`page-shell ${darkMode ? "dark-terminal" : "light-desk"}`}>
       <DotBackground darkMode={darkMode} />
@@ -72,6 +93,7 @@ export default function App() {
         synthetic={runData ? runData.synthetic : null}
         darkMode={darkMode}
         onToggleTheme={() => setDarkMode((prev) => !prev)}
+        onSelectStock={handleSelectStock}
       />
 
       <main id="main-content">
@@ -79,14 +101,21 @@ export default function App() {
           <StocksExplorerPage
             onSelectForTrend={handleSelectForTrend}
             onSelectForTrade={handleSelectForTrade}
+            initialSearchQuery={stocksSearchQuery}
           />
         )}
         {currentTab === "funds" && <MutualFundsPage />}
         {currentTab === "ai-strategy" && (
-          <AIStrategyLabPage onExecuteAITrade={handleExecuteAITrade} />
+          <AIStrategyLabPage
+            onExecuteAITrade={handleExecuteAITrade}
+            initialSymbol={aiSelectedSymbol}
+          />
         )}
         {currentTab === "trends" && (
-          <TrendAnalysisPage onSelectForTrade={handleSelectForTrade} />
+          <TrendAnalysisPage
+            onSelectForTrade={handleSelectForTrade}
+            initialSymbol={trendSelectedSymbol}
+          />
         )}
         {currentTab === "paper" && (
           <PaperTradingPage initialSymbol={tradeSelectedSymbol} />

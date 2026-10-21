@@ -6,15 +6,22 @@ const API_BASE = import.meta.env.VITE_API_URL || "";
 
 interface TrendAnalysisPageProps {
   onSelectForTrade: (symbol: string) => void;
+  initialSymbol?: string;
 }
 
-export function TrendAnalysisPage({ onSelectForTrade }: TrendAnalysisPageProps) {
+export function TrendAnalysisPage({ onSelectForTrade, initialSymbol }: TrendAnalysisPageProps) {
   const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
-  const [selectedSymbol, setSelectedSymbol] = useState<string>("RELIANCE");
+  const [selectedSymbol, setSelectedSymbol] = useState<string>(initialSymbol || "RELIANCE");
   const [sectorFilter, setSectorFilter] = useState<string>("ALL");
   const [liveProvider, setLiveProvider] = useState<string>("Connecting to NSE...");
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [isLiveLoading, setIsLiveLoading] = useState(false);
+
+  useEffect(() => {
+    if (initialSymbol) {
+      setSelectedSymbol(initialSymbol);
+    }
+  }, [initialSymbol]);
 
   const fetchLiveQuotes = useCallback(async () => {
     setIsLiveLoading(true);

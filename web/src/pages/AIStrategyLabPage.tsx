@@ -31,6 +31,7 @@ import type { StockTrendInfo } from "../types/paper";
 
 interface AIStrategyLabPageProps {
   onExecuteAITrade: (symbol: string, side: "BUY" | "SELL", price: number) => void;
+  initialSymbol?: string;
 }
 
 export type StrategyPresetId =
@@ -74,9 +75,9 @@ function getInitialConcallText(symbol: string): string {
   return `Management concall notes and regulatory filings for ${symbol}.`;
 }
 
-export function AIStrategyLabPage({ onExecuteAITrade }: AIStrategyLabPageProps) {
+export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrategyLabPageProps) {
   const [stocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
-  const [selectedSymbol, setSelectedSymbol] = useState<string>("RELIANCE");
+  const [selectedSymbol, setSelectedSymbol] = useState<string>(initialSymbol || "RELIANCE");
   const [selectedProvider, setSelectedProvider] = useState<AIEngineProvider>("OFFLINE_HEURISTIC");
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyPresetId>("TREND_CROSSOVER");
   const [customPrompt, setCustomPrompt] = useState<string>(
@@ -90,13 +91,22 @@ export function AIStrategyLabPage({ onExecuteAITrade }: AIStrategyLabPageProps) 
   });
 
   const [selectedNewsId, setSelectedNewsId] = useState<string>(() => {
-    const news = getNewsForStock("RELIANCE");
+    const news = getNewsForStock(initialSymbol || "RELIANCE");
     return news.length > 0 ? news[0].id : "";
   });
 
   const [sandboxText, setSandboxText] = useState<string>(() =>
-    getInitialConcallText("RELIANCE")
+    getInitialConcallText(initialSymbol || "RELIANCE")
   );
+
+  useEffect(() => {
+    if (initialSymbol) {
+      setSelectedSymbol(initialSymbol);
+      setSandboxText(getInitialConcallText(initialSymbol));
+      const news = getNewsForStock(initialSymbol);
+      setSelectedNewsId(news.length > 0 ? news[0].id : "");
+    }
+  }, [initialSymbol]);
 
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [progressStep, setProgressStep] = useState<string>("");
