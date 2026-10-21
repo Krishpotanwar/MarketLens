@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -77,18 +77,18 @@ interface GlobalSearchBarProps {
 export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [selectedCap, setSelectedCap] = useState<string>("ALL");
   const [results, setResults] = useState<SearchResultItem[]>(TRENDING_STOCKS);
   const [isSearching, setIsSearching] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const modalInputRef = useRef<HTMLInputElement>(null);
 
-  // Global hotkey: Ctrl+K or Cmd+K to focus search
+  // Global hotkey: Ctrl+K or Cmd+K to open search modal, Esc to close
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        setIsOpen(true);
-        inputRef.current?.focus();
+        setIsOpen((prev) => !prev);
       } else if (e.key === "Escape") {
         setIsOpen(false);
       }
@@ -97,16 +97,14 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Click outside listener
+  // Autofocus input when modal opens
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+    if (isOpen) {
+      setTimeout(() => {
+        modalInputRef.current?.focus();
+      }, 50);
     }
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, []);
+  }, [isOpen]);
 
   // Debounced search query
   const performSearch = useCallback(async (q: string) => {
@@ -156,7 +154,7 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
     }
     const timer = setTimeout(() => {
       performSearch(query);
-    }, 220);
+    }, 200);
     return () => clearTimeout(timer);
   }, [query, performSearch]);
 
@@ -166,14 +164,25 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
     onSelectStock(symbol, action);
   }
 
+  const filteredResults = useMemo(() => {
+    if (selectedCap === "ALL") return results;
+    return results.filter((r) => r.marketCapCategory === selectedCap);
+  }, [results, selectedCap]);
+
   return (
-    <div className="global-search-container" ref={containerRef}>
+    <div className="global-search-container">
+      {/* Sleek Header Trigger Bar (Groww & Angel One Style) */}
       <div
         className={`global-search-bar ${isOpen ? "active" : ""}`}
-        onClick={() => {
-          setIsOpen(true);
-          inputRef.current?.focus();
+        onClick={() => setIsOpen(true)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            setIsOpen(true);
+          }
         }}
+        aria-label="Universal stock search (like Groww / Angel One)"
       >
         <span className="global-search-icon" aria-hidden="true">
           🔍
@@ -181,137 +190,174 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
         <input
           ref={inputRef}
           type="text"
+          readOnly
           className="global-search-input"
           placeholder="Search stocks, mutual funds, indices..."
           value={query}
-          onFocus={() => setIsOpen(true)}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            if (!isOpen) setIsOpen(true);
-          }}
-          aria-label="Universal stock search (like Groww / Angel One)"
+          tabIndex={-1}
+          aria-label="Universal stock search input"
         />
-        {query ? (
-          <button
-            type="button"
-            className="global-search-clear"
-            onClick={(e) => {
-              e.stopPropagation();
-              setQuery("");
-              inputRef.current?.focus();
-            }}
-            aria-label="Clear search query"
-          >
-            ✕
-          </button>
-        ) : (
-          <kbd className="global-search-shortcut" title="Press Ctrl+K or Cmd+K to search">
-            ⌘K
-          </kbd>
-        )}
+        <kbd className="global-search-shortcut" title="Press Ctrl+K or Cmd+K to search">
+          ⌘K
+        </kbd>
       </div>
 
+      {/* Institutional Command Palette Modal Backdrop */}
       {isOpen && (
         <div
-          className="global-search-dropdown"
-          role="dialog"
-          aria-label="Stock Search Results"
-          onMouseDown={(e) => e.stopPropagation()}
+          className="global-search-backdrop"
+          onClick={() => setIsOpen(false)}
+          role="presentation"
         >
-          <div className="global-search-header">
-            <span>{query ? `Results for "${query}"` : "Trending on NSE & BSE"}</span>
-            {isSearching && <span className="global-search-loading">Searching live...</span>}
-            <span className="global-search-hint">Press Esc to exit</span>
-          </div>
+          <div
+            className="global-search-modal global-search-dropdown"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Stock Search Results"
+            onClick={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {/* Modal Input Row */}
+            <div className="modal-search-input-row">
+              <span className="modal-search-icon" aria-hidden="true">
+                🔍
+              </span>
+              <input
+                ref={modalInputRef}
+                type="text"
+                className="modal-search-field"
+                placeholder="Search ANY Indian stock symbol or company (e.g. Zomato, Reliance, Dixon, TCS)..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                aria-label="Universal stock search (like Groww / Angel One)"
+              />
+              {query && (
+                <button
+                  type="button"
+                  className="modal-search-clear-btn"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search query"
+                >
+                  ✕
+                </button>
+              )}
+              <kbd className="modal-esc-key" onClick={() => setIsOpen(false)} title="Close (Esc)">
+                ESC
+              </kbd>
+            </div>
 
-          <div className="global-search-list">
-            {results.length === 0 ? (
-              <div className="global-search-empty">
-                No Indian equities or indices found matching "{query}". Try searching by ticker like
-                RELIANCE, ZOMATO, TATASTEEL, or DIXON.
-              </div>
-            ) : (
-              results.map((item) => {
-                const isPositive = item.change >= 0;
-                return (
-                  <div
-                    key={item.symbol}
-                    className="global-search-item"
-                    onMouseDown={() => handleAction(item.symbol, "stocks")}
-                    onClick={() => handleAction(item.symbol, "stocks")}
+            {/* Quick Filter Categories Bar */}
+            <div className="global-search-header">
+              <div className="modal-category-pills">
+                {["ALL", "Large Cap", "Mid Cap", "Small Cap"].map((cap) => (
+                  <button
+                    key={cap}
+                    type="button"
+                    className={`modal-filter-pill ${selectedCap === cap ? "active" : ""}`}
+                    onClick={() => setSelectedCap(cap)}
                   >
-                    <div className="global-search-item-main">
-                      <div className="global-search-item-symbol-row">
-                        <span className="global-search-item-symbol">{item.symbol}</span>
-                        <span className="global-search-item-cap">{item.marketCapCategory || "NSE"}</span>
-                        <span className="global-search-item-sector">{item.sector}</span>
-                      </div>
-                      <span className="global-search-item-name">{item.name}</span>
-                    </div>
+                    {cap === "ALL" ? "All Equities" : cap}
+                  </button>
+                ))}
+              </div>
+              <div className="modal-header-right">
+                {isSearching ? (
+                  <span className="global-search-loading">Searching live...</span>
+                ) : (
+                  <span className="modal-results-count">
+                    {query ? `Results for "${query}"` : "Trending on NSE & BSE"}
+                  </span>
+                )}
+              </div>
+            </div>
 
-                    <div className="global-search-item-right">
-                      <div className="global-search-item-price-col">
-                        <span className="global-search-item-price">
-                          ₹{item.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </span>
-                        <span className={`global-search-item-change ${isPositive ? "gain" : "loss"}`}>
-                          {isPositive ? "+" : ""}
-                          {item.change_percent.toFixed(2)}%
-                        </span>
+            {/* Scrollable Results List */}
+            <div className="global-search-list">
+              {filteredResults.length === 0 ? (
+                <div className="global-search-empty">
+                  No Indian equities or indices found matching "{query}". Try searching by ticker like
+                  RELIANCE, ZOMATO, TATASTEEL, or DIXON.
+                </div>
+              ) : (
+                filteredResults.map((item) => {
+                  const isPositive = item.change >= 0;
+                  return (
+                    <div
+                      key={item.symbol}
+                      className="global-search-item"
+                      onClick={() => handleAction(item.symbol, "stocks")}
+                    >
+                      <div className="global-search-item-main">
+                        <div className="global-search-item-symbol-row">
+                          <span className="global-search-item-symbol">{item.symbol}</span>
+                          <span className="global-search-item-cap">{item.marketCapCategory || "NSE"}</span>
+                          <span className="global-search-item-sector">{item.sector}</span>
+                        </div>
+                        <span className="global-search-item-name">{item.name}</span>
                       </div>
 
-                      <div className="global-search-actions">
-                        <button
-                          type="button"
-                          className="search-action-btn search-trade-btn"
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            handleAction(item.symbol, "trade");
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAction(item.symbol, "trade");
-                          }}
-                          title={`Place paper trade for ${item.symbol}`}
-                        >
-                          ⚡ Trade
-                        </button>
-                        <button
-                          type="button"
-                          className="search-action-btn search-ai-btn"
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            handleAction(item.symbol, "ai");
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAction(item.symbol, "ai");
-                          }}
-                          title={`Run AI Strategy Lab analysis for ${item.symbol}`}
-                        >
-                          🤖 AI
-                        </button>
-                        <button
-                          type="button"
-                          className="search-action-btn search-trend-btn"
-                          onMouseDown={(e) => {
-                            e.stopPropagation();
-                            handleAction(item.symbol, "trends");
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleAction(item.symbol, "trends");
-                          }}
-                          title={`View trend analysis for ${item.symbol}`}
-                        >
-                          📈 Trend
-                        </button>
+                      <div className="global-search-item-right">
+                        <div className="global-search-item-price-col">
+                          <span className="global-search-item-price">
+                            ₹{item.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </span>
+                          <span className={`global-search-item-change ${isPositive ? "gain" : "loss"}`}>
+                            {isPositive ? "+" : ""}
+                            {item.change_percent.toFixed(2)}%
+                          </span>
+                        </div>
+
+                        <div className="global-search-actions">
+                          <button
+                            type="button"
+                            className="search-action-btn search-trade-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAction(item.symbol, "trade");
+                            }}
+                            title={`Place paper trade for ${item.symbol}`}
+                          >
+                            ⚡ Trade
+                          </button>
+                          <button
+                            type="button"
+                            className="search-action-btn search-ai-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAction(item.symbol, "ai");
+                            }}
+                            title={`Run AI Strategy Lab analysis for ${item.symbol}`}
+                          >
+                            🤖 AI
+                          </button>
+                          <button
+                            type="button"
+                            className="search-action-btn search-trend-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAction(item.symbol, "trends");
+                            }}
+                            title={`View trend analysis for ${item.symbol}`}
+                          >
+                            📈 Trend
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
+
+            {/* Modal Legend Footer */}
+            <div className="modal-search-footer">
+              <div className="footer-keys">
+                <span><kbd>↵</kbd> Explore Stock</span>
+                <span><kbd>⚡ Trade</kbd> Paper Trading</span>
+                <span><kbd>🤖 AI</kbd> Timeline Simulation</span>
+              </div>
+              <span className="footer-telemetry-tag">● Live AMFI / NSE Telemetry</span>
+            </div>
           </div>
         </div>
       )}

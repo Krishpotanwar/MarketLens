@@ -42,6 +42,15 @@ export function Header({
           <span className="wordmark-icon" aria-hidden="true">ML</span>
           <span>MarketLens</span>
         </a>
+      </div>
+
+      {onSelectStock && (
+        <div className="topbar-center">
+          <GlobalSearchBar onSelectStock={onSelectStock} />
+        </div>
+      )}
+
+      <div className="topbar-nav-wrapper">
         <nav className="topbar-nav" aria-label="Main Navigation">
           <button
             type="button"
@@ -109,12 +118,6 @@ export function Header({
           </button>
         </nav>
       </div>
-
-      {onSelectStock && (
-        <div className="topbar-center">
-          <GlobalSearchBar onSelectStock={onSelectStock} />
-        </div>
-      )}
 
       <div className="topbar-right">
         {onToggleTheme && (
