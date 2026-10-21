@@ -133,6 +133,21 @@ class ApiEndpointsTests(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json(), {"status": "ok"})
 
+    def test_get_symbol_quote(self) -> None:
+        resp = self.client.get("/api/v1/market/quote/RELIANCE")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["symbol"], "RELIANCE")
+        self.assertIn("ltp", data)
+        self.assertIn("change", data)
+
+    def test_get_market_chart(self) -> None:
+        resp = self.client.get("/api/v1/market/chart/TCS?interval=5m&range=1d")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["symbol"], "TCS")
+        self.assertIn("bars", data)
+
     def test_get_current_run(self) -> None:
         resp = self.client.get("/api/v1/runs/current")
         self.assertEqual(resp.status_code, 200)

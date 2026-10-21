@@ -9,6 +9,12 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
+from bazaar_drishti.market.live_feed import (
+    fetch_all_nse_quotes,
+    fetch_intraday_chart,
+    fetch_symbol_quote,
+)
+
 
 def create_app(conn: sqlite3.Connection) -> FastAPI:
     """Create a configured read-only FastAPI instance backed by the database connection."""
@@ -39,6 +45,33 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
     @app.get("/healthz", summary="Process Health Check")
     def healthz() -> dict[str, str]:
         return {"status": "ok"}
+
+    @app.get("/api/v1/market/status", summary="Market Feed Provider Status")
+    def get_market_status() -> dict[str, Any]:
+        import os
+        api_key = os.getenv("SMARTAPI_API_KEY")
+        return {
+            "status": "online",
+            "provider": "Angel One SmartAPI" if api_key else "NSE Direct Telemetry",
+            "smartapi_configured": bool(api_key),
+        }
+
+    @app.get("/api/v1/market/quotes", summary="Get Live Indian Stock Quotes")
+    async def get_market_quotes() -> dict[str, Any]:
+        quotes = await fetch_all_nse_quotes()
+        return {"quotes": quotes, "count": len(quotes)}
+
+    @app.get("/api/v1/market/quote/{symbol}", summary="Get Single Symbol Quote")
+    async def get_symbol_quote(symbol: str) -> dict[str, Any]:
+        return await fetch_symbol_quote(symbol)
+
+    @app.get("/api/v1/market/chart/{symbol}", summary="Get Intraday Bars Chart")
+    async def get_market_chart(
+        symbol: str,
+        interval: str = Query("5m", description="Bar interval (e.g. 1m, 5m, 15m, 1d)"),
+        range_period: str = Query("1d", alias="range", description="Time range (e.g. 1d, 5d, 1mo)"),
+    ) -> dict[str, Any]:
+        return await fetch_intraday_chart(symbol, interval, range_period)
 
     @app.get("/api/v1/runs/current", summary="Get Active Run Summary")
     def get_current_run() -> dict[str, Any]:

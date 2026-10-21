@@ -6,6 +6,11 @@ __pycache__/
 *.egg-info/
 .mypy_cache/
 .ruff_cache/
+.env
+.env.local
+.env.*
+!.env.example
+*.env
 build/
 dist/
 web_root/
