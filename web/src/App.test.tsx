@@ -8,6 +8,7 @@ import { TrendAnalysisPage } from "./pages/TrendAnalysisPage";
 import { PaperTradingPage } from "./pages/PaperTradingPage";
 import { StocksExplorerPage } from "./pages/StocksExplorerPage";
 import { MutualFundsPage } from "./pages/MutualFundsPage";
+import { AIStrategyLabPage } from "./pages/AIStrategyLabPage";
 import { calculateIndianCharges } from "./types/paper";
 import { calculateSIP } from "./types/funds";
 import { TOP_INDIAN_MUTUAL_FUNDS } from "./data/mutualFundsData";
@@ -176,5 +177,16 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("Quant Small Cap Fund");
     expect(markup).toContain("UTI Nifty 50 Index Fund");
     expect(markup).toContain("Min SIP:");
+  });
+
+  it("renders Hybrid AI Strategy Lab with strategy presets and Grok reasoning stream", () => {
+    const markup = renderToStaticMarkup(<AIStrategyLabPage onExecuteAITrade={() => {}} />);
+    expect(markup).toContain("Hybrid AI Strategy Lab &amp; Grok Reasoning Sandbox");
+    expect(markup).toContain("Strategy Rules &amp; Prompt Sandbox");
+    expect(markup).toContain("20/50 SMA Crossover");
+    expect(markup).toContain("RSI Dip &amp; VWAP");
+    expect(markup).toContain("Volume Breakout");
+    expect(markup).toContain("Custom Prompt Sandbox");
+    expect(markup).toContain("Run AI Analysis on");
   });
 });
