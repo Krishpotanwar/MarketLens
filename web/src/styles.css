@@ -547,6 +547,22 @@ main,
   background: var(--text-faint);
 }
 
+.data-badge.synthetic {
+  color: var(--amber);
+}
+.data-badge.synthetic span {
+  background: var(--amber);
+}
+
+.data-badge.live {
+  color: var(--gain);
+}
+.data-badge.live span {
+  background: var(--gain);
+  box-shadow: 0 0 6px var(--gain);
+  animation: pulse-live 2s infinite ease-in-out;
+}
+
 /* ------------------------------------------------------------- */
 /* Page Content & Headings                                       */
 /* ------------------------------------------------------------- */

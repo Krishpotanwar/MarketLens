@@ -10,6 +10,7 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "build": "tsc --noEmit && vite build"
   },
   "dependencies": {

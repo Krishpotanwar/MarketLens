@@ -127,10 +127,17 @@ export function Header({
             {darkMode ? "Light Desk" : "Dark Terminal"}
           </button>
         )}
-        <p className={`data-badge ${synthetic === null ? "empty" : ""}`} role="status">
-          <span aria-hidden="true" />
-          {synthetic === null ? "No active run" : synthetic ? "Synthetic data" : "Licensed data"}
-        </p>
+        {["stocks", "funds", "ai-strategy", "trends", "paper"].includes(currentTab) ? (
+          <p className="data-badge live" role="status">
+            <span aria-hidden="true" />
+            Live Market Telemetry
+          </p>
+        ) : (
+          <p className={`data-badge ${synthetic === null ? "empty" : synthetic ? "synthetic" : ""}`} role="status">
+            <span aria-hidden="true" />
+            {synthetic === null ? "No active run" : synthetic ? "Synthetic Backtest" : "Licensed Data"}
+          </p>
+        )}
       </div>
     </header>
   );

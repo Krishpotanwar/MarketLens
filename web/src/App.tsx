@@ -118,7 +118,7 @@ export default function App() {
           />
         )}
         {currentTab === "paper" && (
-          <PaperTradingPage initialSymbol={tradeSelectedSymbol} />
+          <PaperTradingPage key={tradeSelectedSymbol} initialSymbol={tradeSelectedSymbol} />
         )}
         {currentTab === "overview" && (
           <OverviewPage runData={runData} loading={loading} />

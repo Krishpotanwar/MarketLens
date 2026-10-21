@@ -33,6 +33,12 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [isLiveLoading, setIsLiveLoading] = useState(false);
 
+  useEffect(() => {
+    if (initialSymbol) {
+      setSymbol(initialSymbol);
+    }
+  }, [initialSymbol]);
+
   // Sync live quotes from backend telemetry
   const fetchLiveQuotes = useCallback(async () => {
     setIsLiveLoading(true);

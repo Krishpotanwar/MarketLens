@@ -104,8 +104,8 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
         setIsOpen(false);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
   // Debounced search query
@@ -212,14 +212,19 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
       </div>
 
       {isOpen && (
-        <div className="global-search-dropdown" role="dialog" aria-label="Stock Search Results">
+        <div
+          className="global-search-dropdown"
+          role="dialog"
+          aria-label="Stock Search Results"
+          onMouseDown={(e) => e.stopPropagation()}
+        >
           <div className="global-search-header">
             <span>{query ? `Results for "${query}"` : "Trending on NSE & BSE"}</span>
             {isSearching && <span className="global-search-loading">Searching live...</span>}
             <span className="global-search-hint">Press Esc to exit</span>
           </div>
 
-          <div className="global-search-list" role="listbox">
+          <div className="global-search-list">
             {results.length === 0 ? (
               <div className="global-search-empty">
                 No Indian equities or indices found matching "{query}". Try searching by ticker like
@@ -232,8 +237,7 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
                   <div
                     key={item.symbol}
                     className="global-search-item"
-                    role="option"
-                    aria-selected={false}
+                    onMouseDown={() => handleAction(item.symbol, "stocks")}
                     onClick={() => handleAction(item.symbol, "stocks")}
                   >
                     <div className="global-search-item-main">
@@ -256,11 +260,18 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
                         </span>
                       </div>
 
-                      <div className="global-search-actions" onClick={(e) => e.stopPropagation()}>
+                      <div className="global-search-actions">
                         <button
                           type="button"
                           className="search-action-btn search-trade-btn"
-                          onClick={() => handleAction(item.symbol, "trade")}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            handleAction(item.symbol, "trade");
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(item.symbol, "trade");
+                          }}
                           title={`Place paper trade for ${item.symbol}`}
                         >
                           ⚡ Trade
@@ -268,7 +279,14 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
                         <button
                           type="button"
                           className="search-action-btn search-ai-btn"
-                          onClick={() => handleAction(item.symbol, "ai")}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            handleAction(item.symbol, "ai");
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(item.symbol, "ai");
+                          }}
                           title={`Run AI Strategy Lab analysis for ${item.symbol}`}
                         >
                           🤖 AI
@@ -276,7 +294,14 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
                         <button
                           type="button"
                           className="search-action-btn search-trend-btn"
-                          onClick={() => handleAction(item.symbol, "trends")}
+                          onMouseDown={(e) => {
+                            e.stopPropagation();
+                            handleAction(item.symbol, "trends");
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAction(item.symbol, "trends");
+                          }}
                           title={`View trend analysis for ${item.symbol}`}
                         >
                           📈 Trend
