@@ -49,6 +49,9 @@ export interface StockTrendInfo {
   symbol: string;
   name: string;
   sector: string;
+  marketCapCategory?: "Large Cap" | "Mid Cap" | "Small Cap" | "Index";
+  week52High?: number;
+  week52Low?: number;
   ltp: number;
   change: number;
   changePercent: number;

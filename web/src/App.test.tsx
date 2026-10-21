@@ -7,6 +7,9 @@ import { RunReceiptPage } from "./pages/RunReceiptPage";
 import { TrendAnalysisPage } from "./pages/TrendAnalysisPage";
 import { PaperTradingPage } from "./pages/PaperTradingPage";
 import { calculateIndianCharges } from "./types/paper";
+import { calculateSIP } from "./types/funds";
+import { TOP_INDIAN_MUTUAL_FUNDS } from "./data/mutualFundsData";
+import { INITIAL_INDIAN_STOCKS } from "./data/indianMarketData";
 import type { RunMetadataResponse } from "./types/api";
 
 const mockRun: RunMetadataResponse = {
@@ -126,5 +129,25 @@ describe("research dashboard shell and pages", () => {
     expect(intraSell.stt).toBeCloseTo(43.75, 2); // 0.025% on intraday sell
     expect(intraSell.stampDuty).toBe(0); // No stamp duty on sell
     expect(intraSell.netEffectiveAmount).toBeLessThan(intraSell.turnover); // Net receivable = turnover - charges
+  });
+
+  it("calculates accurate SIP compound wealth and supports mutual fund models", () => {
+    // ₹10,000/mo for 10 years at 12% annual return
+    const sip = calculateSIP(10000, 12, 10);
+    expect(sip.totalInvestedAmount).toBe(1200000);
+    expect(sip.totalMaturityValue).toBeGreaterThan(2300000);
+    expect(sip.estimatedReturnsAmount).toBeGreaterThan(1100000);
+    expect(sip.wealthGainMultiplier).toBeGreaterThan(1.9);
+
+    // Mutual Funds data
+    expect(TOP_INDIAN_MUTUAL_FUNDS.length).toBeGreaterThanOrEqual(7);
+    const ppfas = TOP_INDIAN_MUTUAL_FUNDS.find((f) => f.id === "ppfas-flexi");
+    expect(ppfas).toBeDefined();
+    expect(ppfas?.category).toBe("Flexi Cap");
+
+    // Multi-cap stocks data
+    const midCaps = INITIAL_INDIAN_STOCKS.filter((s) => s.marketCapCategory === "Mid Cap");
+    expect(midCaps.length).toBeGreaterThan(0);
+    expect(midCaps.some((s) => s.symbol === "DIXON")).toBe(true);
   });
 });
