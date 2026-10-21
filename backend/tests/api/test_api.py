@@ -141,6 +141,14 @@ class ApiEndpointsTests(unittest.TestCase):
         self.assertIn("ltp", data)
         self.assertIn("change", data)
 
+    def test_search_market_stocks(self) -> None:
+        resp = self.client.get("/api/v1/market/search?q=TATA")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data["query"], "TATA")
+        self.assertIn("results", data)
+        self.assertGreater(data["count"], 0)
+
     def test_get_market_chart(self) -> None:
         resp = self.client.get("/api/v1/market/chart/TCS?interval=5m&range=1d")
         self.assertEqual(resp.status_code, 200)

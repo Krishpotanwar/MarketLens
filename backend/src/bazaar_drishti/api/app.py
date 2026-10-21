@@ -13,6 +13,7 @@ from bazaar_drishti.market.live_feed import (
     fetch_all_nse_quotes,
     fetch_intraday_chart,
     fetch_symbol_quote,
+    search_nse_stocks,
 )
 
 
@@ -60,6 +61,13 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
     async def get_market_quotes() -> dict[str, Any]:
         quotes = await fetch_all_nse_quotes()
         return {"quotes": quotes, "count": len(quotes)}
+
+    @app.get("/api/v1/market/search", summary="Search Indian Stocks and Fetch Live Quotes")
+    async def search_market_stocks(
+        q: str = Query(..., min_length=1, description="Stock ticker, name, or sector to search")
+    ) -> dict[str, Any]:
+        results = await search_nse_stocks(q)
+        return {"query": q, "count": len(results), "results": results}
 
     @app.get("/api/v1/market/quote/{symbol}", summary="Get Single Symbol Quote")
     async def get_symbol_quote(symbol: str) -> dict[str, Any]:

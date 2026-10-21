@@ -20,4 +20,7 @@ web_node_modules_root2/
 web_dist_root/
 backend/tests_root/
 .taste-skill/
+.claude-flow/
+claude-seo/
+marketlens-audit/
 
