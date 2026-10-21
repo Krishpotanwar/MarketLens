@@ -4,6 +4,9 @@ import App from "./App";
 import { OverviewPage } from "./pages/OverviewPage";
 import { ForecastLabPage } from "./pages/ForecastLabPage";
 import { RunReceiptPage } from "./pages/RunReceiptPage";
+import { TrendAnalysisPage } from "./pages/TrendAnalysisPage";
+import { PaperTradingPage } from "./pages/PaperTradingPage";
+import { calculateIndianCharges } from "./types/paper";
 import type { RunMetadataResponse } from "./types/api";
 
 const mockRun: RunMetadataResponse = {
@@ -48,6 +51,8 @@ describe("research dashboard shell and pages", () => {
     expect(markup).not.toContain("₹837.91");
     expect(markup).not.toContain("SEBI RA compliant");
     expect(markup).toContain("MarketLens");
+    expect(markup).toContain("Trends &amp; Signals");
+    expect(markup).toContain("Paper Trading");
     expect(markup).toContain("Overview");
     expect(markup).toContain("Forecast Lab");
     expect(markup).toContain("Run Receipt");
@@ -79,5 +84,47 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("SYNTHETIC FIXTURE");
     expect(markup).toContain("9e232063a896d744fea0637387b87f64031a1a91464f05176038d41e804806fd");
     expect(markup).toContain("Prototype Status &amp; Limitations");
+  });
+
+  it("renders Indian stock trends page with NSE screener and prediction studio", () => {
+    const markup = renderToStaticMarkup(<TrendAnalysisPage onSelectForTrade={() => {}} />);
+    expect(markup).toContain("Indian Stock Market Trends &amp; Signals");
+    expect(markup).toContain("NSE Liquid Equities");
+    expect(markup).toContain("NIFTY 50");
+    expect(markup).toContain("RELIANCE");
+    expect(markup).toContain("TCS");
+    expect(markup).toContain("Multi-Timeframe Trend Structure");
+    expect(markup).toContain("Calibrated Directional Prediction");
+    expect(markup).toContain("Test Signal in Paper Trading Terminal");
+  });
+
+  it("renders paper trading terminal with virtual capital and statutory tax ledger", () => {
+    const markup = renderToStaticMarkup(<PaperTradingPage initialSymbol="RELIANCE" />);
+    expect(markup).toContain("Indian Stock Paper Trading Terminal");
+    expect(markup).toContain("Total Portfolio Value");
+    expect(markup).toContain("₹10,00,000.00");
+    expect(markup).toContain("Order Placement Ticket");
+    expect(markup).toContain("Indian Statutory Charges Breakdown");
+    expect(markup).toContain("Active Open Positions");
+    expect(markup).toContain("Trade History &amp; Statutory Audit");
+  });
+
+  it("calculates realistic Indian statutory taxes and charges according to SEBI/NSE schedule", () => {
+    // Delivery BUY of 10 shares of RELIANCE @ ₹2950 (Turnover: ₹29,500)
+    const delBuy = calculateIndianCharges("BUY", "CNC", 2950, 10);
+    expect(delBuy.turnover).toBe(29500);
+    expect(delBuy.brokerage).toBe(0); // Zero for delivery
+    expect(delBuy.stt).toBeCloseTo(29.5, 2); // 0.1% on delivery buy
+    expect(delBuy.stampDuty).toBeCloseTo(4.425, 2); // 0.015% on buy
+    expect(delBuy.totalCharges).toBeGreaterThan(0);
+    expect(delBuy.netEffectiveAmount).toBeGreaterThan(delBuy.turnover); // Capital required = turnover + charges
+
+    // Intraday SELL of 100 shares of INFY @ ₹1750 (Turnover: ₹175,000)
+    const intraSell = calculateIndianCharges("SELL", "MIS", 1750, 100);
+    expect(intraSell.turnover).toBe(175000);
+    expect(intraSell.brokerage).toBe(20); // Capped at ₹20
+    expect(intraSell.stt).toBeCloseTo(43.75, 2); // 0.025% on intraday sell
+    expect(intraSell.stampDuty).toBe(0); // No stamp duty on sell
+    expect(intraSell.netEffectiveAmount).toBeLessThan(intraSell.turnover); // Net receivable = turnover - charges
   });
 });
