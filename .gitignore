@@ -1,0 +1,16 @@
+.venv/
+.venv-vm/
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+web_root/
+web_old2/
+web_node_modules_root/
+web_node_modules_root2/
+web_dist_root/
+backend/tests_root/
