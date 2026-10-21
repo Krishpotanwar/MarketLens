@@ -47,7 +47,7 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("No validated run available");
     expect(markup).not.toContain("₹837.91");
     expect(markup).not.toContain("SEBI RA compliant");
-    expect(markup).toContain("Bazaar Drishti");
+    expect(markup).toContain("MarketLens");
     expect(markup).toContain("Overview");
     expect(markup).toContain("Forecast Lab");
     expect(markup).toContain("Run Receipt");

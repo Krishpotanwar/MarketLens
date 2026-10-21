@@ -50,12 +50,12 @@ The historical notes mention a “Wall Street Terminal Replica Plan.” Borrow w
 
 ## Handoff — 2026-10-21
 
-- This checkout has no commit or configured Git remote; changes remain uncommitted.
+- This checkout is branch `codex/bazaar-drishti-synthetic-slice` at baseline commit `ce5574f`; it has no configured Git remote. Changes in the current pass are uncommitted.
 - Implemented: deterministic synthetic fixture and hash manifest; versioned schemas with JSON serialization; rights-gate and bar-normalization prototypes; offline cost, strategy, baseline, forecast, and metric modules; SQLite bundle publisher; SQLite-backed GET API prototype; static React pages.
 - The fixture uses invented 2030 weekday session templates and includes one intentionally missing five-minute interval. These are not exchange-calendar sessions or historical security data.
 - Its deterministic price path is a zero-drift random walk reset to 1000 synthetic units per session; the manifest limits it to schema/pipeline validation, not strategy or forecast evidence.
 - Current GitNexus repository is this standalone folder (`bazaar-drishti`); re-index only this root after code changes. The VM index is external to the shared checkout.
-- C0 is open; C1 blocks real data/publication; C2 is locally verified but awaits an observed CI run; C3 and C4 remain in progress. No research result is approved or published. There is no provider, PostgreSQL publisher/integration result, API database role, or API-connected dashboard. A PostgreSQL migration exists but is unverified in this VM.
+- C0 is open; C1 blocks real data/publication; C2 local checks pass (74 backend tests and a clean frozen web install with test/typecheck/build) but await an observed CI run. C3–C6 remain in progress; C7 is not started. No research result is approved or published. There is no provider, PostgreSQL publisher/integration result, API database role, or API-connected dashboard. A PostgreSQL migration exists but is unverified in this VM.
 - The Codex GitNexus hooks and MCP configuration are installed for this VM. The user still needs to approve the hooks in Codex's `/hooks` UI and restart the session before hook/MCP activation can be confirmed.
 - Read `docs/project/LOGBOOK.md` before continuing. Review the research and bundle prototypes, close correctness gaps, and keep the professor method and rights gates visible.
 

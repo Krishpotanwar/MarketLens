@@ -1,5 +1,5 @@
 {
-  "name": "bazaar-drishti-web",
+  "name": "marketlens-web",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -10,7 +10,7 @@
     "dev": "vite",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "build": "pnpm run typecheck && vite build"
+    "build": "tsc --noEmit && vite build"
   },
   "dependencies": {
     "react": "19.3.0",

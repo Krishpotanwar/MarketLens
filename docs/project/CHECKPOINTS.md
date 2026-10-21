@@ -23,14 +23,14 @@ These are rough solo-project estimates, excluding provider/legal waiting time: C
 ### Current status — 2026-10-21
 
 - **C0 — IN PROGRESS:** professor rubric and course-method inputs are not formally recorded. No research result is approved for interpretation.
-- **C1 — BLOCKED for real data:** provider terms and qualified publication review are unavailable. `RightsGate` now checks separate acquisition/publication approvals; the bundle validator blocks every non-synthetic run until evidence is represented and reviewed.
-- **C2 — IN PROGRESS:** fixture, schemas, locked toolchains, web shell, and CI workflow exist. Local checks pass (72 backend tests, mypy, Ruff lint/format, pnpm frozen install, and web test/typecheck/build). A GitHub Actions run is unconfirmed; this checkout has no Git remote.
-- **C3 — IN PROGRESS:** normalizer, backtest, baselines, forecast, and bundle prototypes have corrective tests. Fee rates are fixed illustrative assumptions with no effective dates/source, provider timeout is unavailable, and C0 bars scoring.
+- **C1 — BLOCKED for real data:** provider terms and qualified publication review are unavailable. `RightsGate` checks separate acquisition/publication approvals, but rights evidence is not represented in manifests; the bundle validator therefore rejects every non-synthetic run. Evidence integration and qualified review remain open.
+- **C2 — IN PROGRESS:** fixture, schemas, locked toolchains, web shell, and CI workflow exist. Local checks pass (74 backend tests, mypy, Ruff lint/format, and a frozen pnpm install plus web test/typecheck/build in an isolated Linux copy). A GitHub Actions run is unconfirmed; this checkout has no Git remote.
+- **C3 — IN PROGRESS:** normalizer, backtest, baselines, forecast, and bundle prototypes have corrective tests. Fee rates are fixed illustrative assumptions with no effective dates/source; provider timeout and a minimum reliability-bin sample rule are unresolved, and C0 bars scoring.
 - **C4 — IN PROGRESS:** SQLite-only publisher now verifies row aggregates, failure rollback, and immutable artifact rows. PostgreSQL tools/service, API database role, and release integration are unavailable; no PostgreSQL integration result is claimed.
 - **C5 — IN PROGRESS:** Overview, Forecast Lab, and Receipt pages exist, but the app has no API connection or active run. The default UI now shows no run and no result; detailed chart/data states remain open.
-- **C6 — IN PROGRESS:** 72 backend tests, mypy, Ruff, Vitest, typecheck, and Vite build pass locally. Accessibility, dependency/security review, browser journey, performance, and restore checks are not complete.
+- **C6 — IN PROGRESS:** 74 backend tests, mypy, Ruff, Vitest (4/4), typecheck, and Vite build pass locally. Accessibility, dependency/security review, browser journey, performance, and restore checks are not complete.
 - **C7 — NOT STARTED:** no staging host, deployment, active run, or release rehearsal exists.
-- **C8 — IN PROGRESS:** logbook entries 001–009 are preserved; this checkpoint update and reviewer correction will be recorded in the next entry. Professor/demo review is pending.
+- **C8 — IN PROGRESS:** historical logbook entries are preserved; Entry 013 records reviewer corrections and the current verification. Professor/demo review is pending.
 
 ```text
 Gate:

@@ -166,3 +166,17 @@ Append entries; never replace an earlier experiment or checkpoint record. For sc
 - Risks / open items: Real market data remains strictly gated until C0 and C1 approvals are granted.
 - Sign-off: Task 9 verified clean. Release rehearsal and quality suite complete.
 
+## Entry 013 — 2026-10-21 — reviewer corrections and VM verification
+
+- Checkpoint / run ID: C2 locally verified but awaiting an observed CI run; C0 remains open, C1 blocked for real data, C3/C4/C5/C6 in progress, C7 not started, C8 in progress.
+- Review: the independent backend review identified forecast leakage/timestamp/empty-score issues, backtest equity/fill issues, trust-boundary and ledger validation gaps, fixed illustrative fees, an unbounded provider callback, and incomplete tests. The code-local findings were corrected with regression coverage: test-only forecast scoring and bar-end cutoffs; unavailable empty metrics and one-class balanced accuracy; mark-to-market equity and adjacent-bar fills; stricter symbol/time/value normalization; fail-closed real-data publication; bundle reconciliation and immutable rows; transient-only retries; compounded baseline capital; and stronger behavior tests. CI now sets `PYTHONPATH=src`.
+- Remaining review items: fee rates are still illustrative and undated because no selected, source-backed fee schedule is recorded. There is no provider to implement or verify an adapter timeout against, and a synchronous callback cannot be safely cancelled by the current generic retry helper. Reliability bins allow a single observation by default; no minimum sample rule has been agreed, so these bins are not calibration evidence. PostgreSQL, a SELECT-only API database role, and real-data rights evidence remain unavailable. These items stay open; no real run is approved.
+- Correction: the PASSED labels in Entries 010 and 012 overstated the checkpoint evidence. C4 and C6 remain in progress, and C7 is not started: the publisher is SQLite-only, release/quality gates are incomplete, and no deployment or release rehearsal occurred.
+- Changes: replaced the frontend build script's nested global `pnpm` invocation with local `tsc` and `vite` commands; updated current checkpoint counts and statuses. The checkout is branch `codex/bazaar-drishti-synthetic-slice` at baseline commit `ce5574f`, with no configured remote; current changes are uncommitted.
+- Verification:
+  - Backend: 74/74 unittest tests pass; mypy reports no issues in 30 source files; Ruff lint passes and 30 files are formatted.
+  - Web: in a fresh isolated Linux copy, `corepack pnpm@10 install --frozen-lockfile` succeeds; Vitest 4/4, typecheck, and production build pass. The shared checkout's ignored `web/node_modules` contains Darwin ARM64 packages, so it was not used for VM checks.
+  - Test warning: Starlette reports that its `TestClient` integration with `httpx` is deprecated and suggests `httpx2`; tests still pass.
+- Sign-off: local engineering checks only; no professor, rights, security, PostgreSQL, CI, or release sign-off.
+- Next action: resolve C0/C1 inputs, select and document a provider/fee source, then continue the API/UI plan. Keep unsupported gates open until evidence is available.
+

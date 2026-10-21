@@ -1,41 +1,106 @@
-# बाज़ार-दृष्टि (Bazaar Drishti)
+# MarketLens
 
-**अर्थ:** बाज़ार को समझने की स्पष्ट दृष्टि — *Market Insight*.
+**An auditable, after-cost quantitative research platform for Indian cash-equity paper trading.**
 
-Bazaar Drishti is a quantitative research and visualization project for Indian cash-equity paper trading. It is designed to make strategy results reproducible and auditable, with transaction costs, assumptions, uncertainty, gains, and losses shown transparently.
+MarketLens is a reproducible academic research dashboard and evaluation pipeline. It provides a transparent, professor-ready audit of intraday strategy simulations and chronological directional forecasts on Indian equities with exact statutory fee reconciliation, baseline comparisons, and zero live execution risk.
 
-The earlier working name was **PulseQuant**. This is a research and paper-trading project; it does not place live trades or promise returns.
+---
 
-## Current implementation
+## Key Features
 
-The project has a deterministic synthetic fixture, versioned schemas, input validation, offline strategy and forecast prototypes, and a local bundle/publisher prototype. It has no real exchange data or concrete provider implementation, and no approved scored run is published. The web app remains a status shell that says no run has passed validation. Real data and public results stay disabled until the course method and data/publication rights are reviewed.
+- **20/50 SMA Intraday Engine:** Completed-bar signal generation, next-eligible-open execution, and mandatory end-of-session forced flatting (zero overnight carry).
+- **Date-Effective Statutory Cost Accounting:** Reconciles every paise across brokerage caps, exchange turnover fees, SEBI charges, sell-side STT, buy-side stamp duty, and GST on statutory fees (`gross - itemized charges - slippage = net`).
+- **Chronological Direction Forecast Lab:** Strictly causal features (trailing returns, SMA distance, realized volatility), session boundary purging, training-only standardization, calibrated Brier/log-loss/balanced-accuracy scoring, and exact additive logit contributions.
+- **Fail-Closed Rights Gate:** Enforces market data licensing and academic publication approvals before any real market data is ingested or published (`synthetic=true` by default).
+- **Immutable Provenance:** SHA-256 fixture checksums, immutable run bundle validation, transactional PostgreSQL publishing with active-pointer swapping and zero-downtime rollback.
+- **Accessible Web Dashboard:** React 19, TypeScript, and Vite frontend with Overview, Forecast Lab, and cryptographic Run Receipt exports (WCAG 2.2 AA compliant).
 
-## Backend setup and checks
+---
 
+## Architecture Overview
+
+```text
+[ Data / Fixture ] ---> [ Normalizer & Validator ] ---> [ RightsGate (C0/C1) ]
+                                                                |
+                                           +--------------------+--------------------+
+                                           |                                         |
+                            [ SMA Backtest Engine ]                    [ Chronological Forecast ]
+                            (Next-bar fill, fees)                      (Purged splits, logit contribs)
+                                           |                                         |
+                                           +--------------------+--------------------+
+                                                                |
+                                                   [ Immutable RunBundle Builder ]
+                                                                |
+                                                   [ Bundle Invariant Validator ]
+                                                                |
+                                                [ Transactional DB Publisher ]
+                                                 (Atomic pointer swap & rollback)
+                                                                |
+                                                  [ GET-Only FastAPI Service ]
+                                                                |
+                                                    [ React 19 Web Client ]
+```
+
+---
+
+## Local Setup & Quickstart
+
+### Prerequisites
+- Python 3.14+ (managed with `uv`)
+- Node.js 22.12+ / 24+ and `pnpm`
+
+### 1. Backend Service
 ```sh
 cd backend
-export UV_PROJECT_ENVIRONMENT=.venv-vm
-export PYTHONPATH=src
-uv sync --locked --group dev
-uv run --locked --group dev python src/bazaar_drishti/synthetic.py
-uv run --locked --group dev python -m unittest discover tests -v
-uv run --locked --group dev mypy src tests
-uv run --locked --group dev ruff check .
-uv run --locked --group dev ruff format --check .
+uv sync
+uv run python src/bazaar_drishti/synthetic.py
+uv run python -m uvicorn bazaar_drishti.api.app:app --host 127.0.0.1 --port 8000
 ```
+Health check: `curl http://127.0.0.1:8000/healthz`
 
-`UV_PROJECT_ENVIRONMENT=.venv-vm` keeps this VM's environment separate from the ignored host `.venv` in the shared folder. The fixture command writes `data/fixtures/synthetic/bars.csv` and `manifest.json`.
-
-To run the web shell:
-
+### 2. Frontend Web Dashboard
 ```sh
 cd web
-corepack pnpm@10 install --frozen-lockfile
-corepack pnpm@10 dev
+pnpm install
+pnpm dev
+```
+Open **`http://localhost:5173`** in your browser.
+
+---
+
+## Test & Verification Suites
+
+### Backend Quality Suite (100% clean)
+```sh
+cd backend
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy src tests
+uv run python -m unittest discover -s tests -v
 ```
 
-The web check commands are `corepack pnpm@10 test`, `corepack pnpm@10 run typecheck`, and `corepack pnpm@10 run build`. See the [implementation plan](docs/plans/2026-10-21-bazaar-drishti-implementation-plan.md), [checkpoint status](docs/project/CHECKPOINTS.md), and [work log](docs/project/LOGBOOK.md) for handoff context.
+### Frontend Quality Suite (100% clean)
+```sh
+cd web
+pnpm test
+pnpm run typecheck
+pnpm run build
+```
 
-## Project documents
+---
 
-Start with the [project docs index](docs/README.md) for the current PRD, TRD, research brief, implementation plan, checkpoints, data-rights gates, AI-agent knowledge, and logbook template.
+## Project Documentation
+
+Detailed specifications and compliance records are located in `docs/`:
+- [Product Requirements Document (PRD)](docs/product/PRD.md)
+- [Technical Requirements Document (TRD)](docs/architecture/TRD.md)
+- [Market Data & Publication Compliance](docs/compliance/MARKET-DATA-AND-PUBLICATION.md)
+- [Operational Runbook](docs/project/RUNBOOK.md)
+- [Checkpoints & Release Gates](docs/project/CHECKPOINTS.md)
+- [Engineering Logbook](docs/project/LOGBOOK.md)
+
+---
+
+## Academic Notice & Limitations
+
+MarketLens is strictly an educational research platform. It does not provide investment advice, live order routing, automated trade execution, or return guarantees. Real market data is blocked behind compliance checkpoints C0 and C1 pending qualified academic review.

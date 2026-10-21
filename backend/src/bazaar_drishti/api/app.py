@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 def create_app(conn: sqlite3.Connection) -> FastAPI:
     """Create a configured read-only FastAPI instance backed by the database connection."""
     app = FastAPI(
-        title="Bazaar Drishti API",
+        title="MarketLens API",
         version="0.1.0",
         description="Public read-only research dashboard API for auditable Indian cash-equity paper study.",
     )

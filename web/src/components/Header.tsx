@@ -11,9 +11,9 @@ export function Header({ currentTab, onSelectTab, synthetic = true }: HeaderProp
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <a className="wordmark" href="#" onClick={(e) => { e.preventDefault(); onSelectTab("overview"); }} aria-label="Bazaar Drishti home">
-          <span className="wordmark-icon" aria-hidden="true">BD</span>
-          <span>Bazaar Drishti</span>
+        <a className="wordmark" href="#" onClick={(e) => { e.preventDefault(); onSelectTab("overview"); }} aria-label="MarketLens home">
+          <span className="wordmark-icon" aria-hidden="true">ML</span>
+          <span>MarketLens</span>
         </a>
         <nav className="topbar-nav" aria-label="Main Navigation">
           <button
