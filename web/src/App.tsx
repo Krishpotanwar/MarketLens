@@ -6,6 +6,9 @@ import { ForecastLabPage } from "./pages/ForecastLabPage";
 import { RunReceiptPage } from "./pages/RunReceiptPage";
 import { TrendAnalysisPage } from "./pages/TrendAnalysisPage";
 import { PaperTradingPage } from "./pages/PaperTradingPage";
+import { StocksExplorerPage } from "./pages/StocksExplorerPage";
+import { MutualFundsPage } from "./pages/MutualFundsPage";
+import { AIStrategyLabPage } from "./pages/AIStrategyLabPage";
 import type { RunMetadataResponse } from "./types/api";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
@@ -44,7 +47,17 @@ export default function App() {
     };
   }, []);
 
+  function handleSelectForTrend(symbol: string) {
+    setTradeSelectedSymbol(symbol);
+    setCurrentTab("trends");
+  }
+
   function handleSelectForTrade(symbol: string) {
+    setTradeSelectedSymbol(symbol);
+    setCurrentTab("paper");
+  }
+
+  function handleExecuteAITrade(symbol: string) {
     setTradeSelectedSymbol(symbol);
     setCurrentTab("paper");
   }
@@ -60,11 +73,31 @@ export default function App() {
       />
 
       <main id="main-content">
-        {currentTab === "trends" && <TrendAnalysisPage onSelectForTrade={handleSelectForTrade} />}
-        {currentTab === "paper" && <PaperTradingPage initialSymbol={tradeSelectedSymbol} />}
-        {currentTab === "overview" && <OverviewPage runData={runData} loading={loading} />}
-        {currentTab === "forecast" && <ForecastLabPage runData={runData} loading={loading} />}
-        {currentTab === "receipt" && <RunReceiptPage runData={runData} loading={loading} />}
+        {currentTab === "stocks" && (
+          <StocksExplorerPage
+            onSelectForTrend={handleSelectForTrend}
+            onSelectForTrade={handleSelectForTrade}
+          />
+        )}
+        {currentTab === "funds" && <MutualFundsPage />}
+        {currentTab === "ai-strategy" && (
+          <AIStrategyLabPage onExecuteAITrade={handleExecuteAITrade} />
+        )}
+        {currentTab === "trends" && (
+          <TrendAnalysisPage onSelectForTrade={handleSelectForTrade} />
+        )}
+        {currentTab === "paper" && (
+          <PaperTradingPage initialSymbol={tradeSelectedSymbol} />
+        )}
+        {currentTab === "overview" && (
+          <OverviewPage runData={runData} loading={loading} />
+        )}
+        {currentTab === "forecast" && (
+          <ForecastLabPage runData={runData} loading={loading} />
+        )}
+        {currentTab === "receipt" && (
+          <RunReceiptPage runData={runData} loading={loading} />
+        )}
       </main>
 
       <Footer />

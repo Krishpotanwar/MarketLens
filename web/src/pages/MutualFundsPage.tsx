@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { TOP_INDIAN_MUTUAL_FUNDS } from "../data/mutualFundsData";
-import { calculateSIP, type FundCategory } from "../types/funds";
+import { calculateSIP } from "../types/funds";
 
 export function MutualFundsPage() {
   const [funds] = useState(TOP_INDIAN_MUTUAL_FUNDS);

@@ -1,4 +1,12 @@
-export type PageTab = "trends" | "paper" | "overview" | "forecast" | "receipt";
+export type PageTab =
+  | "stocks"
+  | "funds"
+  | "ai-strategy"
+  | "trends"
+  | "paper"
+  | "overview"
+  | "forecast"
+  | "receipt";
 
 interface HeaderProps {
   currentTab: PageTab;
@@ -23,7 +31,7 @@ export function Header({
           href="#"
           onClick={(e) => {
             e.preventDefault();
-            onSelectTab("trends");
+            onSelectTab("stocks");
           }}
           aria-label="MarketLens home"
         >
@@ -31,6 +39,30 @@ export function Header({
           <span>MarketLens</span>
         </a>
         <nav className="topbar-nav" aria-label="Main Navigation">
+          <button
+            type="button"
+            className={`nav-link ${currentTab === "stocks" ? "active" : ""}`}
+            onClick={() => onSelectTab("stocks")}
+            aria-current={currentTab === "stocks" ? "page" : undefined}
+          >
+            Stocks
+          </button>
+          <button
+            type="button"
+            className={`nav-link ${currentTab === "funds" ? "active" : ""}`}
+            onClick={() => onSelectTab("funds")}
+            aria-current={currentTab === "funds" ? "page" : undefined}
+          >
+            Mutual Funds
+          </button>
+          <button
+            type="button"
+            className={`nav-link ${currentTab === "ai-strategy" ? "active" : ""}`}
+            onClick={() => onSelectTab("ai-strategy")}
+            aria-current={currentTab === "ai-strategy" ? "page" : undefined}
+          >
+            AI Strategy Lab
+          </button>
           <button
             type="button"
             className={`nav-link ${currentTab === "trends" ? "active" : ""}`}

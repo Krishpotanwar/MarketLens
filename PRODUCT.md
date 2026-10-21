@@ -18,6 +18,9 @@ Unlike commercial apps that gamify trading or hide friction with zero-cost illus
 Active trading desks and web browsers used during Indian market sessions (09:15–15:30 IST) and post-market strategy debriefs. Accommodates both auditable historical run reviews and live interactive paper trade simulations.
 
 ## Capabilities and Constraints
+- Groww-style Indian stock explorer across Large, Mid, and Small-cap equities with search, sectoral filters, indices tape, and discovery shelves (Top Gainers, Top Losers, Most Active).
+- Indian mutual funds explorer with category filtering (Flexi Cap, Small Cap, Large Cap, Index Funds, ELSS) and interactive compound SIP wealth calculator.
+- Hybrid AI Strategy Lab with strategy presets (20/50 SMA Crossover, RSI Dip Pullback, Breakout Momentum), custom prompt rules sandbox, Grok-style chain-of-thought rationale, and one-click trade execution.
 - Trend and momentum analysis for key Indian equities (Nifty 50, Bluechips).
 - Directional probability forecast lab with causal feature attribution.
 - Live interactive paper trading terminal with virtual capital (₹10,00,000 starting cash), order book, position management, and trade execution.
