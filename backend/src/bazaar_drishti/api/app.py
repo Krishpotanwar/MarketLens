@@ -52,6 +52,7 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
     @app.get("/api/v1/market/status", summary="Market Feed Provider Status")
     def get_market_status() -> dict[str, Any]:
         import os
+
         api_key = os.getenv("SMARTAPI_API_KEY")
         return {
             "status": "online",
@@ -64,24 +65,39 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
         quotes = await fetch_all_nse_quotes()
         return {"quotes": quotes, "count": len(quotes)}
 
-    @app.get("/api/v1/market/search", summary="Search Indian Stocks and Fetch Live Quotes")
+    @app.get(
+        "/api/v1/market/search", summary="Search Indian Stocks and Fetch Live Quotes"
+    )
     async def search_market_stocks(
-        q: str = Query(..., min_length=1, description="Stock ticker, name, or sector to search")
+        q: str = Query(
+            ..., min_length=1, description="Stock ticker, name, or sector to search"
+        ),
     ) -> dict[str, Any]:
         results = await search_nse_stocks(q)
         return {"query": q, "count": len(results), "results": results}
 
-    @app.get("/api/v1/market/funds", summary="Get Live Indian Mutual Funds with AMFI Live NAVs")
+    @app.get(
+        "/api/v1/market/funds",
+        summary="Get Live Indian Mutual Funds with AMFI Live NAVs",
+    )
     async def get_live_mutual_funds() -> dict[str, Any]:
         funds = await fetch_live_indian_mutual_funds()
         return {"funds": funds, "count": len(funds), "provider": "AMFI India Live Feed"}
 
-    @app.get("/api/v1/market/news", summary="Get Live Indian Financial News and Sentiment")
+    @app.get(
+        "/api/v1/market/news", summary="Get Live Indian Financial News and Sentiment"
+    )
     async def get_live_stock_news(
-        symbol: str = Query("RELIANCE", description="Stock ticker symbol to search breaking news for")
+        symbol: str = Query(
+            "RELIANCE", description="Stock ticker symbol to search breaking news for"
+        ),
     ) -> dict[str, Any]:
         news_items = await fetch_live_stock_news(symbol)
-        return {"symbol": symbol.strip().upper(), "count": len(news_items), "news": news_items}
+        return {
+            "symbol": symbol.strip().upper(),
+            "count": len(news_items),
+            "news": news_items,
+        }
 
     @app.get("/api/v1/market/quote/{symbol}", summary="Get Single Symbol Quote")
     async def get_symbol_quote(symbol: str) -> dict[str, Any]:
@@ -91,7 +107,9 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
     async def get_market_chart(
         symbol: str,
         interval: str = Query("5m", description="Bar interval (e.g. 1m, 5m, 15m, 1d)"),
-        range_period: str = Query("1d", alias="range", description="Time range (e.g. 1d, 5d, 1mo)"),
+        range_period: str = Query(
+            "1d", alias="range", description="Time range (e.g. 1d, 5d, 1mo)"
+        ),
     ) -> dict[str, Any]:
         return await fetch_intraday_chart(symbol, interval, range_period)
 

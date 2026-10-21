@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import asyncio
 import os
+import re
 import time
 from typing import Any
+import xml.etree.ElementTree as ET
 
 import httpx
 
@@ -30,34 +32,174 @@ NSE_SPECIAL_ALIASES: dict[str, str] = {
 
 # Extensive directory of active Indian equities across Large, Mid, and Small Cap
 INDIAN_STOCKS_DIRECTORY: list[dict[str, str]] = [
-    {"symbol": "RELIANCE", "name": "Reliance Industries Ltd", "sector": "Energy & Retail", "cap": "Large Cap"},
-    {"symbol": "TCS", "name": "Tata Consultancy Services Ltd", "sector": "Information Technology", "cap": "Large Cap"},
-    {"symbol": "HDFCBANK", "name": "HDFC Bank Ltd", "sector": "Banking & Financial Services", "cap": "Large Cap"},
-    {"symbol": "INFY", "name": "Infosys Ltd", "sector": "Information Technology", "cap": "Large Cap"},
-    {"symbol": "ICICIBANK", "name": "ICICI Bank Ltd", "sector": "Banking & Financial Services", "cap": "Large Cap"},
-    {"symbol": "SBIN", "name": "State Bank of India", "sector": "Public Sector Banking", "cap": "Large Cap"},
-    {"symbol": "BHARTIARTL", "name": "Bharti Airtel Ltd", "sector": "Telecommunications", "cap": "Large Cap"},
-    {"symbol": "ITC", "name": "ITC Ltd", "sector": "FMCG & Conglomerate", "cap": "Large Cap"},
-    {"symbol": "LT", "name": "Larsen & Toubro Ltd", "sector": "Capital Goods & Infrastructure", "cap": "Large Cap"},
-    {"symbol": "TATAMOTORS", "name": "Tata Motors Ltd", "sector": "Automobiles", "cap": "Large Cap"},
-    {"symbol": "TATASTEEL", "name": "Tata Steel Ltd", "sector": "Metals & Mining", "cap": "Large Cap"},
-    {"symbol": "ZOMATO", "name": "Zomato Ltd (Eternal)", "sector": "Consumer Tech / Q-Commerce", "cap": "Large Cap"},
-    {"symbol": "DIXON", "name": "Dixon Technologies Ltd", "sector": "Electronics Manufacturing", "cap": "Mid Cap"},
-    {"symbol": "BSE", "name": "BSE Ltd", "sector": "Financial Market Infrastructure", "cap": "Mid Cap"},
-    {"symbol": "SUZLON", "name": "Suzlon Energy Ltd", "sector": "Renewable Energy / Wind", "cap": "Mid Cap"},
-    {"symbol": "CDSL", "name": "Central Depository Services Ltd", "sector": "Depository Services", "cap": "Mid Cap"},
-    {"symbol": "KALYANKJIL", "name": "Kalyan Jewellers India Ltd", "sector": "Consumer Discretionary", "cap": "Mid Cap"},
-    {"symbol": "WIPRO", "name": "Wipro Ltd", "sector": "Information Technology", "cap": "Large Cap"},
-    {"symbol": "MARUTI", "name": "Maruti Suzuki India Ltd", "sector": "Automobiles", "cap": "Large Cap"},
-    {"symbol": "BAJFINANCE", "name": "Bajaj Finance Ltd", "sector": "Non-Banking Financial", "cap": "Large Cap"},
-    {"symbol": "ADANIENT", "name": "Adani Enterprises Ltd", "sector": "Conglomerate", "cap": "Large Cap"},
-    {"symbol": "HAL", "name": "Hindustan Aeronautics Ltd", "sector": "Aerospace & Defence", "cap": "Large Cap"},
-    {"symbol": "BEL", "name": "Bharat Electronics Ltd", "sector": "Defence Electronics", "cap": "Large Cap"},
-    {"symbol": "TITAN", "name": "Titan Company Ltd", "sector": "Consumer Discretionary", "cap": "Large Cap"},
-    {"symbol": "SUNPHARMA", "name": "Sun Pharmaceutical Industries Ltd", "sector": "Pharmaceuticals", "cap": "Large Cap"},
-    {"symbol": "PAYTM", "name": "One 97 Communications (Paytm)", "sector": "Fintech", "cap": "Small Cap"},
-    {"symbol": "JIOFIN", "name": "Jio Financial Services Ltd", "sector": "Financial Services", "cap": "Large Cap"},
-    {"symbol": "VEDL", "name": "Vedanta Ltd", "sector": "Metals & Natural Resources", "cap": "Mid Cap"},
+    {
+        "symbol": "RELIANCE",
+        "name": "Reliance Industries Ltd",
+        "sector": "Energy & Retail",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "TCS",
+        "name": "Tata Consultancy Services Ltd",
+        "sector": "Information Technology",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "HDFCBANK",
+        "name": "HDFC Bank Ltd",
+        "sector": "Banking & Financial Services",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "INFY",
+        "name": "Infosys Ltd",
+        "sector": "Information Technology",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "ICICIBANK",
+        "name": "ICICI Bank Ltd",
+        "sector": "Banking & Financial Services",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "SBIN",
+        "name": "State Bank of India",
+        "sector": "Public Sector Banking",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "name": "Bharti Airtel Ltd",
+        "sector": "Telecommunications",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "ITC",
+        "name": "ITC Ltd",
+        "sector": "FMCG & Conglomerate",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "LT",
+        "name": "Larsen & Toubro Ltd",
+        "sector": "Capital Goods & Infrastructure",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "name": "Tata Motors Ltd",
+        "sector": "Automobiles",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "TATASTEEL",
+        "name": "Tata Steel Ltd",
+        "sector": "Metals & Mining",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "ZOMATO",
+        "name": "Zomato Ltd (Eternal)",
+        "sector": "Consumer Tech / Q-Commerce",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "DIXON",
+        "name": "Dixon Technologies Ltd",
+        "sector": "Electronics Manufacturing",
+        "cap": "Mid Cap",
+    },
+    {
+        "symbol": "BSE",
+        "name": "BSE Ltd",
+        "sector": "Financial Market Infrastructure",
+        "cap": "Mid Cap",
+    },
+    {
+        "symbol": "SUZLON",
+        "name": "Suzlon Energy Ltd",
+        "sector": "Renewable Energy / Wind",
+        "cap": "Mid Cap",
+    },
+    {
+        "symbol": "CDSL",
+        "name": "Central Depository Services Ltd",
+        "sector": "Depository Services",
+        "cap": "Mid Cap",
+    },
+    {
+        "symbol": "KALYANKJIL",
+        "name": "Kalyan Jewellers India Ltd",
+        "sector": "Consumer Discretionary",
+        "cap": "Mid Cap",
+    },
+    {
+        "symbol": "WIPRO",
+        "name": "Wipro Ltd",
+        "sector": "Information Technology",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "MARUTI",
+        "name": "Maruti Suzuki India Ltd",
+        "sector": "Automobiles",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "BAJFINANCE",
+        "name": "Bajaj Finance Ltd",
+        "sector": "Non-Banking Financial",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "ADANIENT",
+        "name": "Adani Enterprises Ltd",
+        "sector": "Conglomerate",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "HAL",
+        "name": "Hindustan Aeronautics Ltd",
+        "sector": "Aerospace & Defence",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "BEL",
+        "name": "Bharat Electronics Ltd",
+        "sector": "Defence Electronics",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "TITAN",
+        "name": "Titan Company Ltd",
+        "sector": "Consumer Discretionary",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "SUNPHARMA",
+        "name": "Sun Pharmaceutical Industries Ltd",
+        "sector": "Pharmaceuticals",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "PAYTM",
+        "name": "One 97 Communications (Paytm)",
+        "sector": "Fintech",
+        "cap": "Small Cap",
+    },
+    {
+        "symbol": "JIOFIN",
+        "name": "Jio Financial Services Ltd",
+        "sector": "Financial Services",
+        "cap": "Large Cap",
+    },
+    {
+        "symbol": "VEDL",
+        "name": "Vedanta Ltd",
+        "sector": "Metals & Natural Resources",
+        "cap": "Mid Cap",
+    },
 ]
 
 # In-memory cache with 10-second TTL
@@ -110,12 +252,18 @@ async def fetch_symbol_quote(friendly_symbol: str) -> dict[str, Any]:
                             "previous_close": round(prev_close, 2),
                             "change": round(change, 2),
                             "change_percent": round(change_pct, 2),
-                            "high": round(float(meta.get("regularMarketDayHigh", ltp) or ltp), 2),
-                            "low": round(float(meta.get("regularMarketDayLow", ltp) or ltp), 2),
+                            "high": round(
+                                float(meta.get("regularMarketDayHigh", ltp) or ltp), 2
+                            ),
+                            "low": round(
+                                float(meta.get("regularMarketDayLow", ltp) or ltp), 2
+                            ),
                             "volume": int(meta.get("regularMarketVolume", 0) or 0),
                             "last_updated": meta.get("regularMarketTime", int(now)),
                             "status": "live",
-                            "provider": "Angel One SmartAPI" if SMARTAPI_API_KEY else "NSE Telemetry (Live)",
+                            "provider": "Angel One SmartAPI"
+                            if SMARTAPI_API_KEY
+                            else "NSE Telemetry (Live)",
                         }
                         _QUOTE_CACHE[clean_sym] = (now, quote_dict)
                         return quote_dict
@@ -192,18 +340,25 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
     # 1. Match from curated Indian stocks directory
     matches: list[dict[str, str]] = []
     for item in INDIAN_STOCKS_DIRECTORY:
-        if q_clean in item["symbol"].upper() or q_clean in item["name"].upper() or q_clean in item["sector"].upper():
+        if (
+            q_clean in item["symbol"].upper()
+            or q_clean in item["name"].upper()
+            or q_clean in item["sector"].upper()
+        ):
             matches.append(item)
 
     # 2. If exact symbol match is not found in directory, add as custom queried ticker
     has_exact = any(m["symbol"].upper() == q_clean for m in matches)
     if not has_exact and len(q_clean) >= 2:
-        matches.insert(0, {
-            "symbol": q_clean,
-            "name": f"{q_clean} (NSE Listed)",
-            "sector": "Indian Equities",
-            "cap": "Multi Cap",
-        })
+        matches.insert(
+            0,
+            {
+                "symbol": q_clean,
+                "name": f"{q_clean} (NSE Listed)",
+                "sector": "Indian Equities",
+                "cap": "Multi Cap",
+            },
+        )
 
     # Limit to top 6 search results
     candidate_matches = matches[:6]
@@ -214,19 +369,22 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
 
     results: list[dict[str, Any]] = []
     for idx, m in enumerate(candidate_matches):
-        q = quotes[idx] if idx < len(quotes) and isinstance(quotes[idx], dict) else {}
-        results.append({
-            "symbol": m["symbol"],
-            "name": m["name"],
-            "sector": m["sector"],
-            "marketCapCategory": m.get("cap", "Mid Cap"),
-            "ltp": q.get("ltp", 100.0),
-            "change": q.get("change", 0.0),
-            "change_percent": q.get("change_percent", 0.0),
-            "volume": q.get("volume", 0),
-            "status": q.get("status", "live"),
-            "provider": q.get("provider", "NSE Telemetry (Live)"),
-        })
+        raw_q = quotes[idx] if idx < len(quotes) else None
+        q: dict[str, Any] = raw_q if isinstance(raw_q, dict) else {}
+        results.append(
+            {
+                "symbol": m["symbol"],
+                "name": m["name"],
+                "sector": m["sector"],
+                "marketCapCategory": m.get("cap", "Mid Cap"),
+                "ltp": q.get("ltp", 100.0),
+                "change": q.get("change", 0.0),
+                "change_percent": q.get("change_percent", 0.0),
+                "volume": q.get("volume", 0),
+                "status": q.get("status", "live"),
+                "provider": q.get("provider", "NSE Telemetry (Live)"),
+            }
+        )
 
     return results
 
@@ -264,7 +422,9 @@ async def fetch_intraday_chart(
                                 "high": round(float(highs[i] or closes[i]), 2),
                                 "low": round(float(lows[i] or closes[i]), 2),
                                 "close": round(float(closes[i]), 2),
-                                "volume": int(volumes[i] or 0) if i < len(volumes) else 0,
+                                "volume": int(volumes[i] or 0)
+                                if i < len(volumes)
+                                else 0,
                             }
                         )
 
@@ -298,15 +458,96 @@ async def fetch_intraday_chart(
 # -------------------------------------------------------------
 
 TOP_MUTUAL_FUND_SCHEMES = [
-    {"code": 122639, "name": "Parag Parikh Flexi Cap Fund", "category": "Flexi Cap", "fundHouse": "PPFAS Mutual Fund", "expenseRatio": 0.65, "rating": 5, "minSIP": 1000, "aum": "₹78,450 Cr"},
-    {"code": 120828, "name": "Quant Small Cap Fund", "category": "Small Cap", "fundHouse": "Quant Mutual Fund", "expenseRatio": 0.75, "rating": 5, "minSIP": 1000, "aum": "₹26,800 Cr"},
-    {"code": 118778, "name": "Nippon India Small Cap Fund", "category": "Small Cap", "fundHouse": "Nippon India Mutual Fund", "expenseRatio": 0.68, "rating": 5, "minSIP": 500, "aum": "₹58,200 Cr"},
-    {"code": 120716, "name": "UTI Nifty 50 Index Fund", "category": "Index Funds", "fundHouse": "UTI Mutual Fund", "expenseRatio": 0.18, "rating": 4, "minSIP": 500, "aum": "₹19,400 Cr"},
-    {"code": 118834, "name": "Mirae Asset Large Cap Fund", "category": "Large Cap", "fundHouse": "Mirae Asset Mutual Fund", "expenseRatio": 0.54, "rating": 4, "minSIP": 1000, "aum": "₹37,800 Cr"},
-    {"code": 119598, "name": "SBI Bluechip Fund", "category": "Large Cap", "fundHouse": "SBI Mutual Fund", "expenseRatio": 0.85, "rating": 4, "minSIP": 500, "aum": "₹46,100 Cr"},
-    {"code": 118989, "name": "HDFC Mid-Cap Opportunities Fund", "category": "Mid Cap", "fundHouse": "HDFC Mutual Fund", "expenseRatio": 0.72, "rating": 5, "minSIP": 500, "aum": "₹71,300 Cr"},
-    {"code": 127042, "name": "Motilal Oswal Midcap Fund", "category": "Mid Cap", "fundHouse": "Motilal Oswal Mutual Fund", "expenseRatio": 0.70, "rating": 5, "minSIP": 500, "aum": "₹16,900 Cr"},
-    {"code": 135781, "name": "Tata Digital India Fund", "category": "Thematic / Tech", "fundHouse": "Tata Mutual Fund", "expenseRatio": 0.42, "rating": 4, "minSIP": 150, "aum": "₹11,500 Cr"},
+    {
+        "code": 122639,
+        "name": "Parag Parikh Flexi Cap Fund",
+        "category": "Flexi Cap",
+        "fundHouse": "PPFAS Mutual Fund",
+        "expenseRatio": 0.65,
+        "rating": 5,
+        "minSIP": 1000,
+        "aum": "₹78,450 Cr",
+    },
+    {
+        "code": 120828,
+        "name": "Quant Small Cap Fund",
+        "category": "Small Cap",
+        "fundHouse": "Quant Mutual Fund",
+        "expenseRatio": 0.75,
+        "rating": 5,
+        "minSIP": 1000,
+        "aum": "₹26,800 Cr",
+    },
+    {
+        "code": 118778,
+        "name": "Nippon India Small Cap Fund",
+        "category": "Small Cap",
+        "fundHouse": "Nippon India Mutual Fund",
+        "expenseRatio": 0.68,
+        "rating": 5,
+        "minSIP": 500,
+        "aum": "₹58,200 Cr",
+    },
+    {
+        "code": 120716,
+        "name": "UTI Nifty 50 Index Fund",
+        "category": "Index Funds",
+        "fundHouse": "UTI Mutual Fund",
+        "expenseRatio": 0.18,
+        "rating": 4,
+        "minSIP": 500,
+        "aum": "₹19,400 Cr",
+    },
+    {
+        "code": 118834,
+        "name": "Mirae Asset Large Cap Fund",
+        "category": "Large Cap",
+        "fundHouse": "Mirae Asset Mutual Fund",
+        "expenseRatio": 0.54,
+        "rating": 4,
+        "minSIP": 1000,
+        "aum": "₹37,800 Cr",
+    },
+    {
+        "code": 119598,
+        "name": "SBI Bluechip Fund",
+        "category": "Large Cap",
+        "fundHouse": "SBI Mutual Fund",
+        "expenseRatio": 0.85,
+        "rating": 4,
+        "minSIP": 500,
+        "aum": "₹46,100 Cr",
+    },
+    {
+        "code": 118989,
+        "name": "HDFC Mid-Cap Opportunities Fund",
+        "category": "Mid Cap",
+        "fundHouse": "HDFC Mutual Fund",
+        "expenseRatio": 0.72,
+        "rating": 5,
+        "minSIP": 500,
+        "aum": "₹71,300 Cr",
+    },
+    {
+        "code": 127042,
+        "name": "Motilal Oswal Midcap Fund",
+        "category": "Mid Cap",
+        "fundHouse": "Motilal Oswal Mutual Fund",
+        "expenseRatio": 0.70,
+        "rating": 5,
+        "minSIP": 500,
+        "aum": "₹16,900 Cr",
+    },
+    {
+        "code": 135781,
+        "name": "Tata Digital India Fund",
+        "category": "Thematic / Tech",
+        "fundHouse": "Tata Mutual Fund",
+        "expenseRatio": 0.42,
+        "rating": 4,
+        "minSIP": 150,
+        "aum": "₹11,500 Cr",
+    },
 ]
 
 _FUNDS_CACHE: tuple[float, list[dict[str, Any]]] | None = None
@@ -331,12 +572,16 @@ async def fetch_live_indian_mutual_funds() -> list[dict[str, Any]]:
                     nav = round(float(latest.get("nav", 100.0)), 2)
                     date = latest.get("date", "Latest")
 
-                    def get_cagr(days_back: int, years: float, fallback: float) -> float:
+                    def get_cagr(
+                        days_back: int, years: float, fallback: float
+                    ) -> float:
                         if len(data_list) > days_back:
                             try:
                                 past_nav = float(data_list[days_back].get("nav", 0))
                                 if past_nav > 0:
-                                    return round(((nav / past_nav) ** (1 / years) - 1) * 100, 2)
+                                    return round(
+                                        ((nav / past_nav) ** (1 / years) - 1) * 100, 2
+                                    )
                             except Exception:
                                 pass
                         return fallback
@@ -398,16 +643,44 @@ async def fetch_live_indian_mutual_funds() -> list[dict[str, Any]]:
 # Live Indian Financial News (Real-time Web Scrape + Sentiment)
 # -------------------------------------------------------------
 
-import re
-import xml.etree.ElementTree as ET
-
 BULLISH_KEYWORDS = {
-    "surge", "growth", "profit", "rise", "record", "gain", "jump", "rally", "win", "high",
-    "expansion", "buy", "upgrade", "outperform", "dividend", "order", "acquisition", "capex"
+    "surge",
+    "growth",
+    "profit",
+    "rise",
+    "record",
+    "gain",
+    "jump",
+    "rally",
+    "win",
+    "high",
+    "expansion",
+    "buy",
+    "upgrade",
+    "outperform",
+    "dividend",
+    "order",
+    "acquisition",
+    "capex",
 }
 BEARISH_KEYWORDS = {
-    "fall", "drop", "slump", "loss", "decline", "probe", "scrutiny", "penalty", "down",
-    "sell", "downgrade", "fraud", "hit", "weakness", "margin squeeze", "deficit", "npa"
+    "fall",
+    "drop",
+    "slump",
+    "loss",
+    "decline",
+    "probe",
+    "scrutiny",
+    "penalty",
+    "down",
+    "sell",
+    "downgrade",
+    "fraud",
+    "hit",
+    "weakness",
+    "margin squeeze",
+    "deficit",
+    "npa",
 }
 
 _NEWS_CACHE: dict[str, tuple[float, list[dict[str, Any]]]] = {}
@@ -430,13 +703,33 @@ def analyze_headline_sentiment(title: str) -> tuple[float, str, str]:
             label = "BEARISH"
 
     category = "SECTOR_MACRO"
-    if any(k in lower for k in ["q1", "q2", "q3", "q4", "quarter", "profit", "revenue", "ebitda", "net"]):
+    if any(
+        k in lower
+        for k in [
+            "q1",
+            "q2",
+            "q3",
+            "q4",
+            "quarter",
+            "profit",
+            "revenue",
+            "ebitda",
+            "net",
+        ]
+    ):
         category = "EARNINGS"
-    elif any(k in lower for k in ["capex", "plant", "invest", "expansion", "factory", "giga"]):
+    elif any(
+        k in lower for k in ["capex", "plant", "invest", "expansion", "factory", "giga"]
+    ):
         category = "CAPEX"
-    elif any(k in lower for k in ["deal", "order", "contract", "contractor", "win", "secures"]):
+    elif any(
+        k in lower
+        for k in ["deal", "order", "contract", "contractor", "win", "secures"]
+    ):
         category = "DEAL_WIN"
-    elif any(k in lower for k in ["sebi", "rbi", "court", "probe", "regulator", "tax", "cci"]):
+    elif any(
+        k in lower for k in ["sebi", "rbi", "court", "probe", "regulator", "tax", "cci"]
+    ):
         category = "REGULATORY"
 
     return score, label, category
@@ -465,27 +758,48 @@ async def fetch_live_stock_news(symbol: str) -> list[dict[str, Any]]:
                 root = ET.fromstring(resp.text)
                 raw_items = root.findall("./channel/item")
                 for idx, item in enumerate(raw_items[:10]):
-                    title = item.find("title").text if item.find("title") is not None else ""
-                    link = item.find("link").text if item.find("link") is not None else ""
-                    pub_date = item.find("pubDate").text if item.find("pubDate") is not None else ""
+                    title_elem = item.find("title")
+                    title = (
+                        title_elem.text
+                        if title_elem is not None and title_elem.text
+                        else ""
+                    )
+                    link_elem = item.find("link")
+                    link = (
+                        link_elem.text
+                        if link_elem is not None and link_elem.text
+                        else ""
+                    )
+                    pub_date_elem = item.find("pubDate")
+                    pub_date = (
+                        pub_date_elem.text
+                        if pub_date_elem is not None and pub_date_elem.text
+                        else ""
+                    )
                     source_elem = item.find("source")
-                    source_name = source_elem.text if source_elem is not None else "Financial Web"
+                    source_name = (
+                        source_elem.text
+                        if source_elem is not None and source_elem.text
+                        else "Financial Web"
+                    )
 
                     if title:
                         score, label, cat = analyze_headline_sentiment(title)
-                        items.append({
-                            "id": f"live-news-{clean_sym}-{idx}",
-                            "symbol": clean_sym,
-                            "title": title,
-                            "source": source_name,
-                            "url": link,
-                            "publishedAt": pub_date,
-                            "sentimentScore": score,
-                            "sentimentLabel": label,
-                            "category": cat,
-                            "summary": f"Live market news item from {source_name}. Published on {pub_date}.",
-                            "isLive": True,
-                        })
+                        items.append(
+                            {
+                                "id": f"live-news-{clean_sym}-{idx}",
+                                "symbol": clean_sym,
+                                "title": title,
+                                "source": source_name,
+                                "url": link,
+                                "publishedAt": pub_date,
+                                "sentimentScore": score,
+                                "sentimentLabel": label,
+                                "category": cat,
+                                "summary": f"Live market news item from {source_name}. Published on {pub_date}.",
+                                "isLive": True,
+                            }
+                        )
     except Exception:
         pass
 
