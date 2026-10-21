@@ -6,6 +6,7 @@ import { ForecastLabPage } from "./pages/ForecastLabPage";
 import { RunReceiptPage } from "./pages/RunReceiptPage";
 import { TrendAnalysisPage } from "./pages/TrendAnalysisPage";
 import { PaperTradingPage } from "./pages/PaperTradingPage";
+import { StocksExplorerPage } from "./pages/StocksExplorerPage";
 import { calculateIndianCharges } from "./types/paper";
 import { calculateSIP } from "./types/funds";
 import { TOP_INDIAN_MUTUAL_FUNDS } from "./data/mutualFundsData";
@@ -149,5 +150,19 @@ describe("research dashboard shell and pages", () => {
     const midCaps = INITIAL_INDIAN_STOCKS.filter((s) => s.marketCapCategory === "Mid Cap");
     expect(midCaps.length).toBeGreaterThan(0);
     expect(midCaps.some((s) => s.symbol === "DIXON")).toBe(true);
+  });
+
+  it("renders Groww-style Indian stocks explorer with indices and discovery shelves", () => {
+    const markup = renderToStaticMarkup(
+      <StocksExplorerPage onSelectForTrend={() => {}} onSelectForTrade={() => {}} />
+    );
+    expect(markup).toContain("Indian Stocks &amp; Market Explorer");
+    expect(markup).toContain("NIFTY 50");
+    expect(markup).toContain("SENSEX");
+    expect(markup).toContain("Top Gainers");
+    expect(markup).toContain("Top Losers");
+    expect(markup).toContain("Most Active");
+    expect(markup).toContain("ZOMATO");
+    expect(markup).toContain("DIXON");
   });
 });
