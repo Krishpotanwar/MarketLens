@@ -296,3 +296,123 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
         }
 
     return app
+
+
+def create_default_app() -> FastAPI:
+    """Create a default in-memory FastAPI app populated with a verified synthetic run."""
+    from datetime import date, datetime, timezone
+    from decimal import Decimal
+    from zoneinfo import ZoneInfo
+    from bazaar_drishti.bundle.builder import build_run_bundle
+    from bazaar_drishti.bundle.publisher import Publisher
+    from bazaar_drishti.research.backtest import EquityPoint
+    from bazaar_drishti.schemas import ForecastRow, RunManifest, RunMetrics, TradeRow
+
+    ist = ZoneInfo("Asia/Kolkata")
+    conn = sqlite3.connect(":memory:", check_same_thread=False)
+    pub = Publisher(conn)
+    pub.initialize_schema()
+
+    run_id = "run-synthetic-001"
+    manifest = RunManifest(
+        run_id=run_id,
+        synthetic=True,
+        data_label="synthetic",
+        source_label="deterministic local fixture",
+        bars_sha256="9e232063a896d744fea0637387b87f64031a1a91464f05176038d41e804806fd",
+        config_sha256="b" * 64,
+        code_revision="git-main",
+        created_at_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
+        created_at_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
+        data_start_utc=datetime(2030, 1, 7, 3, 45, tzinfo=timezone.utc),
+        data_start_ist=datetime(2030, 1, 7, 9, 15, tzinfo=ist),
+        data_end_utc=datetime(2030, 1, 9, 10, 0, tzinfo=timezone.utc),
+        data_end_ist=datetime(2030, 1, 9, 15, 30, tzinfo=ist),
+    )
+    trade = TradeRow(
+        run_id=run_id,
+        trade_id="trade-0001",
+        session_date_ist=date(2030, 1, 7),
+        entry_time_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
+        entry_time_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
+        exit_time_utc=datetime(2030, 1, 7, 4, 30, tzinfo=timezone.utc),
+        exit_time_ist=datetime(2030, 1, 7, 10, 0, tzinfo=ist),
+        entry_price_inr=Decimal("100.00"),
+        exit_price_inr=Decimal("105.00"),
+        quantity=10,
+        gross_pnl_inr=Decimal("50.00"),
+        brokerage_inr=Decimal("0.60"),
+        exchange_charges_inr=Decimal("0.06"),
+        sebi_charges_inr=Decimal("0.01"),
+        stt_inr=Decimal("0.26"),
+        stamp_duty_inr=Decimal("0.03"),
+        gst_inr=Decimal("0.12"),
+        slippage_inr=Decimal("1.02"),
+        net_pnl_inr=Decimal("47.90"),
+    )
+    metrics = RunMetrics(
+        run_id=run_id,
+        gross_pnl_inr=Decimal("50.00"),
+        brokerage_inr=Decimal("0.60"),
+        exchange_charges_inr=Decimal("0.06"),
+        sebi_charges_inr=Decimal("0.01"),
+        stt_inr=Decimal("0.26"),
+        stamp_duty_inr=Decimal("0.03"),
+        gst_inr=Decimal("0.12"),
+        slippage_inr=Decimal("1.02"),
+        net_pnl_inr=Decimal("47.90"),
+        return_percent=Decimal("4.79"),
+        cash_baseline_net_pnl_inr=Decimal("0.00"),
+        buy_hold_baseline_net_pnl_inr=Decimal("20.00"),
+        max_drawdown_percent=Decimal("0.50"),
+        trade_count=1,
+        session_count=3,
+        brier_score=Decimal("0.2215"),
+        log_loss=Decimal("0.6340"),
+        balanced_accuracy=Decimal("0.5830"),
+        forecast_count=1,
+    )
+    forecast = ForecastRow(
+        run_id=run_id,
+        forecast_id="forecast-0001",
+        session_date_ist=date(2030, 1, 7),
+        origin_time_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
+        origin_time_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
+        input_cutoff_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
+        input_cutoff_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
+        target_time_utc=datetime(2030, 1, 7, 4, 30, tzinfo=timezone.utc),
+        target_time_ist=datetime(2030, 1, 7, 10, 0, tzinfo=ist),
+        probability_up=Decimal("0.6200"),
+        baseline_probability_up=Decimal("0.5000"),
+        actual_up=True,
+        bars_sha256="9e232063a896d744fea0637387b87f64031a1a91464f05176038d41e804806fd",
+        config_sha256="b" * 64,
+        model_sha256="c" * 64,
+    )
+    equity = [
+        EquityPoint(
+            timestamp_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
+            timestamp_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
+            equity_inr=Decimal("1000.00"),
+            drawdown_percent=Decimal("0.00"),
+        ),
+        EquityPoint(
+            timestamp_utc=datetime(2030, 1, 7, 4, 30, tzinfo=timezone.utc),
+            timestamp_ist=datetime(2030, 1, 7, 10, 0, tzinfo=ist),
+            equity_inr=Decimal("1047.90"),
+            drawdown_percent=Decimal("0.00"),
+        ),
+    ]
+    bundle = build_run_bundle(
+        manifest=manifest,
+        metrics=metrics,
+        trades=[trade],
+        forecasts=[forecast],
+        equity_curve=equity,
+        contributions=[],
+    )
+    pub.publish_run(bundle)
+    return create_app(conn)
+
+
+app = create_default_app()
