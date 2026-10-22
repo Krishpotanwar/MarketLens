@@ -818,6 +818,18 @@ main,
   box-shadow: 0 0 6px var(--gain);
   animation: pulse-live 2s infinite ease-in-out;
 }
+.badge-exchange-tag {
+  opacity: 0.85;
+  font-weight: 500;
+  font-size: 0.68rem;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 640px) {
+  .badge-exchange-tag {
+    display: none;
+  }
+}
 
 /* ------------------------------------------------------------- */
 /* Page Content & Headings                                       */

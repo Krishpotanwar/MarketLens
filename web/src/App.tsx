@@ -16,7 +16,7 @@ import type { RunMetadataResponse } from "./types/api";
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export default function App() {
-  const [currentTab, setCurrentTab] = useState<PageTab>("overview");
+  const [currentTab, setCurrentTab] = useState<PageTab>("stocks");
   const [runData, setRunData] = useState<RunMetadataResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(true);

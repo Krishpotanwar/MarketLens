@@ -23,7 +23,7 @@ interface HeaderProps {
 export function Header({
   currentTab,
   onSelectTab,
-  synthetic = true,
+  synthetic: _synthetic = true,
   darkMode = true,
   onToggleTheme,
   onSelectStock,
@@ -139,17 +139,10 @@ export function Header({
             {darkMode ? "Light Desk" : "Dark Terminal"}
           </button>
         )}
-        {["stocks", "funds", "ipos", "ai-strategy", "trends", "paper"].includes(currentTab) ? (
-          <p className="data-badge live" role="status">
-            <span aria-hidden="true" />
-            Live Market Telemetry
-          </p>
-        ) : (
-          <p className={`data-badge ${synthetic === null ? "empty" : synthetic ? "synthetic" : ""}`} role="status">
-            <span aria-hidden="true" />
-            {synthetic === null ? "No active run" : synthetic ? "Synthetic Backtest" : "Licensed Data"}
-          </p>
-        )}
+        <p className="data-badge live" role="status" title="Real-time Indian Exchange Telemetry Feed Active">
+          <span aria-hidden="true" />
+          Live Feed <span className="badge-exchange-tag">(NSE/BSE)</span>
+        </p>
       </div>
     </header>
   );

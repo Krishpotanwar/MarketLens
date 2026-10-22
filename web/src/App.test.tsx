@@ -51,10 +51,10 @@ const mockRun: RunMetadataResponse = {
 };
 
 describe("research dashboard shell and pages", () => {
-  it("renders the default app without unpublished results", () => {
+  it("renders the default app with live market feed and stocks explorer", () => {
     const markup = renderToStaticMarkup(<App />);
-    expect(markup).toContain("No active run");
-    expect(markup).toContain("No validated run available");
+    expect(markup).toContain("Live Feed");
+    expect(markup).toContain("Indian Stocks &amp; Market Explorer");
     expect(markup).not.toContain("₹837.91");
     expect(markup).not.toContain("SEBI RA compliant");
     expect(markup).toContain("MarketLens");
