@@ -231,4 +231,12 @@ describe("research dashboard shell and pages", () => {
     expect(markup).not.toContain("INFY");
     expect(markup).toContain("chart-skeleton-wave");
   });
+
+  it("guards paper trading order ticket with loading state for external stock before live quote resolves", () => {
+    const markup = renderToStaticMarkup(
+      <PaperTradingPage initialSymbol="UNKNOWN_CORP" />
+    );
+    expect(markup).toContain("Syncing Live Price...");
+    expect(markup).toContain("disabled");
+  });
 });

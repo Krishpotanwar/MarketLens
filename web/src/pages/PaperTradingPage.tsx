@@ -22,13 +22,59 @@ const STORAGE_KEY_CASH = "marketlens_paper_cash";
 const INITIAL_CASH = 1000000; // 10 Lakhs INR
 
 export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPageProps) {
-  const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
+  const isCurated = INITIAL_INDIAN_STOCKS.some((s) => s.symbol === initialSymbol);
+  const initialStock = INITIAL_INDIAN_STOCKS.find((s) => s.symbol === initialSymbol);
+
+  const [stocks, setStocks] = useState<StockTrendInfo[]>(() => {
+    if (initialSymbol && !isCurated) {
+      return [
+        {
+          symbol: initialSymbol,
+          name: `${initialSymbol} Listed Equity`,
+          sector: "Indian Equities",
+          marketCapCategory: "Mid Cap",
+          week52High: 1000,
+          week52Low: 500,
+          ltp: 500,
+          change: 0,
+          changePercent: 0,
+          open: 500,
+          high: 510,
+          low: 490,
+          vwap: 500,
+          volume: 1000000,
+          volumeRatio: 1.0,
+          rsi14: 50,
+          sma20: 500,
+          sma50: 500,
+          trend5m: "NEUTRAL",
+          trend15m: "NEUTRAL",
+          trend1h: "NEUTRAL",
+          trend1d: "NEUTRAL",
+          predictedProbabilityUp: 0.5,
+          expectedMovePercent: 1.0,
+          brierCalibration: 0.18,
+          signalStrength: "NEUTRAL",
+          causalFeatures: {
+            momentum: 25,
+            volumeSurge: 25,
+            vwapDeviation: 25,
+            sectorBreadth: 25,
+          },
+          priceHistory: [500],
+        },
+        ...INITIAL_INDIAN_STOCKS,
+      ];
+    }
+    return INITIAL_INDIAN_STOCKS;
+  });
   const [symbol, setSymbol] = useState(initialSymbol);
   const [side, setSide] = useState<OrderSide>("BUY");
   const [product, setProduct] = useState<ProductType>("CNC");
   const [orderType, setOrderType] = useState<OrderType>("MARKET");
   const [quantity, setQuantity] = useState<number>(10);
-  const [limitPrice, setLimitPrice] = useState<number>(2950);
+  const [limitPrice, setLimitPrice] = useState<number>(() => (initialStock ? initialStock.ltp : 500));
+  const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(() => !isCurated && !!initialSymbol);
   const [liveProvider, setLiveProvider] = useState<string>("NSE Live Telemetry");
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [isLiveLoading, setIsLiveLoading] = useState(false);
@@ -36,6 +82,14 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
   useEffect(() => {
     if (initialSymbol) {
       setSymbol(initialSymbol);
+      const curated = INITIAL_INDIAN_STOCKS.find((s) => s.symbol === initialSymbol);
+      if (curated) {
+        setLimitPrice(curated.ltp);
+        setIsQuoteLoading(false);
+      } else {
+        setIsQuoteLoading(true);
+      }
+
       setStocks((prev) => {
         if (!prev.some((s) => s.symbol === initialSymbol)) {
           return [
@@ -79,10 +133,12 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
         }
         return prev;
       });
+
       fetch(`${API_BASE}/api/v1/market/quote/${encodeURIComponent(initialSymbol)}`)
         .then((r) => (r.ok ? r.json() : null))
         .then((q) => {
           if (q?.ltp) {
+            setLimitPrice(q.ltp);
             setStocks((prev) =>
               prev.map((s) =>
                 s.symbol === initialSymbol
@@ -98,7 +154,10 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
             );
           }
         })
-        .catch(() => {});
+        .catch(() => {})
+        .finally(() => {
+          setIsQuoteLoading(false);
+        });
     }
   }, [initialSymbol]);
 
@@ -239,6 +298,10 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
 
   function handleExecuteOrder(e: React.FormEvent) {
     e.preventDefault();
+    if (isQuoteLoading) {
+      setNotice("Order blocked: Still syncing live price from exchange feed.");
+      return;
+    }
     if (quantity <= 0) {
       setNotice("Order rejected: Quantity must be at least 1.");
       return;
@@ -590,8 +653,11 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
             <button
               type="submit"
               className={`btn-submit-order ${side === "BUY" ? "btn-submit-buy" : "btn-submit-sell"}`}
+              disabled={isQuoteLoading}
             >
-              Execute {side} Order ({quantity} {symbol})
+              {isQuoteLoading
+                ? "Syncing Live Price..."
+                : `Execute ${side} Order (${quantity} ${symbol})`}
             </button>
           </form>
         </section>

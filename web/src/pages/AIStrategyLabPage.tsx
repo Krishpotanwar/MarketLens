@@ -185,6 +185,17 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
       .then((data) => {
         if (data && data.ltp > 0 && isMounted) {
           setLiveStockQuotes((prev) => ({ ...prev, [selectedSymbol]: data.ltp }));
+          setStocks((prev) =>
+            prev.map((s) =>
+              s.symbol === selectedSymbol
+                ? {
+                    ...s,
+                    ltp: data.ltp,
+                    name: data.name || s.name,
+                  }
+                : s
+            )
+          );
         }
       })
       .catch(() => {});

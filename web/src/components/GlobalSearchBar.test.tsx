@@ -30,4 +30,13 @@ describe("GlobalSearchBar Component", () => {
     expect(markup).toContain("Searching across all 13,000+ Indian stocks");
     expect(markup).not.toContain("No Indian equities or indices found");
   });
+
+  it("immediately renders trending stocks and aborts search when query is cleared", () => {
+    const markup = renderToStaticMarkup(
+      <GlobalSearchBar onSelectStock={() => {}} initialOpen={true} initialSearching={false} initialQuery="" />
+    );
+    expect(markup).toContain("Trending on NSE &amp; BSE");
+    expect(markup).toContain("RELIANCE");
+    expect(markup).not.toContain("global-search-loading-skeleton");
+  });
 });

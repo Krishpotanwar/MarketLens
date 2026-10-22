@@ -393,6 +393,11 @@ export function GlobalSearchBar({
 
   useEffect(() => {
     if (!query) {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      activeReqIdRef.current++;
+      setIsSearching(false);
       setResults(TRENDING_STOCKS);
       return;
     }
@@ -401,6 +406,13 @@ export function GlobalSearchBar({
     }, 180);
     return () => clearTimeout(timer);
   }, [query, performSearch]);
+
+  // Clean up any pending in-flight request when component unmounts
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
 
   function handleAction(symbol: string, action: "trade" | "ai" | "trends" | "stocks") {
     setIsOpen(false);
