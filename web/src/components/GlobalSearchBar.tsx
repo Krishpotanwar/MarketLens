@@ -175,6 +175,36 @@ const CURATED_EQUITIES: SearchResultItem[] = [
     change_percent: 3.17,
     aliases: "suzlon energy wind turbines green energy renewable power",
   },
+  {
+    symbol: "TATAMOTORS",
+    name: "Tata Motors Ltd",
+    sector: "Automobiles",
+    marketCapCategory: "Large Cap",
+    ltp: 968.4,
+    change: 14.2,
+    change_percent: 1.49,
+    aliases: "tata motors tatamotors tmcv tmpv passenger vehicles commercial ev tiago nexon jlr",
+  },
+  {
+    symbol: "TMCV",
+    name: "Tata Motors Commercial Vehicles Ltd",
+    sector: "Automobiles",
+    marketCapCategory: "Mid Cap",
+    ltp: 620.0,
+    change: 5.5,
+    change_percent: 0.89,
+    aliases: "tatamotors tmcv tata motors commercial vehicles",
+  },
+  {
+    symbol: "TMPV",
+    name: "Tata Motors Passenger Vehicles Ltd",
+    sector: "Automobiles",
+    marketCapCategory: "Mid Cap",
+    ltp: 350.0,
+    change: 3.2,
+    change_percent: 0.92,
+    aliases: "tatamotors tmpv tata motors passenger vehicles ev nexon tiago harrier safari",
+  },
 ];
 
 const TRENDING_STOCKS: SearchResultItem[] = CURATED_EQUITIES.filter((e) => e.symbol !== "STELLANT.BO").slice(0, 8);
@@ -226,7 +256,10 @@ function searchLocalEquities(query: string): SearchResultItem[] {
         (t === "shipyard" && (sym === "mazdock" || sym === "cochinship" || sym === "grse")) ||
         (t === "dock" && sym === "mazdock") ||
         (t === "zudio" && sym === "trent") ||
-        (t === "blinkit" && sym === "zomato")
+        (t === "blinkit" && sym === "zomato") ||
+        (t === "tatamotors" && (sym === "tatamotors" || sym === "tmcv" || sym === "tmpv")) ||
+        (t === "tmcv" && (sym === "tmcv" || sym === "tatamotors")) ||
+        (t === "tmpv" && (sym === "tmpv" || sym === "tatamotors"))
     );
 
     if (qClean === "iocl" && sym === "ioc") {
@@ -251,16 +284,31 @@ function searchLocalEquities(query: string): SearchResultItem[] {
 
 interface GlobalSearchBarProps {
   onSelectStock: (symbol: string, action: "trade" | "ai" | "trends" | "stocks") => void;
+  initialOpen?: boolean;
+  initialSearching?: boolean;
+  initialQuery?: string;
 }
 
-export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [query, setQuery] = useState("");
+export function GlobalSearchBar({
+  onSelectStock,
+  initialOpen = false,
+  initialSearching = false,
+  initialQuery = "",
+}: GlobalSearchBarProps) {
+  const [isOpen, setIsOpen] = useState(initialOpen);
+  const [query, setQuery] = useState(initialQuery);
   const [selectedCap, setSelectedCap] = useState<string>("ALL");
-  const [results, setResults] = useState<SearchResultItem[]>(TRENDING_STOCKS);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(initialSearching);
+  const [results, setResults] = useState<SearchResultItem[]>(() => {
+    if (initialQuery.trim()) {
+      return searchLocalEquities(initialQuery.trim());
+    }
+    return TRENDING_STOCKS;
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const modalInputRef = useRef<HTMLInputElement>(null);
+  const activeReqIdRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Global hotkey: Ctrl+K or Cmd+K to open search modal, Esc to close
   useEffect(() => {
@@ -285,7 +333,7 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
     }
   }, [isOpen]);
 
-  // Debounced search query
+  // Debounced search query with monotonic sequencing and cancellation
   const performSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) {
@@ -294,29 +342,52 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
       return;
     }
 
+    const reqId = ++activeReqIdRef.current;
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const abortCtrl = new AbortController();
+    abortControllerRef.current = abortCtrl;
+
     // Instant local matching
     const localMatches = searchLocalEquities(trimmed);
-    setResults(localMatches);
+    if (localMatches.length > 0) {
+      setResults(localMatches);
+    } else {
+      setResults([]);
+    }
 
     setIsSearching(true);
     try {
-      const res = await fetch(`${API_BASE}/api/v1/market/search?q=${encodeURIComponent(trimmed)}`);
+      const res = await fetch(`${API_BASE}/api/v1/market/search?q=${encodeURIComponent(trimmed)}`, {
+        signal: abortCtrl.signal,
+      });
+      if (reqId !== activeReqIdRef.current) return;
+
       if (res.ok) {
         const data = await res.json();
         const apiResults = data.results || [];
-        if (apiResults.length > 0) {
-          setResults(apiResults);
-        } else if (localMatches.length > 0) {
-          setResults(localMatches);
-        } else {
-          setResults([]);
+        if (reqId === activeReqIdRef.current) {
+          if (apiResults.length > 0) {
+            setResults(apiResults);
+          } else if (localMatches.length > 0) {
+            setResults(localMatches);
+          } else {
+            setResults([]);
+          }
         }
       }
-    } catch {
-      // Retain local matches on network error
-      setResults(localMatches);
+    } catch (err: unknown) {
+      if ((err as Error)?.name === "AbortError") {
+        return;
+      }
+      if (reqId === activeReqIdRef.current) {
+        setResults(localMatches);
+      }
     } finally {
-      setIsSearching(false);
+      if (reqId === activeReqIdRef.current) {
+        setIsSearching(false);
+      }
     }
   }, []);
 
@@ -452,7 +523,26 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
 
             {/* Scrollable Results List */}
             <div className="global-search-list">
-              {filteredResults.length === 0 ? (
+              {isSearching && filteredResults.length === 0 ? (
+                <div className="global-search-loading-skeleton">
+                  <div className="skeleton-pulse-header">
+                    <span className="skeleton-spinner"></span>
+                    <span>Searching across all 13,000+ Indian stocks (NSE &amp; BSE)...</span>
+                  </div>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="global-search-skeleton-row">
+                      <div className="skeleton-item-left">
+                        <div className="skeleton-line-thick"></div>
+                        <div className="skeleton-line-thin"></div>
+                      </div>
+                      <div className="skeleton-item-right">
+                        <div className="skeleton-line-price"></div>
+                        <div className="skeleton-line-actions"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredResults.length === 0 ? (
                 <div className="global-search-empty">
                   No Indian equities or indices found matching "{query}". Try searching by ticker like
                   MAZDOCK, RELIANCE, COCHINSHIP, or TRENT.

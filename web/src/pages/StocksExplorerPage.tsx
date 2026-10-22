@@ -87,6 +87,8 @@ export function StocksExplorerPage({
   useEffect(() => {
     if (initialSearchQuery) {
       setSearchQuery(initialSearchQuery);
+      setSelectedSector("ALL");
+      setPage(1);
     }
   }, [initialSearchQuery]);
 
@@ -263,6 +265,9 @@ export function StocksExplorerPage({
   const handleSearchChange = (val: string) => {
     setSearchQuery(val);
     setPage(1);
+    if (val.trim()) {
+      setSelectedSector("ALL");
+    }
   };
 
   // Discovery shelves

@@ -110,6 +110,22 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(page.locator('.tf-btn:has-text("5D")')).toHaveClass(/active/);
   });
 
+  test("2C. Search for TATAMOTORS in Global Search and Stocks Explorer", async ({ page }) => {
+    const searchInput = page.locator(".global-search-input");
+    await searchInput.click();
+    const dropdown = page.locator(".global-search-dropdown");
+    await expect(dropdown).toBeVisible();
+
+    const modalInput = page.locator(".modal-search-field");
+    await modalInput.fill("TATAMOTORS");
+    await page.waitForTimeout(400);
+
+    // Verify Tata Motors results appear
+    const tataItem = dropdown.locator(".global-search-item").filter({ hasText: "Tata Motors" }).first();
+    await expect(tataItem).toBeVisible();
+    await expect(dropdown).not.toContainText("No Indian equities or indices found");
+  });
+
   test("3. Groww-Style Indian Stocks Explorer", async ({ page }) => {
     await page.locator('.nav-link:has-text("Stocks")').click();
     await expect(page.locator(".page-header h1")).toContainText("Indian Stocks & Market Explorer");

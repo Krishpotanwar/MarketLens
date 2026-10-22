@@ -47,7 +47,10 @@ COMMON_INDIAN_ACRONYMS: dict[str, str] = {
     "PAYTM": "PAYTM",
     "ONE97": "PAYTM",
     "TATAMOTORS": "TATAMOTORS",
+    "TATA MOTORS": "TATAMOTORS",
     "TML": "TATAMOTORS",
+    "TMCV": "TATAMOTORS",
+    "TMPV": "TATAMOTORS",
     "TATASTEEL": "TATASTEEL",
     "POWERGRID": "POWERGRID",
     "PGCIL": "POWERGRID",
@@ -737,9 +740,22 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
         return []
 
     q_upper = q_clean.upper()
-    q_tokens = _normalize_tokens(q_clean)
+    q_bare_upper = re.sub(r"\.(BO|NS)$", "", q_upper)
+    q_tokens = _normalize_tokens(q_bare_upper.lower())
     if not q_tokens:
         return []
+
+    expanded_tokens = list(q_tokens)
+    if "mazgaon" in q_tokens:
+        expanded_tokens.append("mazagon")
+    if "zudio" in q_tokens:
+        expanded_tokens.append("trent")
+    if "blinkit" in q_tokens:
+        expanded_tokens.append("zomato")
+    if "tatamotors" in q_tokens or "tmcv" in q_tokens or "tmpv" in q_tokens:
+        expanded_tokens.extend(["tata", "motors", "tmcv", "tmpv"])
+    if "tata" in q_tokens and "motors" in q_tokens:
+        expanded_tokens.extend(["tatamotors", "tmcv", "tmpv"])
 
     scored_matches: list[tuple[float, dict[str, str]]] = []
     master_directory = get_master_indian_stocks()
@@ -754,35 +770,37 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
 
         score = 0.0
 
-        # Check acronym match (e.g. IOCL -> IOC, HPCL -> HINDPETRO, SBI -> SBIN)
-        if q_upper in COMMON_INDIAN_ACRONYMS:
-            target_sym = COMMON_INDIAN_ACRONYMS[q_upper]
-            if symbol == target_sym:
+        # Check acronym match (e.g. IOCL -> IOC, HPCL -> HINDPETRO, SBI -> SBIN, TATAMOTORS -> TMCV, TMPV)
+        target_sym = COMMON_INDIAN_ACRONYMS.get(q_upper) or COMMON_INDIAN_ACRONYMS.get(q_bare_upper)
+        if target_sym:
+            if symbol == target_sym or (target_sym == "TATAMOTORS" and symbol in ("TMCV", "TMPV", "TATAMOTORS")):
                 score += 300.0
 
         # 1. Exact or partial symbol match
-        if symbol == q_upper or symbol.replace(".BO", "") == q_upper:
-            score += 100.0
-        elif symbol.startswith(q_upper):
+        if symbol == q_upper or symbol.replace(".BO", "") == q_bare_upper or symbol.replace(".NS", "") == q_bare_upper:
+            score += 150.0
+        elif symbol.startswith(q_bare_upper):
             score += 60.0
-        elif q_upper in symbol:
+        elif q_bare_upper in symbol:
             score += 35.0
 
         # 2. Exact phrase match in name or aliases
-        if q_clean.lower() in name.lower() or (aliases and q_clean.lower() in aliases.lower()):
+        if q_bare_upper.lower() in name.lower() or (aliases and q_bare_upper.lower() in aliases.lower()):
             score += 50.0
+        elif (q_bare_upper == "TATAMOTORS" or "tatamotors" in q_tokens) and ("tata" in name.lower() and "motor" in name.lower()):
+            score += 200.0
 
         # 3. Multi-token scoring (e.g. 'mazgaon dock shipyard' or 'stellant securities')
         token_matches = sum(
             1
-            for t in q_tokens
+            for t in expanded_tokens
             if t in searchable_tokens or any(t in tok for tok in searchable_tokens)
         )
         if token_matches > 0:
-            token_ratio = token_matches / len(q_tokens)
+            token_ratio = token_matches / len(expanded_tokens)
             score += token_ratio * 40.0
             # Extra boost if all query tokens matched
-            if token_matches == len(q_tokens):
+            if token_matches >= len(q_tokens):
                 score += 25.0
 
         if score > 0:
@@ -890,7 +908,8 @@ async def get_all_indian_stocks_paginated(
     # 3. Search query with relevance scoring
     q_clean = query.strip().lower()
     if q_clean:
-        q_tokens = _normalize_tokens(q_clean)
+        q_bare = re.sub(r"\.(bo|ns)$", "", q_clean)
+        q_tokens = _normalize_tokens(q_bare)
         expanded_tokens = list(q_tokens)
         if "mazgaon" in q_tokens:
             expanded_tokens.append("mazagon")
@@ -898,8 +917,12 @@ async def get_all_indian_stocks_paginated(
             expanded_tokens.append("trent")
         if "blinkit" in q_tokens:
             expanded_tokens.append("zomato")
+        if "tatamotors" in q_tokens or "tmcv" in q_tokens or "tmpv" in q_tokens:
+            expanded_tokens.extend(["tata", "motors", "tmcv", "tmpv"])
+        if "tata" in q_tokens and "motors" in q_tokens:
+            expanded_tokens.extend(["tatamotors", "tmcv", "tmpv"])
 
-        target_acronym_sym = COMMON_INDIAN_ACRONYMS.get(q_clean.upper())
+        target_acronym_sym = COMMON_INDIAN_ACRONYMS.get(q_clean.upper()) or COMMON_INDIAN_ACRONYMS.get(q_bare.upper())
 
         scored_items: list[tuple[float, dict[str, Any]]] = []
         for s in filtered:
@@ -909,16 +932,18 @@ async def get_all_indian_stocks_paginated(
             text_l = f"{sym_l} {name_l} {alias_l}"
 
             score = 0.0
-            if target_acronym_sym and sym_l == target_acronym_sym.lower():
+            if target_acronym_sym and (sym_l == target_acronym_sym.lower() or (target_acronym_sym == "TATAMOTORS" and sym_l in ("tmcv", "tmpv", "tatamotors"))):
                 score += 350.0
-            elif q_clean == sym_l or sym_l.replace(".bo", "") == q_clean:
+            elif q_clean == sym_l or sym_l.replace(".bo", "") == q_bare or sym_l.replace(".ns", "") == q_bare:
                 score += 200.0
-            elif sym_l.startswith(q_clean):
+            elif sym_l.startswith(q_bare):
                 score += 100.0
-            elif q_clean in sym_l:
+            elif q_bare in sym_l:
                 score += 60.0
-            elif q_clean in name_l or (alias_l and q_clean in alias_l):
+            elif q_bare in name_l or (alias_l and q_bare in alias_l):
                 score += 80.0
+            elif (q_bare == "tatamotors" or "tatamotors" in q_tokens) and ("tata" in name_l and "motor" in name_l):
+                score += 250.0
 
             matched_tokens = sum(1 for t in expanded_tokens if t in text_l)
             if matched_tokens > 0:
