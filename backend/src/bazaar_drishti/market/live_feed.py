@@ -650,7 +650,9 @@ async def fetch_all_nse_quotes() -> list[dict[str, Any]]:
 
 
 MASTER_CATALOG_FILE = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ),
     "data",
     "all_indian_stocks_master.json",
 )
@@ -672,11 +674,16 @@ def get_master_indian_stocks() -> list[dict[str, Any]]:
                     sym = stock.get("symbol", "")
                     if sym in curated_map:
                         curated = curated_map[sym]
-                        if curated.get("name") and len(curated["name"]) > len(stock.get("name", "")):
+                        if curated.get("name") and len(curated["name"]) > len(
+                            stock.get("name", "")
+                        ):
                             stock["name"] = curated["name"]
                         if curated.get("aliases"):
                             stock["aliases"] = curated["aliases"]
-                        if curated.get("sector") and curated["sector"] != "Indian Equities":
+                        if (
+                            curated.get("sector")
+                            and curated["sector"] != "Indian Equities"
+                        ):
                             stock["sector"] = curated["sector"]
                         if curated.get("cap"):
                             stock["cap"] = curated["cap"]
@@ -711,20 +718,28 @@ async def query_live_web_search(query: str) -> list[dict[str, str]]:
                         or exchange in ["NSI", "BSE", "NSE"]
                     )
                     if is_indian:
-                        name = str(q.get("longname") or q.get("shortname") or raw_symbol)
+                        name = str(
+                            q.get("longname") or q.get("shortname") or raw_symbol
+                        )
                         # Keep .BO suffix for BSE-listed stocks so quote resolver routes correctly
                         clean_sym = raw_symbol.replace(".NS", "")
                         sector = str(
                             q.get("sector")
                             or q.get("industry")
-                            or ("BSE Listed" if raw_symbol.endswith(".BO") else "Indian Equities")
+                            or (
+                                "BSE Listed"
+                                if raw_symbol.endswith(".BO")
+                                else "Indian Equities"
+                            )
                         )
                         results.append(
                             {
                                 "symbol": clean_sym,
                                 "name": name,
                                 "sector": sector,
-                                "cap": "Small Cap" if raw_symbol.endswith(".BO") else "Mid Cap",
+                                "cap": "Small Cap"
+                                if raw_symbol.endswith(".BO")
+                                else "Mid Cap",
                                 "aliases": "",
                             }
                         )
@@ -771,13 +786,21 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
         score = 0.0
 
         # Check acronym match (e.g. IOCL -> IOC, HPCL -> HINDPETRO, SBI -> SBIN, TATAMOTORS -> TMCV, TMPV)
-        target_sym = COMMON_INDIAN_ACRONYMS.get(q_upper) or COMMON_INDIAN_ACRONYMS.get(q_bare_upper)
+        target_sym = COMMON_INDIAN_ACRONYMS.get(q_upper) or COMMON_INDIAN_ACRONYMS.get(
+            q_bare_upper
+        )
         if target_sym:
-            if symbol == target_sym or (target_sym == "TATAMOTORS" and symbol in ("TMCV", "TMPV", "TATAMOTORS")):
+            if symbol == target_sym or (
+                target_sym == "TATAMOTORS" and symbol in ("TMCV", "TMPV", "TATAMOTORS")
+            ):
                 score += 300.0
 
         # 1. Exact or partial symbol match
-        if symbol == q_upper or symbol.replace(".BO", "") == q_bare_upper or symbol.replace(".NS", "") == q_bare_upper:
+        if (
+            symbol == q_upper
+            or symbol.replace(".BO", "") == q_bare_upper
+            or symbol.replace(".NS", "") == q_bare_upper
+        ):
             score += 150.0
         elif symbol.startswith(q_bare_upper):
             score += 60.0
@@ -785,9 +808,13 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
             score += 35.0
 
         # 2. Exact phrase match in name or aliases
-        if q_bare_upper.lower() in name.lower() or (aliases and q_bare_upper.lower() in aliases.lower()):
+        if q_bare_upper.lower() in name.lower() or (
+            aliases and q_bare_upper.lower() in aliases.lower()
+        ):
             score += 50.0
-        elif (q_bare_upper == "TATAMOTORS" or "tatamotors" in q_tokens) and ("tata" in name.lower() and "motor" in name.lower()):
+        elif (q_bare_upper == "TATAMOTORS" or "tatamotors" in q_tokens) and (
+            "tata" in name.lower() and "motor" in name.lower()
+        ):
             score += 200.0
 
         # 3. Multi-token scoring (e.g. 'mazgaon dock shipyard' or 'stellant securities')
@@ -844,7 +871,11 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
             candidate_matches.append(item)
 
     # 4. Fallback for raw ticker symbols
-    if not candidate_matches and len(q_upper) >= 2 and re.match(r"^[A-Z0-9\-]+$", q_upper):
+    if (
+        not candidate_matches
+        and len(q_upper) >= 2
+        and re.match(r"^[A-Z0-9\-]+$", q_upper)
+    ):
         candidate_matches.append(
             {
                 "symbol": q_upper,
@@ -922,7 +953,9 @@ async def get_all_indian_stocks_paginated(
         if "tata" in q_tokens and "motors" in q_tokens:
             expanded_tokens.extend(["tatamotors", "tmcv", "tmpv"])
 
-        target_acronym_sym = COMMON_INDIAN_ACRONYMS.get(q_clean.upper()) or COMMON_INDIAN_ACRONYMS.get(q_bare.upper())
+        target_acronym_sym = COMMON_INDIAN_ACRONYMS.get(
+            q_clean.upper()
+        ) or COMMON_INDIAN_ACRONYMS.get(q_bare.upper())
 
         scored_items: list[tuple[float, dict[str, Any]]] = []
         for s in filtered:
@@ -932,9 +965,19 @@ async def get_all_indian_stocks_paginated(
             text_l = f"{sym_l} {name_l} {alias_l}"
 
             score = 0.0
-            if target_acronym_sym and (sym_l == target_acronym_sym.lower() or (target_acronym_sym == "TATAMOTORS" and sym_l in ("tmcv", "tmpv", "tatamotors"))):
+            if target_acronym_sym and (
+                sym_l == target_acronym_sym.lower()
+                or (
+                    target_acronym_sym == "TATAMOTORS"
+                    and sym_l in ("tmcv", "tmpv", "tatamotors")
+                )
+            ):
                 score += 350.0
-            elif q_clean == sym_l or sym_l.replace(".bo", "") == q_bare or sym_l.replace(".ns", "") == q_bare:
+            elif (
+                q_clean == sym_l
+                or sym_l.replace(".bo", "") == q_bare
+                or sym_l.replace(".ns", "") == q_bare
+            ):
                 score += 200.0
             elif sym_l.startswith(q_bare):
                 score += 100.0
@@ -942,7 +985,9 @@ async def get_all_indian_stocks_paginated(
                 score += 60.0
             elif q_bare in name_l or (alias_l and q_bare in alias_l):
                 score += 80.0
-            elif (q_bare == "tatamotors" or "tatamotors" in q_tokens) and ("tata" in name_l and "motor" in name_l):
+            elif (q_bare == "tatamotors" or "tatamotors" in q_tokens) and (
+                "tata" in name_l and "motor" in name_l
+            ):
                 score += 250.0
 
             matched_tokens = sum(1 for t in expanded_tokens if t in text_l)
@@ -967,13 +1012,16 @@ async def get_all_indian_stocks_paginated(
 
     # Fetch live quotes for visible page items (top 8 for fast search, 20 for full browse)
     quote_limit = 8 if q_clean else 20
+
     async def _safe_fetch_quote(sym: str) -> dict[str, Any] | None:
         try:
             return await asyncio.wait_for(fetch_symbol_quote(sym), timeout=1.8)
         except Exception:
             return None
 
-    quote_tasks = [_safe_fetch_quote(item["symbol"]) for item in page_items[:quote_limit]]
+    quote_tasks = [
+        _safe_fetch_quote(item["symbol"]) for item in page_items[:quote_limit]
+    ]
     quotes = await asyncio.gather(*quote_tasks, return_exceptions=True)
 
     hydrated_items = []
@@ -1024,7 +1072,9 @@ async def fetch_live_indian_ipos() -> dict[str, Any]:
         "Accept": "application/json, text/plain, */*",
     }
     try:
-        async with httpx.AsyncClient(headers=headers, timeout=5.0, follow_redirects=True) as client:
+        async with httpx.AsyncClient(
+            headers=headers, timeout=5.0, follow_redirects=True
+        ) as client:
             await client.get("https://www.nseindia.com")
             resp = await client.get("https://www.nseindia.com/api/ipo-current-issue")
             if resp.status_code == 200:
@@ -1152,17 +1202,75 @@ async def fetch_live_indian_ipos() -> dict[str, Any]:
 
     # 3. Recently Listed Indian IPOs with live price hydration
     recently_listed_templates: list[dict[str, Any]] = [
-        {"symbol": "SWIGGY", "name": "Swiggy Limited", "issuePrice": 390.0, "listingPrice": 420.0, "listingDate": "13-Nov-2024", "sector": "Q-Commerce & Food Delivery"},
-        {"symbol": "WAAREEENER", "name": "Waaree Energies Limited", "issuePrice": 1503.0, "listingPrice": 2550.0, "listingDate": "28-Oct-2024", "sector": "Solar Energy Equipment"},
-        {"symbol": "HYUNDAI", "name": "Hyundai Motor India Limited", "issuePrice": 1960.0, "listingPrice": 1931.0, "listingDate": "22-Oct-2024", "sector": "Passenger Automobiles"},
-        {"symbol": "AFCONS", "name": "Afcons Infrastructure Limited", "issuePrice": 463.0, "listingPrice": 426.0, "listingDate": "04-Nov-2024", "sector": "EPC Infrastructure"},
-        {"symbol": "BAJAJHFL", "name": "Bajaj Housing Finance Limited", "issuePrice": 70.0, "listingPrice": 150.0, "listingDate": "16-Sep-2024", "sector": "Housing Finance NBFC"},
-        {"symbol": "PREMIERENE", "name": "Premier Energies Limited", "issuePrice": 450.0, "listingPrice": 991.0, "listingDate": "03-Sep-2024", "sector": "Solar Cells & Modules"},
-        {"symbol": "OLAELEC", "name": "Ola Electric Mobility Limited", "issuePrice": 76.0, "listingPrice": 76.0, "listingDate": "09-Aug-2024", "sector": "EV Two-Wheelers"},
-        {"symbol": "SAGILITY", "name": "Sagility India Limited", "issuePrice": 30.0, "listingPrice": 31.06, "listingDate": "12-Nov-2024", "sector": "Healthcare BPM"},
+        {
+            "symbol": "SWIGGY",
+            "name": "Swiggy Limited",
+            "issuePrice": 390.0,
+            "listingPrice": 420.0,
+            "listingDate": "13-Nov-2024",
+            "sector": "Q-Commerce & Food Delivery",
+        },
+        {
+            "symbol": "WAAREEENER",
+            "name": "Waaree Energies Limited",
+            "issuePrice": 1503.0,
+            "listingPrice": 2550.0,
+            "listingDate": "28-Oct-2024",
+            "sector": "Solar Energy Equipment",
+        },
+        {
+            "symbol": "HYUNDAI",
+            "name": "Hyundai Motor India Limited",
+            "issuePrice": 1960.0,
+            "listingPrice": 1931.0,
+            "listingDate": "22-Oct-2024",
+            "sector": "Passenger Automobiles",
+        },
+        {
+            "symbol": "AFCONS",
+            "name": "Afcons Infrastructure Limited",
+            "issuePrice": 463.0,
+            "listingPrice": 426.0,
+            "listingDate": "04-Nov-2024",
+            "sector": "EPC Infrastructure",
+        },
+        {
+            "symbol": "BAJAJHFL",
+            "name": "Bajaj Housing Finance Limited",
+            "issuePrice": 70.0,
+            "listingPrice": 150.0,
+            "listingDate": "16-Sep-2024",
+            "sector": "Housing Finance NBFC",
+        },
+        {
+            "symbol": "PREMIERENE",
+            "name": "Premier Energies Limited",
+            "issuePrice": 450.0,
+            "listingPrice": 991.0,
+            "listingDate": "03-Sep-2024",
+            "sector": "Solar Cells & Modules",
+        },
+        {
+            "symbol": "OLAELEC",
+            "name": "Ola Electric Mobility Limited",
+            "issuePrice": 76.0,
+            "listingPrice": 76.0,
+            "listingDate": "09-Aug-2024",
+            "sector": "EV Two-Wheelers",
+        },
+        {
+            "symbol": "SAGILITY",
+            "name": "Sagility India Limited",
+            "issuePrice": 30.0,
+            "listingPrice": 31.06,
+            "listingDate": "12-Nov-2024",
+            "sector": "Healthcare BPM",
+        },
     ]
 
-    listed_tasks = [fetch_symbol_quote(str(r["symbol"])) for r in recently_listed_templates]
+    listed_tasks = [
+        fetch_symbol_quote(str(r["symbol"])) for r in recently_listed_templates
+    ]
     listed_quotes = await asyncio.gather(*listed_tasks, return_exceptions=True)
 
     listed_ipos = []
@@ -1262,7 +1370,8 @@ async def fetch_intraday_chart(
                         "regularMarketDayLow": meta.get("regularMarketDayLow"),
                         "fiftyTwoWeekHigh": meta.get("fiftyTwoWeekHigh"),
                         "fiftyTwoWeekLow": meta.get("fiftyTwoWeekLow"),
-                        "longName": meta.get("longName") or friendly_symbol.strip().upper(),
+                        "longName": meta.get("longName")
+                        or friendly_symbol.strip().upper(),
                         "provider": "NSE/BSE Telemetry (Live)",
                     },
                 }

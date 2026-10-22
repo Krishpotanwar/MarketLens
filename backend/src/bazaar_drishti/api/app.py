@@ -86,8 +86,13 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
         page: int = Query(1, ge=1, description="Page number"),
         limit: int = Query(50, ge=1, le=200, description="Items per page"),
         exchange: str = Query("ALL", description="Filter by exchange: ALL, NSE, BSE"),
-        cap: str = Query("ALL", description="Filter by cap: ALL, Large Cap, Mid Cap, Small Cap"),
-        q: str = Query("", description="Search ticker or company name across all 13,000+ Indian stocks"),
+        cap: str = Query(
+            "ALL", description="Filter by cap: ALL, Large Cap, Mid Cap, Small Cap"
+        ),
+        q: str = Query(
+            "",
+            description="Search ticker or company name across all 13,000+ Indian stocks",
+        ),
     ) -> dict[str, Any]:
         return await get_all_indian_stocks_paginated(page, limit, exchange, cap, q)
 
