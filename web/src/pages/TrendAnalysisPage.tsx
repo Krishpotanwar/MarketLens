@@ -429,15 +429,89 @@ export function TrendAnalysisPage({
     }
     const q = screenerSearch.trim().toLowerCase();
     if (q) {
-      list = list.filter(
-        (s) =>
-          s.symbol.toLowerCase().includes(q) ||
-          s.name.toLowerCase().includes(q) ||
-          (s.aliases && s.aliases.toLowerCase().includes(q))
-      );
+      const qBare = q.replace(/\.(bo|ns)$/, "");
+      const acronymMap: Record<string, string> = {
+        iocl: "ioc",
+        ioc: "ioc",
+        hpcl: "hindpetro",
+        sbi: "sbin",
+        sbin: "sbin",
+        hdfc: "hdfcbank",
+        icici: "icicibank",
+        ril: "reliance",
+        "l&t": "lt",
+        lt: "lt",
+        zudio: "trent",
+        westside: "trent",
+        blinkit: "zomato",
+        eternal: "zomato",
+        mazgaon: "mazdock",
+        mazagon: "mazdock",
+        stellant: "stellant.bo",
+        tatamotors: "tatamotors",
+        tmcv: "tatamotors",
+        tmpv: "tatamotors",
+      };
+      const targetSym = acronymMap[q] || acronymMap[qBare];
+
+      list = list.filter((s) => {
+        const sym = s.symbol.toLowerCase();
+        const symBare = sym.replace(/\.(bo|ns)$/, "");
+        const name = s.name.toLowerCase();
+        const alias = (s.aliases || "").toLowerCase();
+
+        if (targetSym && (sym === targetSym || symBare === targetSym)) return true;
+        if (sym === q || symBare === qBare) return true;
+        if (sym.includes(qBare)) return true;
+        if (name.includes(qBare)) return true;
+        if (alias.includes(qBare)) return true;
+        return false;
+      });
     }
     return list;
   }, [stocks, sectorFilter, screenerSearch]);
+
+  // Combined watchlist including any live search hits
+  const combinedScreenerStocks = useMemo(() => {
+    if (searchResults.length === 0) return filteredStocks;
+    const existing = new Set(filteredStocks.map((s) => s.symbol.toUpperCase()));
+    const extra: StockTrendInfo[] = [];
+    for (const sr of searchResults) {
+      const symUpper = sr.symbol.toUpperCase();
+      if (!existing.has(symUpper)) {
+        existing.add(symUpper);
+        extra.push({
+          symbol: sr.symbol,
+          name: sr.name,
+          sector: sr.sector || "Indian Equities",
+          marketCapCategory: "Mid Cap",
+          ltp: sr.ltp || 100,
+          change: 0,
+          changePercent: 0,
+          open: sr.ltp || 100,
+          high: (sr.ltp || 100) * 1.01,
+          low: (sr.ltp || 100) * 0.99,
+          vwap: sr.ltp || 100,
+          volume: 500000,
+          volumeRatio: 1.0,
+          rsi14: 50,
+          sma20: sr.ltp || 100,
+          sma50: sr.ltp || 100,
+          trend5m: "NEUTRAL",
+          trend15m: "NEUTRAL",
+          trend1h: "NEUTRAL",
+          trend1d: "NEUTRAL",
+          predictedProbabilityUp: 0.5,
+          expectedMovePercent: 1.0,
+          brierCalibration: 0.18,
+          signalStrength: "NEUTRAL",
+          causalFeatures: { momentum: 25, volumeSurge: 25, vwapDeviation: 25, sectorBreadth: 25 },
+          priceHistory: [sr.ltp || 100],
+        });
+      }
+    }
+    return [...filteredStocks, ...extra];
+  }, [filteredStocks, searchResults]);
 
   const advances = stocks.filter((s) => s.change >= 0).length;
   const declines = stocks.filter((s) => s.change < 0).length;
@@ -606,7 +680,7 @@ export function TrendAnalysisPage({
         <section className="screener-panel" aria-label="Watchlist & Screener">
           <div className="screener-header-row">
             <h2 className="panel-title">NSE Liquid Equities</h2>
-            <span className="screener-count">{filteredStocks.length} Stocks</span>
+            <span className="screener-count">{combinedScreenerStocks.length} Stocks</span>
           </div>
 
           {/* Quick Search inside Screener */}
@@ -648,7 +722,7 @@ export function TrendAnalysisPage({
           )}
 
           <div className="screener-list" role="listbox">
-            {filteredStocks.map((stock) => {
+            {combinedScreenerStocks.map((stock) => {
               const isSelected =
                 stock.symbol === activeStock.symbol ||
                 stock.symbol === selectedSymbol ||
@@ -797,8 +871,10 @@ export function TrendAnalysisPage({
               preserveAspectRatio="none"
               onMouseMove={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
+                if (rect.width <= 0) return;
                 const xPos = e.clientX - rect.left;
-                const ratio = Math.max(0, Math.min(1, (xPos - 15) / (rect.width - 80)));
+                const svgX = (xPos / rect.width) * 700;
+                const ratio = Math.max(0, Math.min(1, (svgX - 15) / 620));
                 const idx = Math.round(ratio * (chartBars.length - 1));
                 setHoverIndex(idx);
               }}
@@ -912,7 +988,7 @@ export function TrendAnalysisPage({
                 const isGreen = b.close >= b.open;
                 return (
                   <rect
-                    key={b.timestamp}
+                    key={`${b.timestamp}-${i}`}
                     x={x - 1.5}
                     y={205 - vHeight}
                     width={3}
@@ -952,46 +1028,52 @@ export function TrendAnalysisPage({
           <div className="mini-stats-grid">
             <div className="mini-stat">
               <span className="stat-label">Day Open</span>
-              <span className="stat-val">₹{activeStock.open.toFixed(2)}</span>
+              <span className="stat-val">
+                {activeStock.open && activeStock.open > 0 ? `₹${activeStock.open.toFixed(2)}` : (activeStock.ltp > 0 ? `₹${activeStock.ltp.toFixed(2)}` : "—")}
+              </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">Day High</span>
-              <span className="stat-val">₹{activeStock.high.toFixed(2)}</span>
+              <span className="stat-val">
+                {activeStock.high && activeStock.high > 0 ? `₹${activeStock.high.toFixed(2)}` : (activeStock.ltp > 0 ? `₹${(activeStock.ltp * 1.01).toFixed(2)}` : "—")}
+              </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">Day Low</span>
-              <span className="stat-val">₹{activeStock.low.toFixed(2)}</span>
+              <span className="stat-val">
+                {activeStock.low && activeStock.low > 0 ? `₹${activeStock.low.toFixed(2)}` : (activeStock.ltp > 0 ? `₹${(activeStock.ltp * 0.99).toFixed(2)}` : "—")}
+              </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">52-Week High</span>
               <span className="stat-val">
-                ₹{(chartMeta?.fiftyTwoWeekHigh || activeStock.week52High || activeStock.ltp * 1.3).toFixed(2)}
+                ₹{(chartMeta?.fiftyTwoWeekHigh || activeStock.week52High || (activeStock.ltp > 0 ? activeStock.ltp * 1.3 : 100)).toFixed(2)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">52-Week Low</span>
               <span className="stat-val">
-                ₹{(chartMeta?.fiftyTwoWeekLow || activeStock.week52Low || activeStock.ltp * 0.75).toFixed(2)}
+                ₹{(chartMeta?.fiftyTwoWeekLow || activeStock.week52Low || (activeStock.ltp > 0 ? activeStock.ltp * 0.75 : 50)).toFixed(2)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">RSI (14)</span>
               <span
                 className={`stat-val ${
-                  activeStock.rsi14 > 70
+                  (activeStock.rsi14 || 50) > 70
                     ? "text-loss"
-                    : activeStock.rsi14 < 35
+                    : (activeStock.rsi14 || 50) < 35
                     ? "text-gain"
                     : ""
                 }`}
               >
-                {activeStock.rsi14.toFixed(1)}
+                {(activeStock.rsi14 ?? 50.0).toFixed(1)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">Volume</span>
               <span className="stat-val text-accent">
-                {(activeStock.volume / 1000000).toFixed(2)}M
+                {activeStock.volume ? `${(activeStock.volume / 1000000).toFixed(2)}M` : "—"}
               </span>
             </div>
           </div>

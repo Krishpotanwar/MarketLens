@@ -61,9 +61,14 @@ interface IPOApiResponse {
 interface IPODiscoveryPageProps {
   onSelectForTrade: (symbol: string) => void;
   onSelectForAI: (symbol: string) => void;
+  onSelectForTrend?: (symbol: string) => void;
 }
 
-export function IPODiscoveryPage({ onSelectForTrade, onSelectForAI }: IPODiscoveryPageProps) {
+export function IPODiscoveryPage({
+  onSelectForTrade,
+  onSelectForAI,
+  onSelectForTrend,
+}: IPODiscoveryPageProps) {
   const [activeTab, setActiveTab] = useState<"ALL" | "ACTIVE" | "UPCOMING" | "LISTED">("ALL");
   const [loading, setLoading] = useState(true);
   const [ipoData, setIpoData] = useState<IPOApiResponse>({
@@ -578,6 +583,16 @@ export function IPODiscoveryPage({ onSelectForTrade, onSelectForAI }: IPODiscove
                       </td>
                       <td>
                         <div className="stock-action-group">
+                          {onSelectForTrend && (
+                            <button
+                              type="button"
+                              className="btn-stock-trend"
+                              onClick={() => onSelectForTrend(ipo.symbol)}
+                              title={`View live price action and trend analysis for ${ipo.symbol}`}
+                            >
+                              📈 Analyze
+                            </button>
+                          )}
                           <button
                             type="button"
                             className="btn-stock-trade"

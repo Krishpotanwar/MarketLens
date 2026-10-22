@@ -205,6 +205,106 @@ const CURATED_EQUITIES: SearchResultItem[] = [
     change_percent: 0.92,
     aliases: "tatamotors tmpv tata motors passenger vehicles ev nexon tiago harrier safari",
   },
+  {
+    symbol: "INFY",
+    name: "Infosys Ltd",
+    sector: "Information Tech",
+    marketCapCategory: "Large Cap",
+    ltp: 1752.6,
+    change: 22.4,
+    change_percent: 1.3,
+    aliases: "infosys infy it tech software services narayana murthy",
+  },
+  {
+    symbol: "SBIN",
+    name: "State Bank of India",
+    sector: "Banking",
+    marketCapCategory: "Large Cap",
+    ltp: 824.5,
+    change: 14.2,
+    change_percent: 1.75,
+    aliases: "sbi sbin state bank of india psu banking public bank loans",
+  },
+  {
+    symbol: "BHARTIARTL",
+    name: "Bharti Airtel Ltd",
+    sector: "Telecom",
+    marketCapCategory: "Large Cap",
+    ltp: 1564.8,
+    change: 18.2,
+    change_percent: 1.18,
+    aliases: "airtel bharti airtel telecom 5g mobile broadband sunil mittal",
+  },
+  {
+    symbol: "ITC",
+    name: "ITC Ltd",
+    sector: "FMCG",
+    marketCapCategory: "Large Cap",
+    ltp: 489.1,
+    change: 1.65,
+    change_percent: 0.34,
+    aliases: "itc itc limited fmcg cigarettes hotels paper agri business",
+  },
+  {
+    symbol: "ICICIBANK",
+    name: "ICICI Bank Ltd",
+    sector: "Banking",
+    marketCapCategory: "Large Cap",
+    ltp: 1244.75,
+    change: 9.35,
+    change_percent: 0.76,
+    aliases: "icici icicibank private banking loans credit cards",
+  },
+  {
+    symbol: "LT",
+    name: "Larsen & Toubro Ltd",
+    sector: "Infrastructure",
+    marketCapCategory: "Large Cap",
+    ltp: 3640.0,
+    change: -22.5,
+    change_percent: -0.61,
+    aliases: "l&t lt larsen toubro larsen & toubro engineering epc infrastructure construction",
+  },
+  {
+    symbol: "TATASTEEL",
+    name: "Tata Steel Ltd",
+    sector: "Metals",
+    marketCapCategory: "Large Cap",
+    ltp: 154.2,
+    change: 2.1,
+    change_percent: 1.38,
+    aliases: "tata steel tatasteel metals mining steel kalinganagar",
+  },
+  {
+    symbol: "CDSL",
+    name: "Central Depository Services",
+    sector: "Capital Markets",
+    marketCapCategory: "Mid Cap",
+    ltp: 1782.5,
+    change: 46.2,
+    change_percent: 2.66,
+    aliases: "cdsl central depository services demat capital markets",
+  },
+  {
+    symbol: "BSE",
+    name: "BSE Limited",
+    sector: "Capital Markets",
+    marketCapCategory: "Mid Cap",
+    ltp: 4890.0,
+    change: 185.0,
+    change_percent: 3.93,
+    aliases: "bse bombay stock exchange capital markets exchange sensex",
+  },
+  {
+    symbol: "KALYANKJIL",
+    name: "Kalyan Jewellers India",
+    sector: "Retail / Gems",
+    marketCapCategory: "Mid Cap",
+    ltp: 722.0,
+    change: 18.5,
+    change_percent: 2.63,
+    aliases: "kalyan kalyan jewellers kalyankjil gold jewellery candere",
+  },
 ];
 
 const TRENDING_STOCKS: SearchResultItem[] = CURATED_EQUITIES.filter((e) => e.symbol !== "STELLANT.BO").slice(0, 8);
@@ -566,7 +666,7 @@ export function GlobalSearchBar({
                     <div
                       key={item.symbol}
                       className="global-search-item"
-                      onClick={() => handleAction(item.symbol, "stocks")}
+                      onClick={() => handleAction(item.symbol, "trends")}
                     >
                       <div className="global-search-item-main">
                         <div className="global-search-item-symbol-row">
@@ -591,6 +691,17 @@ export function GlobalSearchBar({
                         <div className="global-search-actions">
                           <button
                             type="button"
+                            className="search-action-btn search-trend-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAction(item.symbol, "trends");
+                            }}
+                            title={`View live price action and market trend analysis for ${item.symbol}`}
+                          >
+                            📈 Trend
+                          </button>
+                          <button
+                            type="button"
                             className="search-action-btn search-trade-btn"
                             onClick={(e) => {
                               e.stopPropagation();
@@ -610,17 +721,6 @@ export function GlobalSearchBar({
                             title={`Run AI Strategy Lab analysis for ${item.symbol}`}
                           >
                             🤖 AI
-                          </button>
-                          <button
-                            type="button"
-                            className="search-action-btn search-trend-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleAction(item.symbol, "trends");
-                            }}
-                            title={`View trend analysis for ${item.symbol}`}
-                          >
-                            📈 Trend
                           </button>
                         </div>
                       </div>

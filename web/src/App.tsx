@@ -115,6 +115,7 @@ export default function App() {
           <IPODiscoveryPage
             onSelectForTrade={handleSelectForTrade}
             onSelectForAI={handleSelectForAI}
+            onSelectForTrend={handleSelectForTrend}
           />
         )}
         {currentTab === "ai-strategy" && (

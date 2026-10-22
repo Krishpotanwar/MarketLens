@@ -24,7 +24,7 @@ describe("GlobalSearchBar Component", () => {
 
   it("renders search skeleton loader while searching and does not show premature empty state", () => {
     const markup = renderToStaticMarkup(
-      <GlobalSearchBar onSelectStock={() => {}} initialOpen={true} initialSearching={true} initialQuery="INFY" />
+      <GlobalSearchBar onSelectStock={() => {}} initialOpen={true} initialSearching={true} initialQuery="BAJFINANCE" />
     );
     expect(markup).toContain("global-search-loading-skeleton");
     expect(markup).toContain("Searching across all 13,000+ Indian stocks");

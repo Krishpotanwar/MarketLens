@@ -1002,6 +1002,26 @@ async def get_all_indian_stocks_paginated(
         scored_items.sort(key=lambda x: x[0], reverse=True)
         filtered = [x[1] for x in scored_items]
 
+        # Dynamic exchange search fallback for uncatalogued / newly listed equities
+        if q_clean and len(filtered) == 0:
+            try:
+                web_hits = await query_live_web_search(q_clean)
+                for hit in web_hits:
+                    filtered.append(
+                        {
+                            "symbol": hit["symbol"],
+                            "name": hit["name"],
+                            "exchange": "BSE"
+                            if hit["symbol"].endswith(".BO")
+                            else "NSE",
+                            "sector": hit.get("sector", "Indian Equities"),
+                            "cap": hit.get("cap", "Mid Cap"),
+                            "series": "EQ",
+                        }
+                    )
+            except Exception:
+                pass
+
     total = len(filtered)
     total_pages = max(1, (total + limit - 1) // limit)
     current_page = max(1, min(page, total_pages))
