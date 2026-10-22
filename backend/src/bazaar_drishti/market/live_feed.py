@@ -11,6 +11,7 @@ import os
 import re
 import time
 from typing import Any
+import urllib.parse
 import xml.etree.ElementTree as ET
 
 import httpx
@@ -32,6 +33,13 @@ NSE_SPECIAL_ALIASES: dict[str, str] = {
 
 # Extensive directory of active Indian equities across Large, Mid, and Small Cap
 INDIAN_STOCKS_DIRECTORY: list[dict[str, str]] = [
+    {
+        "symbol": "STELLANT.BO",
+        "name": "Stellant Securities (India) Limited",
+        "sector": "Financial Services",
+        "cap": "Small Cap",
+        "aliases": "stellant securities stellant stellant securities india bse 526071",
+    },
     {
         "symbol": "MAZDOCK",
         "name": "Mazagon Dock Shipbuilders Ltd",
@@ -504,8 +512,49 @@ def _normalize_tokens(text: str) -> list[str]:
     return [t for t in re.split(r"[^a-zA-Z0-9]+", text.lower()) if t]
 
 
+async def query_live_web_search(query: str) -> list[dict[str, str]]:
+    """Query live financial telemetry search API for ANY Indian company across NSE and BSE."""
+    encoded_query = urllib.parse.quote(query.strip())
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MarketLens/1.0"}
+    url = f"https://query2.finance.yahoo.com/v1/finance/search?q={encoded_query}&quotesCount=10&newsCount=0"
+    results: list[dict[str, str]] = []
+    try:
+        async with httpx.AsyncClient(headers=headers, timeout=5.0) as client:
+            resp = await client.get(url)
+            if resp.status_code == 200:
+                for q in resp.json().get("quotes", []):
+                    raw_symbol = str(q.get("symbol", "")).strip().upper()
+                    exchange = str(q.get("exchange", "")).strip().upper()
+                    is_indian = (
+                        raw_symbol.endswith(".NS")
+                        or raw_symbol.endswith(".BO")
+                        or exchange in ["NSI", "BSE", "NSE"]
+                    )
+                    if is_indian:
+                        name = str(q.get("longname") or q.get("shortname") or raw_symbol)
+                        # Keep .BO suffix for BSE-listed stocks so quote resolver routes correctly
+                        clean_sym = raw_symbol.replace(".NS", "")
+                        sector = str(
+                            q.get("sector")
+                            or q.get("industry")
+                            or ("BSE Listed" if raw_symbol.endswith(".BO") else "Indian Equities")
+                        )
+                        results.append(
+                            {
+                                "symbol": clean_sym,
+                                "name": name,
+                                "sector": sector,
+                                "cap": "Small Cap" if raw_symbol.endswith(".BO") else "Mid Cap",
+                                "aliases": "",
+                            }
+                        )
+    except Exception:
+        pass
+    return results
+
+
 async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
-    """Search Indian stocks directory and dynamic symbols using tokenized relevance scoring."""
+    """Search Indian stocks directory and dynamic symbols using tokenized relevance scoring with live web search fallback."""
     q_clean = query.strip()
     if not q_clean:
         return []
@@ -555,11 +604,44 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
         if score > 0:
             scored_matches.append((score, item))
 
-    # Sort matches by score descending
+    # Sort directory matches by score descending
     scored_matches.sort(key=lambda x: x[0], reverse=True)
-    candidate_matches = [m[1] for m in scored_matches[:6]]
+    directory_matches = [m[1] for m in scored_matches[:6]]
 
-    # If no directory matches found and query looks like a valid ticker symbol (2-12 chars uppercase alphanumeric)
+    # 2. Concurrently query live web search for ANY Indian stock across NSE & BSE (e.g. Stellant Securities)
+    web_matches: list[dict[str, str]] = []
+    try:
+        web_matches = await query_live_web_search(q_clean)
+    except Exception:
+        pass
+
+    # 3. Merge candidates without duplicates
+    seen_symbols: set[str] = set()
+    candidate_matches: list[dict[str, str]] = []
+
+    # If directory has strong matches (score >= 50, e.g. exact symbol or known alias), prioritize
+    for s_val, item in scored_matches:
+        if s_val >= 50.0:
+            sym_key = item["symbol"].upper()
+            if sym_key not in seen_symbols:
+                seen_symbols.add(sym_key)
+                candidate_matches.append(item)
+
+    # Add all matching live web candidates (e.g. Stellant Securities, Deepak Nitrite, etc.)
+    for w in web_matches:
+        sym_key = w["symbol"].upper()
+        if sym_key not in seen_symbols:
+            seen_symbols.add(sym_key)
+            candidate_matches.append(w)
+
+    # Add remaining directory matches
+    for item in directory_matches:
+        sym_key = item["symbol"].upper()
+        if sym_key not in seen_symbols:
+            seen_symbols.add(sym_key)
+            candidate_matches.append(item)
+
+    # 4. Fallback for raw ticker symbols
     if not candidate_matches and len(q_upper) >= 2 and re.match(r"^[A-Z0-9\-]+$", q_upper):
         candidate_matches.append(
             {
@@ -573,6 +655,8 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
 
     if not candidate_matches:
         return []
+
+    candidate_matches = candidate_matches[:8]
 
     # Concurrently fetch live quotes for candidate matches
     tasks = [fetch_symbol_quote(m["symbol"]) for m in candidate_matches]

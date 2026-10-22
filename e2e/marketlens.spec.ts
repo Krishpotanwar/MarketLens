@@ -70,13 +70,14 @@ test.describe("MarketLens End-to-End Suite", () => {
     const shelfCards = page.locator(".shelf-card");
     await expect(shelfCards.first()).toBeVisible();
 
-    // In-page table search
+    // In-page table search with live web telemetry for any Indian equity (e.g. Stellant Securities)
     const inPageSearch = page.locator(".explorer-controls-panel .search-input");
-    await inPageSearch.fill("TCS");
-    await page.waitForTimeout(300);
+    await inPageSearch.fill("Stellant Securities");
+    await page.waitForTimeout(400);
 
     const stockRows = page.locator(".data-table tbody tr");
-    await expect(stockRows.first()).toContainText("TCS");
+    await expect(stockRows.first()).toContainText("STELLANT.BO");
+    await expect(stockRows.first()).toContainText("Stellant Securities (India) Limited");
   });
 
   test("4. Indian Mutual Funds & SIP Compounding Studio", async ({ page }) => {

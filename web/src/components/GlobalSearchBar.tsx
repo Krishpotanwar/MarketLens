@@ -16,6 +16,16 @@ export interface SearchResultItem {
 
 const CURATED_EQUITIES: SearchResultItem[] = [
   {
+    symbol: "STELLANT.BO",
+    name: "Stellant Securities (India) Limited",
+    sector: "Financial Services",
+    marketCapCategory: "Small Cap",
+    ltp: 825.4,
+    change: -36.15,
+    change_percent: -4.2,
+    aliases: "stellant securities stellant stellant securities india bse 526071",
+  },
+  {
     symbol: "RELIANCE",
     name: "Reliance Industries Ltd",
     sector: "Energy & Retail",
@@ -157,7 +167,7 @@ const CURATED_EQUITIES: SearchResultItem[] = [
   },
 ];
 
-const TRENDING_STOCKS: SearchResultItem[] = CURATED_EQUITIES.slice(0, 8);
+const TRENDING_STOCKS: SearchResultItem[] = CURATED_EQUITIES.filter((e) => e.symbol !== "STELLANT.BO").slice(0, 8);
 
 function searchLocalEquities(query: string): SearchResultItem[] {
   const qClean = query.trim().toLowerCase();
