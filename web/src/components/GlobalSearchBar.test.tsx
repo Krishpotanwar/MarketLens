@@ -15,4 +15,10 @@ describe("GlobalSearchBar Component", () => {
     const markup = renderToStaticMarkup(<GlobalSearchBar onSelectStock={() => {}} />);
     expect(markup).toContain('aria-label="Universal stock search (like Groww / Angel One)"');
   });
+
+  it("contains keyboard accessibility and search trigger structure", () => {
+    const markup = renderToStaticMarkup(<GlobalSearchBar onSelectStock={() => {}} />);
+    expect(markup).toContain('class="global-search-input"');
+    expect(markup).toContain('class="global-search-shortcut"');
+  });
 });

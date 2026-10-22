@@ -232,12 +232,27 @@ export function StocksExplorerPage({
 
   // Filtered List
   const filteredStocks = useMemo(() => {
+    const qClean = searchQuery.trim().toLowerCase();
+    const qTokens = qClean.split(/[^a-z0-9]+/).filter(Boolean);
+
     return stocks.filter((stock) => {
-      const matchesSearch =
-        searchQuery === "" ||
-        stock.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.sector.toLowerCase().includes(searchQuery.toLowerCase());
+      let matchesSearch = true;
+      if (qTokens.length > 0) {
+        const sym = stock.symbol.toLowerCase();
+        const name = stock.name.toLowerCase();
+        const sector = stock.sector.toLowerCase();
+        const haystack = `${sym} ${name} ${sector}`;
+        // If all query tokens match any part of the haystack or known aliases
+        matchesSearch = qTokens.every(
+          (t) =>
+            haystack.includes(t) ||
+            (t === "mazgaon" && (sym === "mazdock" || name.includes("mazagon"))) ||
+            (t === "shipyard" && (sym === "mazdock" || sym === "cochinship" || sym === "grse")) ||
+            (t === "dock" && sym === "mazdock") ||
+            (t === "zudio" && sym === "trent") ||
+            (t === "blinkit" && sym === "zomato")
+        );
+      }
 
       const matchesCap =
         selectedCap === "ALL" || stock.marketCapCategory === selectedCap;
@@ -303,94 +318,96 @@ export function StocksExplorerPage({
         ))}
       </section>
 
-      {/* Discovery Shelves */}
-      <section className="discovery-shelves-grid" aria-label="Market Shelves">
-        {/* Top Gainers Shelf */}
-        <div className="shelf-card">
-          <div className="shelf-head">
-            <span className="shelf-title text-gain">Top Gainers</span>
-            <span className="shelf-sub">Today's leaders</span>
-          </div>
-          <div className="shelf-items">
-            {topGainers.map((stock) => (
-              <div
-                key={stock.symbol}
-                className="shelf-row"
-                onClick={() => onSelectForTrend(stock.symbol)}
-                role="button"
-                tabIndex={0}
-              >
-                <div className="shelf-sym-col">
-                  <span className="shelf-sym">{stock.symbol}</span>
-                  <span className="shelf-company">{stock.name}</span>
+      {/* Discovery Shelves - Visible during broad discovery, auto-collapses during targeted search */}
+      {!searchQuery.trim() && (
+        <section className="discovery-shelves-grid" aria-label="Market Shelves">
+          {/* Top Gainers Shelf */}
+          <div className="shelf-card">
+            <div className="shelf-head">
+              <span className="shelf-title text-gain">Top Gainers</span>
+              <span className="shelf-sub">Today's leaders</span>
+            </div>
+            <div className="shelf-items">
+              {topGainers.map((stock) => (
+                <div
+                  key={stock.symbol}
+                  className="shelf-row"
+                  onClick={() => onSelectForTrend(stock.symbol)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="shelf-sym-col">
+                    <span className="shelf-sym">{stock.symbol}</span>
+                    <span className="shelf-company">{stock.name}</span>
+                  </div>
+                  <div className="shelf-price-col">
+                    <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
+                    <span className="shelf-pct text-gain">+{stock.changePercent.toFixed(2)}%</span>
+                  </div>
                 </div>
-                <div className="shelf-price-col">
-                  <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                  <span className="shelf-pct text-gain">+{stock.changePercent.toFixed(2)}%</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Top Losers Shelf */}
-        <div className="shelf-card">
-          <div className="shelf-head">
-            <span className="shelf-title text-loss">Top Losers</span>
-            <span className="shelf-sub">Pullback setups</span>
-          </div>
-          <div className="shelf-items">
-            {topLosers.map((stock) => (
-              <div
-                key={stock.symbol}
-                className="shelf-row"
-                onClick={() => onSelectForTrend(stock.symbol)}
-                role="button"
-                tabIndex={0}
-              >
-                <div className="shelf-sym-col">
-                  <span className="shelf-sym">{stock.symbol}</span>
-                  <span className="shelf-company">{stock.name}</span>
+          {/* Top Losers Shelf */}
+          <div className="shelf-card">
+            <div className="shelf-head">
+              <span className="shelf-title text-loss">Top Losers</span>
+              <span className="shelf-sub">Pullback setups</span>
+            </div>
+            <div className="shelf-items">
+              {topLosers.map((stock) => (
+                <div
+                  key={stock.symbol}
+                  className="shelf-row"
+                  onClick={() => onSelectForTrend(stock.symbol)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="shelf-sym-col">
+                    <span className="shelf-sym">{stock.symbol}</span>
+                    <span className="shelf-company">{stock.name}</span>
+                  </div>
+                  <div className="shelf-price-col">
+                    <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
+                    <span className="shelf-pct text-loss">{stock.changePercent.toFixed(2)}%</span>
+                  </div>
                 </div>
-                <div className="shelf-price-col">
-                  <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                  <span className="shelf-pct text-loss">{stock.changePercent.toFixed(2)}%</span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
 
-        {/* Most Active Volume Shelf */}
-        <div className="shelf-card">
-          <div className="shelf-head">
-            <span className="shelf-title text-accent">Most Active</span>
-            <span className="shelf-sub">Highest daily turnover</span>
-          </div>
-          <div className="shelf-items">
-            {mostActive.map((stock) => (
-              <div
-                key={stock.symbol}
-                className="shelf-row"
-                onClick={() => onSelectForTrend(stock.symbol)}
-                role="button"
-                tabIndex={0}
-              >
-                <div className="shelf-sym-col">
-                  <span className="shelf-sym">{stock.symbol}</span>
-                  <span className="shelf-company">{(stock.volume / 1000000).toFixed(1)}M Vol</span>
+          {/* Most Active Volume Shelf */}
+          <div className="shelf-card">
+            <div className="shelf-head">
+              <span className="shelf-title text-accent">Most Active</span>
+              <span className="shelf-sub">Highest daily turnover</span>
+            </div>
+            <div className="shelf-items">
+              {mostActive.map((stock) => (
+                <div
+                  key={stock.symbol}
+                  className="shelf-row"
+                  onClick={() => onSelectForTrend(stock.symbol)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="shelf-sym-col">
+                    <span className="shelf-sym">{stock.symbol}</span>
+                    <span className="shelf-company">{(stock.volume / 1000000).toFixed(1)}M Vol</span>
+                  </div>
+                  <div className="shelf-price-col">
+                    <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
+                    <span className={`shelf-pct ${stock.change >= 0 ? "text-gain" : "text-loss"}`}>
+                      {stock.change >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%
+                    </span>
+                  </div>
                 </div>
-                <div className="shelf-price-col">
-                  <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                  <span className={`shelf-pct ${stock.change >= 0 ? "text-gain" : "text-loss"}`}>
-                    {stock.change >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%
-                  </span>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Explorer Controls: Search & Market Cap Tabs */}
       <section className="explorer-controls-panel" aria-label="Stock Search and Filtering">

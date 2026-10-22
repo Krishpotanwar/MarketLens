@@ -33,172 +33,340 @@ NSE_SPECIAL_ALIASES: dict[str, str] = {
 # Extensive directory of active Indian equities across Large, Mid, and Small Cap
 INDIAN_STOCKS_DIRECTORY: list[dict[str, str]] = [
     {
-        "symbol": "RELIANCE",
-        "name": "Reliance Industries Ltd",
-        "sector": "Energy & Retail",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "TCS",
-        "name": "Tata Consultancy Services Ltd",
-        "sector": "Information Technology",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "HDFCBANK",
-        "name": "HDFC Bank Ltd",
-        "sector": "Banking & Financial Services",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "INFY",
-        "name": "Infosys Ltd",
-        "sector": "Information Technology",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "ICICIBANK",
-        "name": "ICICI Bank Ltd",
-        "sector": "Banking & Financial Services",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "SBIN",
-        "name": "State Bank of India",
-        "sector": "Public Sector Banking",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "BHARTIARTL",
-        "name": "Bharti Airtel Ltd",
-        "sector": "Telecommunications",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "ITC",
-        "name": "ITC Ltd",
-        "sector": "FMCG & Conglomerate",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "LT",
-        "name": "Larsen & Toubro Ltd",
-        "sector": "Capital Goods & Infrastructure",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "TATAMOTORS",
-        "name": "Tata Motors Ltd",
-        "sector": "Automobiles",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "TATASTEEL",
-        "name": "Tata Steel Ltd",
-        "sector": "Metals & Mining",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "ZOMATO",
-        "name": "Zomato Ltd (Eternal)",
-        "sector": "Consumer Tech / Q-Commerce",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "DIXON",
-        "name": "Dixon Technologies Ltd",
-        "sector": "Electronics Manufacturing",
+        "symbol": "MAZDOCK",
+        "name": "Mazagon Dock Shipbuilders Ltd",
+        "sector": "Defence & Shipbuilding",
         "cap": "Mid Cap",
+        "aliases": "mazgaon dock mazagon dock mazdock shipyard defence shipyard mdl warship submarine",
     },
     {
-        "symbol": "BSE",
-        "name": "BSE Ltd",
-        "sector": "Financial Market Infrastructure",
+        "symbol": "COCHINSHIP",
+        "name": "Cochin Shipyard Ltd",
+        "sector": "Defence & Shipbuilding",
         "cap": "Mid Cap",
+        "aliases": "cochin shipyard cochin dock csl shipyard defence aircraft carrier vikrant",
     },
     {
-        "symbol": "SUZLON",
-        "name": "Suzlon Energy Ltd",
-        "sector": "Renewable Energy / Wind",
-        "cap": "Mid Cap",
-    },
-    {
-        "symbol": "CDSL",
-        "name": "Central Depository Services Ltd",
-        "sector": "Depository Services",
-        "cap": "Mid Cap",
-    },
-    {
-        "symbol": "KALYANKJIL",
-        "name": "Kalyan Jewellers India Ltd",
-        "sector": "Consumer Discretionary",
-        "cap": "Mid Cap",
-    },
-    {
-        "symbol": "WIPRO",
-        "name": "Wipro Ltd",
-        "sector": "Information Technology",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "MARUTI",
-        "name": "Maruti Suzuki India Ltd",
-        "sector": "Automobiles",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "BAJFINANCE",
-        "name": "Bajaj Finance Ltd",
-        "sector": "Non-Banking Financial",
-        "cap": "Large Cap",
-    },
-    {
-        "symbol": "ADANIENT",
-        "name": "Adani Enterprises Ltd",
-        "sector": "Conglomerate",
-        "cap": "Large Cap",
+        "symbol": "GRSE",
+        "name": "Garden Reach Shipbuilders & Engineers Ltd",
+        "sector": "Defence & Shipbuilding",
+        "cap": "Small Cap",
+        "aliases": "garden reach shipbuilders grse shipyard naval warship defence",
     },
     {
         "symbol": "HAL",
         "name": "Hindustan Aeronautics Ltd",
         "sector": "Aerospace & Defence",
         "cap": "Large Cap",
+        "aliases": "hindustan aeronautics hal defence aircraft tejas fighter jet helicopters",
     },
     {
         "symbol": "BEL",
         "name": "Bharat Electronics Ltd",
         "sector": "Defence Electronics",
         "cap": "Large Cap",
+        "aliases": "bharat electronics bel defence radar avionics defence systems",
+    },
+    {
+        "symbol": "BDL",
+        "name": "Bharat Dynamics Ltd",
+        "sector": "Aerospace & Defence",
+        "cap": "Mid Cap",
+        "aliases": "bharat dynamics bdl defence missiles akash astra torpedoes",
+    },
+    {
+        "symbol": "IRFC",
+        "name": "Indian Railway Finance Corporation Ltd",
+        "sector": "Railway Finance",
+        "cap": "Mid Cap",
+        "aliases": "indian railway finance corporation rail railway finance irfc leasing",
+    },
+    {
+        "symbol": "RVNL",
+        "name": "Rail Vikas Nigam Ltd",
+        "sector": "Railway Infrastructure",
+        "cap": "Mid Cap",
+        "aliases": "rail vikas nigam rail railway infrastructure rvnl metro projects",
+    },
+    {
+        "symbol": "IRCON",
+        "name": "Ircon International Ltd",
+        "sector": "Railway Infrastructure",
+        "cap": "Small Cap",
+        "aliases": "ircon international railway construction infrastructure tracks",
+    },
+    {
+        "symbol": "RAILTEL",
+        "name": "RailTel Corporation of India Ltd",
+        "sector": "Railway Telecom",
+        "cap": "Small Cap",
+        "aliases": "railtel telecom railway broadband wifi optical fiber",
+    },
+    {
+        "symbol": "TITAGARH",
+        "name": "Titagarh Rail Systems Ltd",
+        "sector": "Railway Infrastructure",
+        "cap": "Small Cap",
+        "aliases": "titagarh rail systems wagons trainsets vande bharat metro coaches",
+    },
+    {
+        "symbol": "TRENT",
+        "name": "Trent Ltd",
+        "sector": "Retail & Apparel",
+        "cap": "Large Cap",
+        "aliases": "trent westside zudio star bazaar tata retail fashion apparel",
+    },
+    {
+        "symbol": "RELIANCE",
+        "name": "Reliance Industries Ltd",
+        "sector": "Energy & Retail",
+        "cap": "Large Cap",
+        "aliases": "ril reliance jio retail petrochemicals energy mukesh ambani oil",
+    },
+    {
+        "symbol": "TCS",
+        "name": "Tata Consultancy Services Ltd",
+        "sector": "Information Technology",
+        "cap": "Large Cap",
+        "aliases": "tata consultancy services tcs it services tech consulting outsourcing",
+    },
+    {
+        "symbol": "HDFCBANK",
+        "name": "HDFC Bank Ltd",
+        "sector": "Banking & Financial Services",
+        "cap": "Large Cap",
+        "aliases": "hdfc bank private banking loans mortgages credit cards",
+    },
+    {
+        "symbol": "INFY",
+        "name": "Infosys Ltd",
+        "sector": "Information Technology",
+        "cap": "Large Cap",
+        "aliases": "infosys infy it services software consulting tech",
+    },
+    {
+        "symbol": "ICICIBANK",
+        "name": "ICICI Bank Ltd",
+        "sector": "Banking & Financial Services",
+        "cap": "Large Cap",
+        "aliases": "icici bank banking private sector finance",
+    },
+    {
+        "symbol": "SBIN",
+        "name": "State Bank of India",
+        "sector": "Public Sector Banking",
+        "cap": "Large Cap",
+        "aliases": "sbi state bank of india public sector psu bank banking",
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "name": "Bharti Airtel Ltd",
+        "sector": "Telecommunications",
+        "cap": "Large Cap",
+        "aliases": "airtel bharti airtel 5g telecom cellular broadband",
+    },
+    {
+        "symbol": "ITC",
+        "name": "ITC Ltd",
+        "sector": "FMCG & Conglomerate",
+        "cap": "Large Cap",
+        "aliases": "itc cigarettes hotels paper packaging fmcg ashirvaad sunfeast",
+    },
+    {
+        "symbol": "LT",
+        "name": "Larsen & Toubro Ltd",
+        "sector": "Capital Goods & Infrastructure",
+        "cap": "Large Cap",
+        "aliases": "l&t lt larsen toubro infrastructure construction defence engineering",
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "name": "Tata Motors Ltd",
+        "sector": "Automobiles",
+        "cap": "Large Cap",
+        "aliases": "tata motors jlr jaguar land rover commercial vehicles ev tiago nexon",
+    },
+    {
+        "symbol": "TATASTEEL",
+        "name": "Tata Steel Ltd",
+        "sector": "Metals & Mining",
+        "cap": "Large Cap",
+        "aliases": "tata steel steel metals mining blast furnace kalinganagar",
+    },
+    {
+        "symbol": "ZOMATO",
+        "name": "Zomato Ltd (Eternal)",
+        "sector": "Consumer Tech / Q-Commerce",
+        "cap": "Large Cap",
+        "aliases": "zomato blinkit eternal food delivery q-commerce grocery deepinder",
+    },
+    {
+        "symbol": "SWIGGY",
+        "name": "Swiggy Ltd",
+        "sector": "Consumer Tech / Q-Commerce",
+        "cap": "Large Cap",
+        "aliases": "swiggy instamart dineout food delivery q-commerce grocery",
+    },
+    {
+        "symbol": "PAYTM",
+        "name": "One 97 Communications (Paytm)",
+        "sector": "Fintech & Payments",
+        "cap": "Small Cap",
+        "aliases": "paytm one97 upi soundbox qr payments fintech vijay shekhar",
+    },
+    {
+        "symbol": "OLAELEC",
+        "name": "Ola Electric Mobility Ltd",
+        "sector": "Electric Vehicles",
+        "cap": "Mid Cap",
+        "aliases": "ola electric mobility ev scooter bhavish gigafactory battery",
+    },
+    {
+        "symbol": "DIXON",
+        "name": "Dixon Technologies Ltd",
+        "sector": "Electronics Manufacturing",
+        "cap": "Mid Cap",
+        "aliases": "dixon technologies ems mobile manufacturing electronics pli smart tv",
+    },
+    {
+        "symbol": "KAYNES",
+        "name": "Kaynes Technology India Ltd",
+        "sector": "Electronics Manufacturing",
+        "cap": "Mid Cap",
+        "aliases": "kaynes technology semiconductor osat ems electronics aerospace",
+    },
+    {
+        "symbol": "BSE",
+        "name": "BSE Ltd",
+        "sector": "Financial Market Infrastructure",
+        "cap": "Mid Cap",
+        "aliases": "bse bombay stock exchange sensex derivatives equity exchange",
+    },
+    {
+        "symbol": "CDSL",
+        "name": "Central Depository Services Ltd",
+        "sector": "Depository Services",
+        "cap": "Mid Cap",
+        "aliases": "cdsl depository demat accounts settlement stock custody",
+    },
+    {
+        "symbol": "MCX",
+        "name": "Multi Commodity Exchange of India Ltd",
+        "sector": "Commodity Exchange",
+        "cap": "Mid Cap",
+        "aliases": "mcx multi commodity exchange gold crude options futures trading",
+    },
+    {
+        "symbol": "SUZLON",
+        "name": "Suzlon Energy Ltd",
+        "sector": "Renewable Energy / Wind",
+        "cap": "Mid Cap",
+        "aliases": "suzlon energy wind turbines green energy renewable power",
+    },
+    {
+        "symbol": "IREDA",
+        "name": "Indian Renewable Energy Development Agency",
+        "sector": "Green Energy Finance",
+        "cap": "Mid Cap",
+        "aliases": "ireda indian renewable energy development green energy solar financing",
+    },
+    {
+        "symbol": "TATAPOWER",
+        "name": "Tata Power Company Ltd",
+        "sector": "Power & Renewable",
+        "cap": "Large Cap",
+        "aliases": "tata power solar wind ev charging power transmission electricity",
+    },
+    {
+        "symbol": "ADANIPORTS",
+        "name": "Adani Ports and Special Economic Zone Ltd",
+        "sector": "Infrastructure & Ports",
+        "cap": "Large Cap",
+        "aliases": "adani ports sez mundra logistics shipping containers",
+    },
+    {
+        "symbol": "ADANIGREEN",
+        "name": "Adani Green Energy Ltd",
+        "sector": "Renewable Energy",
+        "cap": "Large Cap",
+        "aliases": "adani green renewable solar park wind energy khavda",
+    },
+    {
+        "symbol": "ADANIENT",
+        "name": "Adani Enterprises Ltd",
+        "sector": "Conglomerate",
+        "cap": "Large Cap",
+        "aliases": "adani enterprises conglomerate airports mining solar green hydrogen",
+    },
+    {
+        "symbol": "DMART",
+        "name": "Avenue Supermarts Ltd (DMart)",
+        "sector": "Retail / Supermarket",
+        "cap": "Large Cap",
+        "aliases": "dmart avenue supermarts radhakishan damani grocery supermarket retail",
+    },
+    {
+        "symbol": "VBL",
+        "name": "Varun Beverages Ltd",
+        "sector": "FMCG / Beverages",
+        "cap": "Large Cap",
+        "aliases": "varun beverages vbl pepsi pepsico sting mirinda aquafina bottling",
+    },
+    {
+        "symbol": "KALYANKJIL",
+        "name": "Kalyan Jewellers India Ltd",
+        "sector": "Consumer Discretionary",
+        "cap": "Mid Cap",
+        "aliases": "kalyan jewellers jewelry gold ornaments candere wedding",
     },
     {
         "symbol": "TITAN",
         "name": "Titan Company Ltd",
         "sector": "Consumer Discretionary",
         "cap": "Large Cap",
+        "aliases": "titan tanishq watches fastrack mia zoya jewelry tata",
+    },
+    {
+        "symbol": "MARUTI",
+        "name": "Maruti Suzuki India Ltd",
+        "sector": "Automobiles",
+        "cap": "Large Cap",
+        "aliases": "maruti suzuki swift dzire baleno suzuki cars auto",
+    },
+    {
+        "symbol": "BAJFINANCE",
+        "name": "Bajaj Finance Ltd",
+        "sector": "Non-Banking Financial",
+        "cap": "Large Cap",
+        "aliases": "bajaj finance bajfinance nbfc consumer loans emi cards",
     },
     {
         "symbol": "SUNPHARMA",
         "name": "Sun Pharmaceutical Industries Ltd",
         "sector": "Pharmaceuticals",
         "cap": "Large Cap",
-    },
-    {
-        "symbol": "PAYTM",
-        "name": "One 97 Communications (Paytm)",
-        "sector": "Fintech",
-        "cap": "Small Cap",
+        "aliases": "sun pharma sunpharma generics formulations medicines healthcare",
     },
     {
         "symbol": "JIOFIN",
         "name": "Jio Financial Services Ltd",
         "sector": "Financial Services",
         "cap": "Large Cap",
+        "aliases": "jio financial services jiofin jfs amc blackrock asset management",
     },
     {
         "symbol": "VEDL",
         "name": "Vedanta Ltd",
         "sector": "Metals & Natural Resources",
         "cap": "Mid Cap",
+        "aliases": "vedanta vedl aluminium zinc oil gas anil agarwal mining",
+    },
+    {
+        "symbol": "WIPRO",
+        "name": "Wipro Ltd",
+        "sector": "Information Technology",
+        "cap": "Large Cap",
+        "aliases": "wipro it services tech azim premji cloud software",
     },
 ]
 
@@ -331,37 +499,80 @@ async def fetch_all_nse_quotes() -> list[dict[str, Any]]:
     return results
 
 
+def _normalize_tokens(text: str) -> list[str]:
+    """Tokenize query or text into clean lower-case alphanumeric tokens."""
+    return [t for t in re.split(r"[^a-zA-Z0-9]+", text.lower()) if t]
+
+
 async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
-    """Search Indian stocks directory and dynamic symbols, attaching real live quotes."""
-    q_clean = query.strip().upper()
+    """Search Indian stocks directory and dynamic symbols using tokenized relevance scoring."""
+    q_clean = query.strip()
     if not q_clean:
         return []
 
-    # 1. Match from curated Indian stocks directory
-    matches: list[dict[str, str]] = []
-    for item in INDIAN_STOCKS_DIRECTORY:
-        if (
-            q_clean in item["symbol"].upper()
-            or q_clean in item["name"].upper()
-            or q_clean in item["sector"].upper()
-        ):
-            matches.append(item)
+    q_upper = q_clean.upper()
+    q_tokens = _normalize_tokens(q_clean)
+    if not q_tokens:
+        return []
 
-    # 2. If exact symbol match is not found in directory, add as custom queried ticker
-    has_exact = any(m["symbol"].upper() == q_clean for m in matches)
-    if not has_exact and len(q_clean) >= 2:
-        matches.insert(
-            0,
+    scored_matches: list[tuple[float, dict[str, str]]] = []
+
+    for item in INDIAN_STOCKS_DIRECTORY:
+        symbol = item["symbol"].upper()
+        name = item["name"]
+        sector = item["sector"]
+        aliases = item.get("aliases", "")
+        searchable_text = f"{symbol} {name} {sector} {aliases}".lower()
+        searchable_tokens = set(_normalize_tokens(searchable_text))
+
+        score = 0.0
+
+        # 1. Exact or partial symbol match
+        if symbol == q_upper:
+            score += 100.0
+        elif symbol.startswith(q_upper):
+            score += 60.0
+        elif q_upper in symbol:
+            score += 35.0
+
+        # 2. Exact phrase match in name or aliases
+        if q_clean.lower() in name.lower() or q_clean.lower() in aliases.lower():
+            score += 50.0
+
+        # 3. Multi-token scoring (e.g. 'mazgaon dock shipyard' -> 'mazgaon', 'dock', 'shipyard')
+        token_matches = sum(
+            1
+            for t in q_tokens
+            if t in searchable_tokens or any(t in tok for tok in searchable_tokens)
+        )
+        if token_matches > 0:
+            token_ratio = token_matches / len(q_tokens)
+            score += token_ratio * 40.0
+            # Extra boost if all query tokens matched
+            if token_matches == len(q_tokens):
+                score += 25.0
+
+        if score > 0:
+            scored_matches.append((score, item))
+
+    # Sort matches by score descending
+    scored_matches.sort(key=lambda x: x[0], reverse=True)
+    candidate_matches = [m[1] for m in scored_matches[:6]]
+
+    # If no directory matches found and query looks like a valid ticker symbol (2-12 chars uppercase alphanumeric)
+    if not candidate_matches and len(q_upper) >= 2 and re.match(r"^[A-Z0-9\-]+$", q_upper):
+        candidate_matches.append(
             {
-                "symbol": q_clean,
-                "name": f"{q_clean} (NSE Listed)",
+                "symbol": q_upper,
+                "name": f"{q_upper} (NSE Listed)",
                 "sector": "Indian Equities",
                 "cap": "Multi Cap",
-            },
+                "aliases": "",
+            }
         )
 
-    # Limit to top 6 search results
-    candidate_matches = matches[:6]
+    if not candidate_matches:
+        return []
 
     # Concurrently fetch live quotes for candidate matches
     tasks = [fetch_symbol_quote(m["symbol"]) for m in candidate_matches]

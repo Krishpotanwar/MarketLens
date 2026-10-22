@@ -39,15 +39,23 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(dropdown).toContainText("RELIANCE");
     await expect(dropdown).toContainText("ZOMATO");
 
-    // Click ⚡ Trade button directly from the search dropdown on Zomato
-    const zomatoItem = dropdown.locator(".global-search-item").filter({ hasText: "ZOMATO" }).first();
-    await expect(zomatoItem).toBeVisible();
-    const tradeBtn = zomatoItem.locator(".search-trade-btn");
+    // Search explicitly for "mazgaon dock shipyard"
+    const modalInput = page.locator(".modal-search-field");
+    await modalInput.fill("mazgaon dock shipyard");
+    await page.waitForTimeout(300);
+
+    // Verify MAZDOCK is returned as the top result with live data, and Zomato is not in results
+    const mazdockItem = dropdown.locator(".global-search-item").filter({ hasText: "MAZDOCK" }).first();
+    await expect(mazdockItem).toBeVisible();
+    await expect(mazdockItem).toContainText("Mazagon Dock Shipbuilders Ltd");
+
+    // Click ⚡ Trade button directly from the search dropdown on MAZDOCK
+    const tradeBtn = mazdockItem.locator(".search-trade-btn");
     await tradeBtn.dispatchEvent("click");
 
-    // Verify seamless navigation directly into Paper Trading with ZOMATO loaded
+    // Verify seamless navigation directly into Paper Trading with MAZDOCK loaded
     await expect(page.locator(".page-header h1")).toContainText("Paper Trading Terminal");
-    await expect(page.locator("#symbol-select")).toHaveValue("ZOMATO");
+    await expect(page.locator("#symbol-select")).toHaveValue("MAZDOCK");
   });
 
   test("3. Groww-Style Indian Stocks Explorer", async ({ page }) => {

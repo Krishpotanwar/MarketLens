@@ -11,9 +11,10 @@ export interface SearchResultItem {
   change: number;
   change_percent: number;
   provider?: string;
+  aliases?: string;
 }
 
-const TRENDING_STOCKS: SearchResultItem[] = [
+const CURATED_EQUITIES: SearchResultItem[] = [
   {
     symbol: "RELIANCE",
     name: "Reliance Industries Ltd",
@@ -22,6 +23,7 @@ const TRENDING_STOCKS: SearchResultItem[] = [
     ltp: 2985.4,
     change: 32.5,
     change_percent: 1.1,
+    aliases: "ril reliance jio retail petrochemicals energy mukesh ambani oil",
   },
   {
     symbol: "ZOMATO",
@@ -31,6 +33,17 @@ const TRENDING_STOCKS: SearchResultItem[] = [
     ltp: 264.8,
     change: 4.8,
     change_percent: 1.85,
+    aliases: "zomato blinkit eternal food delivery q-commerce grocery deepinder",
+  },
+  {
+    symbol: "MAZDOCK",
+    name: "Mazagon Dock Shipbuilders Ltd",
+    sector: "Defence & Shipbuilding",
+    marketCapCategory: "Mid Cap",
+    ltp: 1997.5,
+    change: -54.5,
+    change_percent: -2.66,
+    aliases: "mazgaon dock mazagon dock mazdock shipyard defence shipyard mdl warship submarine",
   },
   {
     symbol: "TCS",
@@ -40,6 +53,7 @@ const TRENDING_STOCKS: SearchResultItem[] = [
     ltp: 4120.0,
     change: -18.4,
     change_percent: -0.44,
+    aliases: "tata consultancy services tcs it services tech consulting outsourcing",
   },
   {
     symbol: "HDFCBANK",
@@ -49,6 +63,77 @@ const TRENDING_STOCKS: SearchResultItem[] = [
     ltp: 1680.5,
     change: 14.2,
     change_percent: 0.85,
+    aliases: "hdfc bank private banking loans mortgages credit cards",
+  },
+  {
+    symbol: "COCHINSHIP",
+    name: "Cochin Shipyard Ltd",
+    sector: "Defence & Shipbuilding",
+    marketCapCategory: "Mid Cap",
+    ltp: 1167.1,
+    change: -12.4,
+    change_percent: -1.05,
+    aliases: "cochin shipyard cochin dock csl shipyard defence aircraft carrier vikrant",
+  },
+  {
+    symbol: "TRENT",
+    name: "Trent Ltd",
+    sector: "Retail & Apparel",
+    marketCapCategory: "Large Cap",
+    ltp: 2822.0,
+    change: 48.0,
+    change_percent: 1.73,
+    aliases: "trent westside zudio star bazaar tata retail fashion apparel",
+  },
+  {
+    symbol: "HAL",
+    name: "Hindustan Aeronautics Ltd",
+    sector: "Aerospace & Defence",
+    marketCapCategory: "Large Cap",
+    ltp: 4854.4,
+    change: 62.0,
+    change_percent: 1.29,
+    aliases: "hindustan aeronautics hal defence aircraft tejas fighter jet helicopters",
+  },
+  {
+    symbol: "BEL",
+    name: "Bharat Electronics Ltd",
+    sector: "Defence Electronics",
+    marketCapCategory: "Large Cap",
+    ltp: 371.2,
+    change: 4.8,
+    change_percent: 1.31,
+    aliases: "bharat electronics bel defence radar avionics defence systems",
+  },
+  {
+    symbol: "IRFC",
+    name: "Indian Railway Finance Corporation",
+    sector: "Railway Finance",
+    marketCapCategory: "Mid Cap",
+    ltp: 76.8,
+    change: 1.45,
+    change_percent: 1.92,
+    aliases: "indian railway finance corporation rail railway finance irfc leasing",
+  },
+  {
+    symbol: "RVNL",
+    name: "Rail Vikas Nigam Ltd",
+    sector: "Railway Infrastructure",
+    marketCapCategory: "Mid Cap",
+    ltp: 188.4,
+    change: 3.8,
+    change_percent: 2.06,
+    aliases: "rail vikas nigam rail railway infrastructure rvnl metro projects",
+  },
+  {
+    symbol: "GRSE",
+    name: "Garden Reach Shipbuilders & Engineers Ltd",
+    sector: "Defence & Shipbuilding",
+    marketCapCategory: "Small Cap",
+    ltp: 2024.1,
+    change: 18.2,
+    change_percent: 0.91,
+    aliases: "garden reach shipbuilders grse shipyard naval warship defence",
   },
   {
     symbol: "DIXON",
@@ -58,6 +143,7 @@ const TRENDING_STOCKS: SearchResultItem[] = [
     ltp: 12450.0,
     change: 280.0,
     change_percent: 2.3,
+    aliases: "dixon technologies ems mobile manufacturing electronics pli smart tv",
   },
   {
     symbol: "SUZLON",
@@ -67,8 +153,70 @@ const TRENDING_STOCKS: SearchResultItem[] = [
     ltp: 68.4,
     change: 2.1,
     change_percent: 3.17,
+    aliases: "suzlon energy wind turbines green energy renewable power",
   },
 ];
+
+const TRENDING_STOCKS: SearchResultItem[] = CURATED_EQUITIES.slice(0, 8);
+
+function searchLocalEquities(query: string): SearchResultItem[] {
+  const qClean = query.trim().toLowerCase();
+  if (!qClean) return TRENDING_STOCKS;
+
+  const qTokens = qClean.split(/[^a-z0-9]+/).filter(Boolean);
+  if (qTokens.length === 0) return TRENDING_STOCKS;
+
+  const scored: Array<{ score: number; item: SearchResultItem }> = [];
+
+  for (const item of CURATED_EQUITIES) {
+    const sym = item.symbol.toLowerCase();
+    const name = item.name.toLowerCase();
+    const sector = item.sector.toLowerCase();
+    const aliases = (item.aliases || "").toLowerCase();
+    const haystack = `${sym} ${name} ${sector} ${aliases}`;
+
+    let score = 0;
+
+    // 1. Exact or partial symbol match
+    if (sym === qClean) {
+      score += 100;
+    } else if (sym.startsWith(qClean)) {
+      score += 60;
+    } else if (sym.includes(qClean)) {
+      score += 35;
+    }
+
+    // 2. Exact phrase match in name or aliases
+    if (name.includes(qClean) || aliases.includes(qClean)) {
+      score += 50;
+    }
+
+    // 3. Multi-token scoring (e.g. 'mazgaon dock shipyard')
+    const matchedTokens = qTokens.filter(
+      (t) =>
+        haystack.includes(t) ||
+        (t === "mazgaon" && (sym === "mazdock" || name.includes("mazagon"))) ||
+        (t === "shipyard" && (sym === "mazdock" || sym === "cochinship" || sym === "grse")) ||
+        (t === "dock" && sym === "mazdock") ||
+        (t === "zudio" && sym === "trent") ||
+        (t === "blinkit" && sym === "zomato")
+    );
+
+    if (matchedTokens.length > 0) {
+      score += (matchedTokens.length / qTokens.length) * 40;
+      if (matchedTokens.length === qTokens.length) {
+        score += 25;
+      }
+    }
+
+    if (score > 0) {
+      scored.push({ score, item });
+    }
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return scored.map((s) => s.item);
+}
 
 interface GlobalSearchBarProps {
   onSelectStock: (symbol: string, action: "trade" | "ai" | "trends" | "stocks") => void;
@@ -97,7 +245,7 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Autofocus input when modal opens
+  // Autofocus modal input when modal opens
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => {
@@ -115,6 +263,10 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
       return;
     }
 
+    // Instant local matching
+    const localMatches = searchLocalEquities(trimmed);
+    setResults(localMatches);
+
     setIsSearching(true);
     try {
       const res = await fetch(`${API_BASE}/api/v1/market/search?q=${encodeURIComponent(trimmed)}`);
@@ -123,25 +275,15 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
         const apiResults = data.results || [];
         if (apiResults.length > 0) {
           setResults(apiResults);
+        } else if (localMatches.length > 0) {
+          setResults(localMatches);
         } else {
-          // Heuristic fallback matching local symbols
-          const filtered = TRENDING_STOCKS.filter(
-            (s) =>
-              s.symbol.toLowerCase().includes(trimmed.toLowerCase()) ||
-              s.name.toLowerCase().includes(trimmed.toLowerCase()) ||
-              s.sector.toLowerCase().includes(trimmed.toLowerCase())
-          );
-          setResults(filtered);
+          setResults([]);
         }
       }
     } catch {
-      // Local fallback on network error
-      const filtered = TRENDING_STOCKS.filter(
-        (s) =>
-          s.symbol.toLowerCase().includes(trimmed.toLowerCase()) ||
-          s.name.toLowerCase().includes(trimmed.toLowerCase())
-      );
-      setResults(filtered);
+      // Retain local matches on network error
+      setResults(localMatches);
     } finally {
       setIsSearching(false);
     }
@@ -154,7 +296,7 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
     }
     const timer = setTimeout(() => {
       performSearch(query);
-    }, 200);
+    }, 180);
     return () => clearTimeout(timer);
   }, [query, performSearch]);
 
@@ -174,7 +316,10 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
       {/* Sleek Header Trigger Bar (Groww & Angel One Style) */}
       <div
         className={`global-search-bar ${isOpen ? "active" : ""}`}
-        onClick={() => setIsOpen(true)}
+        onClick={() => {
+          setIsOpen(true);
+          inputRef.current?.focus();
+        }}
         role="button"
         tabIndex={0}
         onKeyDown={(e) => {
@@ -190,11 +335,14 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
         <input
           ref={inputRef}
           type="text"
-          readOnly
           className="global-search-input"
           placeholder="Search stocks, mutual funds, indices..."
           value={query}
-          tabIndex={-1}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (!isOpen) setIsOpen(true);
+          }}
+          onFocus={() => setIsOpen(true)}
           aria-label="Universal stock search input"
         />
         <kbd className="global-search-shortcut" title="Press Ctrl+K or Cmd+K to search">
@@ -226,7 +374,7 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
                 ref={modalInputRef}
                 type="text"
                 className="modal-search-field"
-                placeholder="Search ANY Indian stock symbol or company (e.g. Zomato, Reliance, Dixon, TCS)..."
+                placeholder="Search ANY Indian stock symbol or company (e.g. Mazagon Dock, Zomato, Reliance, Dixon, HAL)..."
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 aria-label="Universal stock search (like Groww / Angel One)"
@@ -276,7 +424,7 @@ export function GlobalSearchBar({ onSelectStock }: GlobalSearchBarProps) {
               {filteredResults.length === 0 ? (
                 <div className="global-search-empty">
                   No Indian equities or indices found matching "{query}". Try searching by ticker like
-                  RELIANCE, ZOMATO, TATASTEEL, or DIXON.
+                  MAZDOCK, RELIANCE, COCHINSHIP, or TRENT.
                 </div>
               ) : (
                 filteredResults.map((item) => {
