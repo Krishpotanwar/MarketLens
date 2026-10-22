@@ -16,6 +16,16 @@ export interface SearchResultItem {
 
 const CURATED_EQUITIES: SearchResultItem[] = [
   {
+    symbol: "IOC",
+    name: "Indian Oil Corporation Limited",
+    sector: "Energy & Petrochemicals",
+    marketCapCategory: "Large Cap",
+    ltp: 128.8,
+    change: -0.85,
+    change_percent: -0.65,
+    aliases: "iocl indian oil corporation limited ioc petrol diesel refinery energy psu maharatna",
+  },
+  {
     symbol: "STELLANT.BO",
     name: "Stellant Securities (India) Limited",
     sector: "Financial Services",
@@ -201,16 +211,27 @@ function searchLocalEquities(query: string): SearchResultItem[] {
       score += 50;
     }
 
-    // 3. Multi-token scoring (e.g. 'mazgaon dock shipyard')
+    // 3. Multi-token scoring (e.g. 'mazgaon dock shipyard' or 'iocl')
     const matchedTokens = qTokens.filter(
       (t) =>
         haystack.includes(t) ||
+        (t === "iocl" && sym === "ioc") ||
+        (t === "hpcl" && sym === "hindpetro") ||
+        (t === "sbi" && sym === "sbin") ||
+        (t === "hdfc" && sym === "hdfcbank") ||
+        (t === "icici" && sym === "icicibank") ||
+        (t === "kotak" && sym === "kotakbank") ||
+        (t === "axis" && sym === "axisbank") ||
         (t === "mazgaon" && (sym === "mazdock" || name.includes("mazagon"))) ||
         (t === "shipyard" && (sym === "mazdock" || sym === "cochinship" || sym === "grse")) ||
         (t === "dock" && sym === "mazdock") ||
         (t === "zudio" && sym === "trent") ||
         (t === "blinkit" && sym === "zomato")
     );
+
+    if (qClean === "iocl" && sym === "ioc") {
+      score += 150;
+    }
 
     if (matchedTokens.length > 0) {
       score += (matchedTokens.length / qTokens.length) * 40;

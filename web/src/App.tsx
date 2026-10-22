@@ -126,6 +126,7 @@ export default function App() {
         {currentTab === "trends" && (
           <TrendAnalysisPage
             onSelectForTrade={handleSelectForTrade}
+            onSelectForAI={handleSelectForAI}
             initialSymbol={trendSelectedSymbol}
           />
         )}

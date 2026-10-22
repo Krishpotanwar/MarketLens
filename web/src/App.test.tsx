@@ -105,6 +105,20 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("Test Signal in Paper Trading Terminal");
   });
 
+  it("renders real live exchange graph and resolves IOCL to Indian Oil Corporation Limited", () => {
+    const markup = renderToStaticMarkup(
+      <TrendAnalysisPage onSelectForTrade={() => {}} initialSymbol="IOCL" />
+    );
+    expect(markup).toContain("IOC");
+    expect(markup).toContain("Indian Oil Corporation Limited");
+    expect(markup).toContain("Live Exchange Price Action");
+    expect(markup).toContain("1D");
+    expect(markup).toContain("5D");
+    expect(markup).toContain("1M");
+    expect(markup).toContain("1Y");
+    expect(markup).toContain("Prev Close");
+  });
+
   it("renders paper trading terminal with virtual capital and statutory tax ledger", () => {
     const markup = renderToStaticMarkup(<PaperTradingPage initialSymbol="RELIANCE" />);
     expect(markup).toContain("Indian Stock Paper Trading Terminal");

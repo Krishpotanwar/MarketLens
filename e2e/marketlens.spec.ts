@@ -59,6 +59,42 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(page.locator("#symbol-select")).toHaveValue("MAZDOCK");
   });
 
+  test("2B. Search for IOCL and Plot Real Live Exchange Chart", async ({ page }) => {
+    const searchInput = page.locator(".global-search-input");
+    await searchInput.click();
+    const dropdown = page.locator(".global-search-dropdown");
+    await expect(dropdown).toBeVisible();
+
+    // Search explicitly for "IOCL"
+    const modalInput = page.locator(".modal-search-field");
+    await modalInput.fill("IOCL");
+    await page.waitForTimeout(350);
+
+    // Verify IOC (Indian Oil Corporation Limited) is returned with live price
+    const iocItem = dropdown.locator(".global-search-item").filter({ hasText: "IOC" }).first();
+    await expect(iocItem).toBeVisible();
+    await expect(iocItem).toContainText("Indian Oil Corporation Limited");
+
+    // Click 📈 Trends button directly on IOC
+    const trendsBtn = iocItem.locator(".search-trend-btn");
+    await trendsBtn.dispatchEvent("click");
+
+    // Verify navigation into Trends & Signals with IOC loaded
+    await expect(page.locator(".page-header h1")).toContainText("Indian Stock Market Trends & Signals");
+    await expect(page.locator(".symbol-row h2")).toContainText("IOC");
+    await expect(page.locator(".stock-subtitle")).toContainText("Indian Oil Corporation Limited");
+
+    // Verify live exchange chart and timeframes are visible
+    await expect(page.locator(".trend-svg")).toBeVisible();
+    const tfBtns = page.locator(".chart-timeframe-selector .tf-btn");
+    await expect(tfBtns).toContainText(["1D", "5D", "1M", "1Y"]);
+
+    // Click 5D timeframe
+    await page.locator('.tf-btn:has-text("5D")').click();
+    await page.waitForTimeout(300);
+    await expect(page.locator('.tf-btn:has-text("5D")')).toHaveClass(/active/);
+  });
+
   test("3. Groww-Style Indian Stocks Explorer", async ({ page }) => {
     await page.locator('.nav-link:has-text("Stocks")').click();
     await expect(page.locator(".page-header h1")).toContainText("Indian Stocks & Market Explorer");
