@@ -1217,6 +1217,48 @@ h1 {
   color: var(--text-main);
 }
 
+.chart-skeleton-wave {
+  animation: pulseOpacity 1.6s ease-in-out infinite;
+}
+
+@keyframes pulseOpacity {
+  0%, 100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+.chart-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.65rem 1rem;
+  background: rgba(244, 63, 94, 0.12);
+  border: 1px solid rgba(244, 63, 94, 0.35);
+  border-radius: 6px;
+  color: #f43f5e;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+}
+
+.chart-retry-btn {
+  background: #f43f5e;
+  color: #fff;
+  border: none;
+  padding: 0.3rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.chart-retry-btn:hover {
+  opacity: 0.9;
+}
+
 /* SVG Chart */
 .chart-wrapper {
   background: var(--bg-card-sub);

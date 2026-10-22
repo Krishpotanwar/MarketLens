@@ -222,4 +222,13 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("Strategy Rules &amp; Prompt Sandbox");
     expect(markup).toContain("Run AI Analysis on");
   });
+
+  it("filters screener watchlist directly when searching in Trends page", () => {
+    const markup = renderToStaticMarkup(
+      <TrendAnalysisPage onSelectForTrade={() => {}} initialSymbol="RELIANCE" initialScreenerSearch="TCS" />
+    );
+    expect(markup).toContain("TCS");
+    expect(markup).not.toContain("INFY");
+    expect(markup).toContain("chart-skeleton-wave");
+  });
 });

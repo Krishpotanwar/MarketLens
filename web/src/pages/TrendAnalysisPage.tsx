@@ -8,6 +8,7 @@ interface TrendAnalysisPageProps {
   onSelectForTrade: (symbol: string) => void;
   onSelectForAI?: (symbol: string) => void;
   initialSymbol?: string;
+  initialScreenerSearch?: string;
 }
 
 interface ChartBar {
@@ -35,6 +36,7 @@ export function TrendAnalysisPage({
   onSelectForTrade,
   onSelectForAI,
   initialSymbol,
+  initialScreenerSearch = "",
 }: TrendAnalysisPageProps) {
   const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
   const [selectedSymbol, setSelectedSymbol] = useState<string>(
@@ -50,10 +52,11 @@ export function TrendAnalysisPage({
   const [chartBars, setChartBars] = useState<ChartBar[]>([]);
   const [chartMeta, setChartMeta] = useState<ChartMeta | null>(null);
   const [isChartLoading, setIsChartLoading] = useState(false);
+  const [chartError, setChartError] = useState(false);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   // Search input in screener sidebar for ANY Indian stock
-  const [screenerSearch, setScreenerSearch] = useState("");
+  const [screenerSearch, setScreenerSearch] = useState(initialScreenerSearch);
   const [searchResults, setSearchResults] = useState<
     Array<{ symbol: string; name: string; sector: string; ltp: number }>
   >([]);
@@ -93,46 +96,79 @@ export function TrendAnalysisPage({
     );
     if (found) return found;
 
+    if (normalizedSymbol === "IOC") {
+      return {
+        symbol: "IOC",
+        name: "Indian Oil Corporation Limited",
+        sector: "Energy & Petrochemicals",
+        marketCapCategory: "Large Cap" as const,
+        week52High: 188.96,
+        week52Low: 124.92,
+        ltp: 128.8,
+        change: -0.85,
+        changePercent: -0.65,
+        open: 129.0,
+        high: 129.02,
+        low: 127.75,
+        vwap: 128.4,
+        volume: 13700000,
+        volumeRatio: 1.15,
+        rsi14: 42.6,
+        sma20: 131.5,
+        sma50: 138.2,
+        trend5m: "BEARISH" as const,
+        trend15m: "BEARISH" as const,
+        trend1h: "NEUTRAL" as const,
+        trend1d: "BEARISH" as const,
+        predictedProbabilityUp: 0.44,
+        expectedMovePercent: 1.2,
+        brierCalibration: 0.175,
+        signalStrength: "NEUTRAL" as const,
+        causalFeatures: {
+          momentum: 22,
+          volumeSurge: 24,
+          vwapDeviation: 18,
+          sectorBreadth: 20,
+        },
+        priceHistory: [129.5, 129.2, 128.8, 128.8],
+      };
+    }
+
+    // Neutral profile for external assets preventing IOC metric leakage
     return {
       symbol: normalizedSymbol,
-      name:
-        normalizedSymbol === "IOC"
-          ? "Indian Oil Corporation Limited"
-          : `${normalizedSymbol} (NSE Listed)`,
-      sector:
-        normalizedSymbol === "IOC"
-          ? "Energy & Petrochemicals"
-          : "Indian Equities",
-      marketCapCategory: "Large Cap" as const,
-      week52High: 188.96,
-      week52Low: 124.92,
-      ltp: 128.8,
-      change: -0.85,
-      changePercent: -0.65,
-      open: 129.0,
-      high: 129.02,
-      low: 127.75,
-      vwap: 128.4,
-      volume: 13700000,
-      volumeRatio: 1.15,
-      rsi14: 42.6,
-      sma20: 131.5,
-      sma50: 138.2,
-      trend5m: "BEARISH" as const,
-      trend15m: "BEARISH" as const,
+      name: `${normalizedSymbol} (NSE Listed)`,
+      sector: "Indian Equities",
+      marketCapCategory: "Mid Cap" as const,
+      week52High: 0,
+      week52Low: 0,
+      ltp: 0,
+      change: 0,
+      changePercent: 0,
+      open: 0,
+      high: 0,
+      low: 0,
+      vwap: 0,
+      volume: 0,
+      volumeRatio: 1.0,
+      rsi14: 50.0,
+      sma20: 0,
+      sma50: 0,
+      trend5m: "NEUTRAL" as const,
+      trend15m: "NEUTRAL" as const,
       trend1h: "NEUTRAL" as const,
-      trend1d: "BEARISH" as const,
-      predictedProbabilityUp: 0.44,
-      expectedMovePercent: 1.2,
-      brierCalibration: 0.175,
+      trend1d: "NEUTRAL" as const,
+      predictedProbabilityUp: 0.5,
+      expectedMovePercent: 1.0,
+      brierCalibration: 0.18,
       signalStrength: "NEUTRAL" as const,
       causalFeatures: {
-        momentum: 22,
-        volumeSurge: 24,
-        vwapDeviation: 18,
-        sectorBreadth: 20,
+        momentum: 25,
+        volumeSurge: 25,
+        vwapDeviation: 25,
+        sectorBreadth: 25,
       },
-      priceHistory: [129.5, 129.2, 128.8, 128.8],
+      priceHistory: [0],
     };
   }, [stocks, normalizedSymbol, selectedSymbol]);
 
@@ -202,6 +238,8 @@ export function TrendAnalysisPage({
       };
       const { interval, range } = paramsMap[tf];
 
+      setIsChartLoading(true);
+      setChartError(false);
       try {
         const [chartRes, quoteRes] = await Promise.all([
           fetch(
@@ -315,7 +353,9 @@ export function TrendAnalysisPage({
           }
         }
       } catch {
-        // Fallback gracefully
+        if (reqId === activeReqIdRef.current) {
+          setChartError(true);
+        }
       } finally {
         if (reqId === activeReqIdRef.current) {
           setIsChartLoading(false);
@@ -383,9 +423,21 @@ export function TrendAnalysisPage({
   ];
 
   const filteredStocks = useMemo(() => {
-    if (sectorFilter === "ALL") return stocks;
-    return stocks.filter((s) => s.sector.toLowerCase().includes(sectorFilter.toLowerCase()));
-  }, [stocks, sectorFilter]);
+    let list = stocks;
+    if (sectorFilter !== "ALL") {
+      list = list.filter((s) => s.sector.toLowerCase().includes(sectorFilter.toLowerCase()));
+    }
+    const q = screenerSearch.trim().toLowerCase();
+    if (q) {
+      list = list.filter(
+        (s) =>
+          s.symbol.toLowerCase().includes(q) ||
+          s.name.toLowerCase().includes(q) ||
+          (s.aliases && s.aliases.toLowerCase().includes(q))
+      );
+    }
+    return list;
+  }, [stocks, sectorFilter, screenerSearch]);
 
   const advances = stocks.filter((s) => s.change >= 0).length;
   const declines = stocks.filter((s) => s.change < 0).length;
@@ -724,6 +776,20 @@ export function TrendAnalysisPage({
               </div>
             )}
 
+            {/* Chart Error Banner */}
+            {chartError && (
+              <div className="chart-error-banner" role="alert">
+                <span>Failed to load live exchange candles for {activeStock.symbol}.</span>
+                <button
+                  type="button"
+                  className="chart-retry-btn"
+                  onClick={() => fetchRealLiveChart(normalizedSymbol, timeframe)}
+                >
+                  ↻ Retry
+                </button>
+              </div>
+            )}
+
             {/* Live SVG Price & Volume Chart */}
             <svg
               className="trend-svg"
@@ -748,6 +814,30 @@ export function TrendAnalysisPage({
                   <stop offset="100%" stopColor="#ef4444" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
+
+              {/* Waveform Skeleton Loader when Chart Bars is Empty */}
+              {chartBars.length === 0 && (
+                <g className="chart-skeleton-wave">
+                  <path
+                    d="M 15 110 Q 90 70, 175 115 T 335 100 T 495 125 T 635 95"
+                    fill="none"
+                    stroke="#1c2638"
+                    strokeWidth="2.5"
+                    strokeDasharray="6 6"
+                    className="skeleton-wave-line"
+                  />
+                  <text
+                    x="325"
+                    y="115"
+                    textAnchor="middle"
+                    fill="#64748b"
+                    fontSize="12"
+                    fontFamily="sans-serif"
+                  >
+                    Loading live exchange candles from BSE/NSE...
+                  </text>
+                </g>
+              )}
 
               {/* Previous Close Horizontal Baseline */}
               {chartDataSummary.prevCloseVal > 0 && (
