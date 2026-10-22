@@ -258,4 +258,20 @@ test.describe("MarketLens End-to-End Suite", () => {
     // Trade fills and positions update
     await expect(page.locator('table[aria-label="Open Positions"] tbody tr').first()).toBeVisible();
   });
+
+  test("6B. Paper Trading preserves external stock and does not revert to NIFTY 50", async ({ page }) => {
+    await page.goto("/");
+    // Search for MAZDOCK in Global Search and click Trade
+    const searchInput = page.locator(".global-search-input");
+    await searchInput.click();
+    await page.locator(".modal-search-field").fill("MAZDOCK");
+    await page.waitForTimeout(400);
+    await page.locator(".search-trade-btn").first().click();
+
+    // Verify Paper Trading order ticket has MAZDOCK selected, NOT NIFTY 50
+    await expect(page.locator("#symbol-select")).toHaveValue("MAZDOCK");
+    await expect(page.locator("#symbol-select option:checked")).toContainText("MAZDOCK");
+    const turnover = page.locator(".tax-slip-block");
+    await expect(turnover).not.toContainText("248,542");
+  });
 });

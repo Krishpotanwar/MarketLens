@@ -105,6 +105,50 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
       setSandboxText(getInitialConcallText(initialSymbol));
       const news = getNewsForStock(initialSymbol);
       setSelectedNewsId(news.length > 0 ? news[0].id : "");
+
+      setStocks((prev) => {
+        if (!prev.some((s) => s.symbol === initialSymbol)) {
+          return [
+            {
+              symbol: initialSymbol,
+              name: `${initialSymbol} Listed Equity`,
+              sector: "Indian Equities",
+              marketCapCategory: "Mid Cap",
+              week52High: 1000,
+              week52Low: 500,
+              ltp: 500,
+              change: 0,
+              changePercent: 0,
+              open: 500,
+              high: 510,
+              low: 490,
+              vwap: 500,
+              volume: 1000000,
+              volumeRatio: 1.0,
+              rsi14: 50,
+              sma20: 500,
+              sma50: 500,
+              trend5m: "NEUTRAL",
+              trend15m: "NEUTRAL",
+              trend1h: "NEUTRAL",
+              trend1d: "NEUTRAL",
+              predictedProbabilityUp: 0.5,
+              expectedMovePercent: 1.0,
+              brierCalibration: 0.18,
+              signalStrength: "NEUTRAL",
+              causalFeatures: {
+                momentum: 25,
+                volumeSurge: 25,
+                vwapDeviation: 25,
+                sectorBreadth: 25,
+              },
+              priceHistory: [500],
+            },
+            ...prev,
+          ];
+        }
+        return prev;
+      });
     }
   }, [initialSymbol]);
 
