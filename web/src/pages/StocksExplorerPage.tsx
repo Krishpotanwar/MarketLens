@@ -563,12 +563,19 @@ export function StocksExplorerPage({
               </tr>
             </thead>
             <tbody>
-              {visibleStocks.length === 0 ? (
+              {isLoadingCatalog && searchQuery.trim() ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <tr key={`loading-${i}`} className="table-row-skeleton">
+                    <td colSpan={8} className="skeleton-cell">
+                      <div className="skeleton-line-thick" style={{ width: "25%", height: "14px", marginBottom: "6px" }} />
+                      <div className="skeleton-line-thin" style={{ width: "50%", height: "11px" }} />
+                    </td>
+                  </tr>
+                ))
+              ) : visibleStocks.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="empty-table-cell">
-                    {isLoadingCatalog
-                      ? "Fetching Indian equities directory..."
-                      : `No Indian stocks found matching "${searchQuery}".`}
+                    {`No Indian stocks found matching "${searchQuery}".`}
                   </td>
                 </tr>
               ) : (

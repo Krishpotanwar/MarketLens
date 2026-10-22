@@ -1952,6 +1952,11 @@ h1 {
   gap: 1.5rem;
 }
 
+.table-row-skeleton .skeleton-cell {
+  padding: 1rem 1.25rem;
+  background: var(--bg-card);
+}
+
 .table-wrapper {
   overflow-x: auto;
   border: 1px solid var(--border-app);

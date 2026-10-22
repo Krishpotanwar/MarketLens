@@ -965,8 +965,15 @@ async def get_all_indian_stocks_paginated(
     end_idx = start_idx + limit
     page_items = filtered[start_idx:end_idx]
 
-    # Fetch live quotes for visible page items (top 20 concurrent for responsiveness)
-    quote_tasks = [fetch_symbol_quote(item["symbol"]) for item in page_items[:20]]
+    # Fetch live quotes for visible page items (top 8 for fast search, 20 for full browse)
+    quote_limit = 8 if q_clean else 20
+    async def _safe_fetch_quote(sym: str) -> dict[str, Any] | None:
+        try:
+            return await asyncio.wait_for(fetch_symbol_quote(sym), timeout=1.8)
+        except Exception:
+            return None
+
+    quote_tasks = [_safe_fetch_quote(item["symbol"]) for item in page_items[:quote_limit]]
     quotes = await asyncio.gather(*quote_tasks, return_exceptions=True)
 
     hydrated_items = []

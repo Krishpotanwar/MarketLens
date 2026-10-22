@@ -76,7 +76,7 @@ function getInitialConcallText(symbol: string): string {
 }
 
 export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrategyLabPageProps) {
-  const [stocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
+  const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
   const [selectedSymbol, setSelectedSymbol] = useState<string>(initialSymbol || "RELIANCE");
   const [selectedProvider, setSelectedProvider] = useState<AIEngineProvider>("OFFLINE_HEURISTIC");
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyPresetId>("TREND_CROSSOVER");
