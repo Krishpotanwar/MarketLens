@@ -3,6 +3,7 @@ import { GlobalSearchBar } from "./GlobalSearchBar";
 export type PageTab =
   | "stocks"
   | "funds"
+  | "ipos"
   | "ai-strategy"
   | "trends"
   | "paper"
@@ -70,6 +71,14 @@ export function Header({
           </button>
           <button
             type="button"
+            className={`nav-link ${currentTab === "ipos" ? "active" : ""}`}
+            onClick={() => onSelectTab("ipos")}
+            aria-current={currentTab === "ipos" ? "page" : undefined}
+          >
+            New IPOs
+          </button>
+          <button
+            type="button"
             className={`nav-link ${currentTab === "ai-strategy" ? "active" : ""}`}
             onClick={() => onSelectTab("ai-strategy")}
             aria-current={currentTab === "ai-strategy" ? "page" : undefined}
@@ -130,7 +139,7 @@ export function Header({
             {darkMode ? "Light Desk" : "Dark Terminal"}
           </button>
         )}
-        {["stocks", "funds", "ai-strategy", "trends", "paper"].includes(currentTab) ? (
+        {["stocks", "funds", "ipos", "ai-strategy", "trends", "paper"].includes(currentTab) ? (
           <p className="data-badge live" role="status">
             <span aria-hidden="true" />
             Live Market Telemetry

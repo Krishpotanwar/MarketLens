@@ -8,6 +8,7 @@ import { TrendAnalysisPage } from "./pages/TrendAnalysisPage";
 import { PaperTradingPage } from "./pages/PaperTradingPage";
 import { StocksExplorerPage } from "./pages/StocksExplorerPage";
 import { MutualFundsPage } from "./pages/MutualFundsPage";
+import { IPODiscoveryPage } from "./pages/IPODiscoveryPage";
 import { AIStrategyLabPage } from "./pages/AIStrategyLabPage";
 import { DotBackground } from "./components/DotBackground";
 import type { RunMetadataResponse } from "./types/api";
@@ -62,6 +63,11 @@ export default function App() {
     setCurrentTab("paper");
   }
 
+  function handleSelectForAI(symbol: string) {
+    setAiSelectedSymbol(symbol);
+    setCurrentTab("ai-strategy");
+  }
+
   function handleExecuteAITrade(symbol: string) {
     setTradeSelectedSymbol(symbol);
     setCurrentTab("paper");
@@ -105,6 +111,12 @@ export default function App() {
           />
         )}
         {currentTab === "funds" && <MutualFundsPage />}
+        {currentTab === "ipos" && (
+          <IPODiscoveryPage
+            onSelectForTrade={handleSelectForTrade}
+            onSelectForAI={handleSelectForAI}
+          />
+        )}
         {currentTab === "ai-strategy" && (
           <AIStrategyLabPage
             onExecuteAITrade={handleExecuteAITrade}

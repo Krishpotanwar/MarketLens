@@ -149,6 +149,24 @@ class ApiEndpointsTests(unittest.TestCase):
         self.assertIn("results", data)
         self.assertGreater(data["count"], 0)
 
+    def test_get_all_indian_stocks_paginated(self) -> None:
+        resp = self.client.get("/api/v1/market/stocks/all?page=1&limit=10")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("total", data)
+        self.assertGreaterEqual(data["total"], 2000)
+        self.assertEqual(len(data["stocks"]), 10)
+        self.assertIn("symbol", data["stocks"][0])
+
+    def test_get_live_indian_ipos(self) -> None:
+        resp = self.client.get("/api/v1/market/ipos")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertIn("active", data)
+        self.assertIn("upcoming", data)
+        self.assertIn("listed", data)
+        self.assertGreater(data["counts"]["total"], 0)
+
     def test_get_live_mutual_funds(self) -> None:
         resp = self.client.get("/api/v1/market/funds")
         self.assertEqual(resp.status_code, 200)

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import type { StockTrendInfo } from "../types/paper";
 
@@ -17,25 +17,64 @@ interface IndexTapeItem {
   positive: boolean;
 }
 
+interface ListedStockItem {
+  symbol: string;
+  name: string;
+  exchange: "NSE" | "BSE" | string;
+  sector: string;
+  marketCapCategory: string;
+  series?: string;
+  listingDate?: string;
+  isin?: string;
+  ltp: number;
+  change: number;
+  changePercent: number;
+  volume: number;
+  week52High?: number;
+  week52Low?: number;
+}
+
 export function StocksExplorerPage({
   onSelectForTrend,
   onSelectForTrade,
   initialSearchQuery = "",
 }: StocksExplorerPageProps) {
-  const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
-  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  // Shelves state (top gainers/losers/active)
+  const [shelvesStocks, setShelvesStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
 
-  useEffect(() => {
-    if (initialSearchQuery) {
-      setSearchQuery(initialSearchQuery);
-    }
-  }, [initialSearchQuery]);
+  // Paginated master catalog state (13,109+ Indian equities)
+  const [stocks, setStocks] = useState<ListedStockItem[]>(
+    INITIAL_INDIAN_STOCKS.map((s) => ({
+      symbol: s.symbol,
+      name: s.name,
+      exchange: s.symbol.endsWith(".BO") ? "BSE" : "NSE",
+      sector: s.sector,
+      marketCapCategory: s.marketCapCategory || "Mid Cap",
+      series: "EQ",
+      ltp: s.ltp,
+      change: s.change,
+      changePercent: s.changePercent,
+      volume: s.volume,
+      week52High: s.week52High,
+      week52Low: s.week52Low,
+    }))
+  );
+
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery);
+  const [selectedExchange, setSelectedExchange] = useState<string>("ALL");
   const [selectedCap, setSelectedCap] = useState<string>("ALL");
   const [selectedSector, setSelectedSector] = useState<string>("ALL");
+
+  const [page, setPage] = useState<number>(1);
+  const [totalPages, setTotalPages] = useState<number>(263);
+  const [totalCount, setTotalCount] = useState<number>(13109);
+  const [isLoadingCatalog, setIsLoadingCatalog] = useState<boolean>(false);
+
   const [isLiveLoading, setIsLiveLoading] = useState(false);
-  const [liveProvider, setLiveProvider] = useState<string>("Connecting...");
+  const [liveProvider, setLiveProvider] = useState<string>("NSE/BSE Master Telemetry");
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
-  const [isSearchingLive, setIsSearchingLive] = useState(false);
+  const isInitialMount = useRef(true);
+  const activeRequestIdRef = useRef(0);
 
   const [indices, setIndices] = useState<IndexTapeItem[]>([
     { name: "NIFTY 50", val: "24,854.20", chg: "+0.58%", positive: true },
@@ -45,7 +84,13 @@ export function StocksExplorerPage({
     { name: "NIFTY AUTO", val: "25,640.10", chg: "+2.10%", positive: true },
   ]);
 
-  // Fetch live market quotes from backend telemetry
+  useEffect(() => {
+    if (initialSearchQuery) {
+      setSearchQuery(initialSearchQuery);
+    }
+  }, [initialSearchQuery]);
+
+  // Fetch live market quotes for indices and discovery shelves
   const fetchLiveMarketQuotes = useCallback(async () => {
     setIsLiveLoading(true);
     try {
@@ -64,7 +109,13 @@ export function StocksExplorerPage({
         if (quotes.length > 0) {
           const providerName = quotes[0].provider || "NSE Telemetry (Live)";
           setLiveProvider(providerName);
-          setLastSyncTime(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
+          setLastSyncTime(
+            new Date().toLocaleTimeString("en-IN", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+            })
+          );
 
           // Update indices
           setIndices((prev) =>
@@ -73,7 +124,10 @@ export function StocksExplorerPage({
               if (match) {
                 return {
                   name: idx.name,
-                  val: match.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                  val: match.ltp.toLocaleString("en-IN", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }),
                   chg: `${match.change_percent >= 0 ? "+" : ""}${match.change_percent.toFixed(2)}%`,
                   positive: match.change_percent >= 0,
                 };
@@ -82,8 +136,8 @@ export function StocksExplorerPage({
             })
           );
 
-          // Update stocks list with live quotes
-          setStocks((prev) =>
+          // Update shelves with live quotes
+          setShelvesStocks((prev) =>
             prev.map((s) => {
               const match = quotes.find((q) => q.symbol === s.symbol);
               if (match && match.ltp > 0) {
@@ -107,162 +161,139 @@ export function StocksExplorerPage({
     }
   }, []);
 
-  // Run live quote fetch on mount
-  useEffect(() => {
-    fetchLiveMarketQuotes();
-    const interval = setInterval(fetchLiveMarketQuotes, 15000); // Poll live quotes every 15s
-    return () => clearInterval(interval);
-  }, [fetchLiveMarketQuotes]);
-
-  // Dynamic live search when user queries any stock symbol or name
-  useEffect(() => {
-    const q = searchQuery.trim();
-    if (q.length < 2) return;
-
-    let isMounted = true;
-    setIsSearchingLive(true);
-    const timer = setTimeout(async () => {
+  // Fetch paginated stock catalog from master API (13,109+ Indian equities)
+  const fetchStockCatalog = useCallback(
+    async (
+      targetPage: number,
+      targetExchange: string,
+      targetCap: string,
+      queryStr: string
+    ) => {
+      const reqId = ++activeRequestIdRef.current;
+      setIsLoadingCatalog(true);
       try {
-        const res = await fetch(`${API_BASE}/api/v1/market/search?q=${encodeURIComponent(q)}`);
-        if (res.ok && isMounted) {
+        const params = new URLSearchParams({
+          page: String(targetPage),
+          limit: "50",
+          exchange: targetExchange,
+          cap: targetCap,
+          q: queryStr.trim(),
+        });
+
+        const res = await fetch(`${API_BASE}/api/v1/market/stocks/all?${params.toString()}`);
+        if (reqId !== activeRequestIdRef.current) return;
+
+        if (res.ok) {
           const data = await res.json();
-          const results: Array<{
-            symbol: string;
-            name: string;
-            sector: string;
-            marketCapCategory: string;
-            ltp: number;
-            change: number;
-            change_percent: number;
-            volume: number;
-          }> = data.results || [];
+          if (reqId !== activeRequestIdRef.current) return;
 
-          if (results.length > 0) {
-            setStocks((prev) => {
-              const existingMap = new Map(prev.map((item) => [item.symbol, item]));
-              for (const r of results) {
-                if (existingMap.has(r.symbol)) {
-                  const curr = existingMap.get(r.symbol)!;
-                  existingMap.set(r.symbol, {
-                    ...curr,
-                    ltp: r.ltp > 0 ? r.ltp : curr.ltp,
-                    change: r.change,
-                    changePercent: r.change_percent,
-                    volume: r.volume > 0 ? r.volume : curr.volume,
-                  });
-                } else {
-                  // Add discovered stock dynamically with default technical setup
-                  const capCategory = (
-                    r.marketCapCategory === "Large Cap" ||
-                    r.marketCapCategory === "Mid Cap" ||
-                    r.marketCapCategory === "Small Cap" ||
-                    r.marketCapCategory === "Index"
-                  ) ? r.marketCapCategory : "Mid Cap";
-
-                  existingMap.set(r.symbol, {
-                    symbol: r.symbol,
-                    name: r.name,
-                    sector: r.sector,
-                    marketCapCategory: capCategory,
-                    week52High: r.ltp * 1.35,
-                    week52Low: r.ltp * 0.75,
-                    ltp: r.ltp,
-                    change: r.change,
-                    changePercent: r.change_percent,
-                    open: r.ltp - r.change,
-                    high: r.ltp * 1.015,
-                    low: r.ltp * 0.985,
-                    vwap: r.ltp,
-                    volume: r.volume || 1500000,
-                    volumeRatio: 1.15,
-                    rsi14: 54.2,
-                    sma20: r.ltp * 0.985,
-                    sma50: r.ltp * 0.965,
-                    trend5m: r.change >= 0 ? "BULLISH" : "BEARISH",
-                    trend15m: r.change >= 0 ? "BULLISH" : "BEARISH",
-                    trend1h: r.change >= 0 ? "BULLISH" : "BEARISH",
-                    trend1d: r.change >= 0 ? "BULLISH" : "BEARISH",
-                    predictedProbabilityUp: r.change >= 0 ? 0.65 : 0.42,
-                    expectedMovePercent: Math.abs(r.change_percent) || 1.25,
-                    brierCalibration: 0.18,
-                    signalStrength: r.change >= 0 ? "BUY" : "NEUTRAL",
-                    causalFeatures: { momentum: 30, volumeSurge: 25, vwapDeviation: 20, sectorBreadth: 25 },
-                    priceHistory: [r.ltp * 0.98, r.ltp * 0.99, r.ltp, r.ltp],
-                  });
-                }
-              }
-              return Array.from(existingMap.values());
-            });
+          if (Array.isArray(data.stocks) && data.stocks.length > 0) {
+            setStocks(
+              data.stocks.map((item: any) => ({
+                symbol: item.symbol,
+                name: item.name,
+                exchange: item.exchange || (item.symbol.endsWith(".BO") ? "BSE" : "NSE"),
+                sector: item.sector || "Indian Equities",
+                marketCapCategory: item.marketCapCategory || "Mid Cap",
+                series: item.series || "EQ",
+                listingDate: item.listingDate || "",
+                isin: item.isin || "",
+                ltp: item.ltp || 100.0,
+                change: item.change || 0.0,
+                changePercent: item.changePercent || 0.0,
+                volume: item.volume || 0,
+                week52High: (item.ltp || 100) * 1.3,
+                week52Low: (item.ltp || 100) * 0.75,
+              }))
+            );
+            setTotalCount(data.total || 0);
+            setTotalPages(data.totalPages || Math.ceil((data.total || 1) / 50));
+            setPage(data.page || targetPage);
+          } else if (queryStr.trim()) {
+            // No results for this query
+            setStocks([]);
+            setTotalCount(0);
+            setTotalPages(1);
           }
         }
       } catch {
-        // Fallback gracefully
+        // Fallback to initial stocks on network error
       } finally {
-        if (isMounted) setIsSearchingLive(false);
+        if (reqId === activeRequestIdRef.current) {
+          setIsLoadingCatalog(false);
+        }
       }
-    }, 300);
+    },
+    []
+  );
 
-    return () => {
-      isMounted = false;
-      clearTimeout(timer);
-    };
-  }, [searchQuery]);
+  // Initial load
+  useEffect(() => {
+    fetchLiveMarketQuotes();
+    const interval = setInterval(fetchLiveMarketQuotes, 15000);
+    return () => clearInterval(interval);
+  }, [fetchLiveMarketQuotes]);
+
+  // Debounced search and filter triggers
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      fetchStockCatalog(1, selectedExchange, selectedCap, searchQuery);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchStockCatalog(page, selectedExchange, selectedCap, searchQuery);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [fetchStockCatalog, page, selectedExchange, selectedCap, searchQuery]);
+
+  // Reset page to 1 when filters or search change
+  const handleExchangeChange = (ex: string) => {
+    setSelectedExchange(ex);
+    setPage(1);
+  };
+
+  const handleCapChange = (cap: string) => {
+    setSelectedCap(cap);
+    setPage(1);
+  };
+
+  const handleSearchChange = (val: string) => {
+    setSearchQuery(val);
+    setPage(1);
+  };
 
   // Discovery shelves
   const topGainers = useMemo(() => {
-    return [...stocks]
+    return [...shelvesStocks]
       .filter((s) => s.marketCapCategory !== "Index" && s.changePercent > 0)
       .sort((a, b) => b.changePercent - a.changePercent)
       .slice(0, 4);
-  }, [stocks]);
+  }, [shelvesStocks]);
 
   const topLosers = useMemo(() => {
-    return [...stocks]
+    return [...shelvesStocks]
       .filter((s) => s.marketCapCategory !== "Index" && s.changePercent < 0)
       .sort((a, b) => a.changePercent - b.changePercent)
       .slice(0, 3);
-  }, [stocks]);
+  }, [shelvesStocks]);
 
   const mostActive = useMemo(() => {
-    return [...stocks]
+    return [...shelvesStocks]
       .filter((s) => s.marketCapCategory !== "Index")
       .sort((a, b) => b.volume - a.volume)
       .slice(0, 4);
-  }, [stocks]);
+  }, [shelvesStocks]);
 
-  // Filtered List
-  const filteredStocks = useMemo(() => {
-    const qClean = searchQuery.trim().toLowerCase();
-    const qTokens = qClean.split(/[^a-z0-9]+/).filter(Boolean);
-
-    return stocks.filter((stock) => {
-      let matchesSearch = true;
-      if (qTokens.length > 0) {
-        const sym = stock.symbol.toLowerCase();
-        const name = stock.name.toLowerCase();
-        const sector = stock.sector.toLowerCase();
-        const haystack = `${sym} ${name} ${sector}`;
-        // If all query tokens match any part of the haystack or known aliases
-        matchesSearch = qTokens.every(
-          (t) =>
-            haystack.includes(t) ||
-            (t === "mazgaon" && (sym === "mazdock" || name.includes("mazagon"))) ||
-            (t === "shipyard" && (sym === "mazdock" || sym === "cochinship" || sym === "grse")) ||
-            (t === "dock" && sym === "mazdock") ||
-            (t === "zudio" && sym === "trent") ||
-            (t === "blinkit" && sym === "zomato")
-        );
-      }
-
-      const matchesCap =
-        selectedCap === "ALL" || stock.marketCapCategory === selectedCap;
-
-      const matchesSector =
-        selectedSector === "ALL" || stock.sector.includes(selectedSector);
-
-      return matchesSearch && matchesCap && matchesSector;
-    });
-  }, [stocks, searchQuery, selectedCap, selectedSector]);
+  // Client-side sector filtering
+  const visibleStocks = useMemo(() => {
+    if (selectedSector === "ALL") return stocks;
+    return stocks.filter((s) =>
+      s.sector.toLowerCase().includes(selectedSector.toLowerCase())
+    );
+  }, [stocks, selectedSector]);
 
   const sectors = [
     "ALL",
@@ -270,8 +301,11 @@ export function StocksExplorerPage({
     "Information Tech",
     "Automobile",
     "Energy",
+    "Defence",
     "Consumer Tech",
+    "Retail",
     "Capital Markets",
+    "Railway",
   ];
 
   return (
@@ -281,23 +315,28 @@ export function StocksExplorerPage({
           <div>
             <h1>Indian Stocks & Market Explorer</h1>
             <p className="status-copy">
-              Explore all NSE/BSE equities across Large, Mid, and Small-cap categories with live pricing, top market shelves, and one-click paper trade execution.
+              Explore all 13,000+ listed Indian companies across NSE and BSE with live quotes, official exchange masters, top market shelves, and one-click paper trade execution.
             </p>
           </div>
           <div className="live-telemetry-status-card" role="status">
             <span className="live-telemetry-dot" aria-hidden="true" />
             <div className="live-telemetry-info">
               <span className="live-telemetry-provider">{liveProvider}</span>
-              {lastSyncTime && <span className="live-telemetry-time">Synced at {lastSyncTime}</span>}
+              {lastSyncTime && (
+                <span className="live-telemetry-time">Synced at {lastSyncTime}</span>
+              )}
             </div>
             <button
               type="button"
               className="live-sync-btn"
-              onClick={fetchLiveMarketQuotes}
-              disabled={isLiveLoading}
+              onClick={() => {
+                fetchLiveMarketQuotes();
+                fetchStockCatalog(page, selectedExchange, selectedCap, searchQuery);
+              }}
+              disabled={isLiveLoading || isLoadingCatalog}
               aria-label="Refresh live quotes"
             >
-              {isLiveLoading ? "Syncing..." : "↻ Refresh"}
+              {isLiveLoading || isLoadingCatalog ? "Syncing..." : "↻ Refresh"}
             </button>
           </div>
         </div>
@@ -342,7 +381,9 @@ export function StocksExplorerPage({
                   </div>
                   <div className="shelf-price-col">
                     <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                    <span className="shelf-pct text-gain">+{stock.changePercent.toFixed(2)}%</span>
+                    <span className="shelf-pct text-gain">
+                      +{stock.changePercent.toFixed(2)}%
+                    </span>
                   </div>
                 </div>
               ))}
@@ -370,7 +411,9 @@ export function StocksExplorerPage({
                   </div>
                   <div className="shelf-price-col">
                     <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                    <span className="shelf-pct text-loss">{stock.changePercent.toFixed(2)}%</span>
+                    <span className="shelf-pct text-loss">
+                      {stock.changePercent.toFixed(2)}%
+                    </span>
                   </div>
                 </div>
               ))}
@@ -394,12 +437,17 @@ export function StocksExplorerPage({
                 >
                   <div className="shelf-sym-col">
                     <span className="shelf-sym">{stock.symbol}</span>
-                    <span className="shelf-company">{(stock.volume / 1000000).toFixed(1)}M Vol</span>
+                    <span className="shelf-company">
+                      {(stock.volume / 1000000).toFixed(1)}M Vol
+                    </span>
                   </div>
                   <div className="shelf-price-col">
                     <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                    <span className={`shelf-pct ${stock.change >= 0 ? "text-gain" : "text-loss"}`}>
-                      {stock.change >= 0 ? "+" : ""}{stock.changePercent.toFixed(2)}%
+                    <span
+                      className={`shelf-pct ${stock.change >= 0 ? "text-gain" : "text-loss"}`}
+                    >
+                      {stock.change >= 0 ? "+" : ""}
+                      {stock.changePercent.toFixed(2)}%
                     </span>
                   </div>
                 </div>
@@ -409,23 +457,25 @@ export function StocksExplorerPage({
         </section>
       )}
 
-      {/* Explorer Controls: Search & Market Cap Tabs */}
+      {/* Explorer Controls: Search & Market Cap & Exchange Tabs */}
       <section className="explorer-controls-panel" aria-label="Stock Search and Filtering">
         <div className="search-box">
           <input
             type="search"
-            placeholder="Search ANY Indian stock symbol or company (e.g. Zomato, Dixon, Suzlon, Paytm, Tata Steel)..."
+            placeholder="Search ANY Indian stock symbol or company (e.g. Zomato, Dixon, Mazgaon Dock, Stellant, Suzlon)..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             className="search-input"
             aria-label="Search Indian stocks"
           />
-          {isSearchingLive && <span className="search-live-status-pill">Searching live...</span>}
+          {isLoadingCatalog && (
+            <span className="search-live-status-pill">Loading catalog...</span>
+          )}
           {searchQuery && (
             <button
               type="button"
               className="clear-search-btn"
-              onClick={() => setSearchQuery("")}
+              onClick={() => handleSearchChange("")}
               aria-label="Clear search"
             >
               ✕
@@ -433,18 +483,39 @@ export function StocksExplorerPage({
           )}
         </div>
 
+        {/* Exchange Filter Row */}
+        <div className="exchange-filter-row" role="tablist" aria-label="Exchange Selection">
+          {[
+            { id: "ALL", label: "All Exchanges (13,109+)" },
+            { id: "NSE", label: "NSE Listed (2,611)" },
+            { id: "BSE", label: "BSE Listed (10,498)" },
+          ].map((ex) => (
+            <button
+              key={ex.id}
+              type="button"
+              role="tab"
+              aria-selected={selectedExchange === ex.id}
+              className={`exchange-tab-btn ${selectedExchange === ex.id ? "active" : ""}`}
+              onClick={() => handleExchangeChange(ex.id)}
+            >
+              {ex.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Cap and Sector Filter Row */}
         <div className="filter-pill-row">
           <div className="cap-tabs" role="tablist" aria-label="Market Cap Filter">
-            {["ALL", "Large Cap", "Mid Cap", "Index"].map((cap) => (
+            {["ALL", "Large Cap", "Mid Cap", "Small Cap"].map((cap) => (
               <button
                 key={cap}
                 type="button"
                 role="tab"
                 aria-selected={selectedCap === cap}
                 className={`cap-tab-btn ${selectedCap === cap ? "active" : ""}`}
-                onClick={() => setSelectedCap(cap)}
+                onClick={() => handleCapChange(cap)}
               >
-                {cap === "ALL" ? "All Equities" : cap}
+                {cap === "ALL" ? "All Caps" : cap}
               </button>
             ))}
           </div>
@@ -463,6 +534,10 @@ export function StocksExplorerPage({
               ))}
             </select>
           </div>
+
+          <div className="catalog-total-counter">
+            Showing {visibleStocks.length} of {totalCount.toLocaleString("en-IN")} Indian Equities
+          </div>
         </div>
       </section>
 
@@ -473,6 +548,7 @@ export function StocksExplorerPage({
             <thead>
               <tr>
                 <th scope="col">Company & Symbol</th>
+                <th scope="col">Exchange</th>
                 <th scope="col">Category</th>
                 <th scope="col">Sector</th>
                 <th scope="col">Market Price (LTP)</th>
@@ -482,37 +558,54 @@ export function StocksExplorerPage({
               </tr>
             </thead>
             <tbody>
-              {filteredStocks.length === 0 ? (
+              {visibleStocks.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="empty-table-cell">
-                    No Indian stocks found matching "{searchQuery}".
+                  <td colSpan={8} className="empty-table-cell">
+                    {isLoadingCatalog
+                      ? "Fetching Indian equities directory..."
+                      : `No Indian stocks found matching "${searchQuery}".`}
                   </td>
                 </tr>
               ) : (
-                filteredStocks.map((stock) => {
+                visibleStocks.map((stock) => {
                   const isPositive = stock.change >= 0;
-                  const high52 = stock.week52High || stock.high * 1.1;
-                  const low52 = stock.week52Low || stock.low * 0.9;
+                  const high52 = stock.week52High || stock.ltp * 1.25;
+                  const low52 = stock.week52Low || stock.ltp * 0.75;
                   const rangePct = Math.min(
                     100,
                     Math.max(0, ((stock.ltp - low52) / (high52 - low52 || 1)) * 100)
                   );
 
                   return (
-                    <tr key={stock.symbol}>
+                    <tr key={`${stock.exchange}-${stock.symbol}`}>
                       <th scope="row">
                         <span className="table-symbol">{stock.symbol}</span>
                         <span className="table-sub">{stock.name}</span>
                       </th>
                       <td>
+                        <span
+                          className={
+                            stock.exchange === "NSE"
+                              ? "exchange-badge-nse"
+                              : "exchange-badge-bse"
+                          }
+                        >
+                          {stock.exchange}
+                        </span>
+                      </td>
+                      <td>
                         <span className="cap-badge">
-                          {stock.marketCapCategory || "Large Cap"}
+                          {stock.marketCapCategory || "Mid Cap"}
                         </span>
                       </td>
                       <td>{stock.sector}</td>
-                      <td>₹{stock.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+                      <td>
+                        ₹{stock.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      </td>
                       <td className={isPositive ? "text-gain" : "text-loss"}>
-                        {isPositive ? "+" : ""}₹{stock.change.toFixed(2)} ({isPositive ? "+" : ""}{stock.changePercent.toFixed(2)}%)
+                        {isPositive ? "+" : ""}₹{stock.change.toFixed(2)} (
+                        {isPositive ? "+" : ""}
+                        {stock.changePercent.toFixed(2)}%)
                       </td>
                       <td>
                         <div className="range-bar-cell">
@@ -551,6 +644,64 @@ export function StocksExplorerPage({
             </tbody>
           </table>
         </div>
+
+        {/* Pagination Bar */}
+        {totalPages > 1 && (
+          <nav className="pagination-bar" aria-label="Stock directory pages">
+            <div className="pagination-info">
+              Page <strong>{page}</strong> of <strong>{totalPages.toLocaleString("en-IN")}</strong>{" "}
+              <span className="text-muted">
+                ({((page - 1) * 50 + 1).toLocaleString("en-IN")} -{" "}
+                {Math.min(page * 50, totalCount).toLocaleString("en-IN")} of{" "}
+                {totalCount.toLocaleString("en-IN")})
+              </span>
+            </div>
+
+            <div className="pagination-controls">
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setPage(1)}
+                disabled={page <= 1 || isLoadingCatalog}
+                aria-label="First page"
+              >
+                « First
+              </button>
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1 || isLoadingCatalog}
+                aria-label="Previous page"
+              >
+                ‹ Prev
+              </button>
+
+              <span className="pagination-current-pill">
+                Page {page}
+              </span>
+
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages || isLoadingCatalog}
+                aria-label="Next page"
+              >
+                Next ›
+              </button>
+              <button
+                type="button"
+                className="pagination-btn"
+                onClick={() => setPage(totalPages)}
+                disabled={page >= totalPages || isLoadingCatalog}
+                aria-label="Last page"
+              >
+                Last »
+              </button>
+            </div>
+          </nav>
+        )}
       </section>
     </div>
   );

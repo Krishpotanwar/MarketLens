@@ -15,6 +15,7 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(navLinks).toContainText([
       "Stocks",
       "Mutual Funds",
+      "New IPOs",
       "AI Strategy Lab",
       "Trends & Signals",
       "Paper Trading",
@@ -78,6 +79,41 @@ test.describe("MarketLens End-to-End Suite", () => {
     const stockRows = page.locator(".data-table tbody tr");
     await expect(stockRows.first()).toContainText("STELLANT.BO");
     await expect(stockRows.first()).toContainText("Stellant Securities (India) Limited");
+
+    // Clear search and test exchange filters and pagination
+    await page.locator(".clear-search-btn").click();
+    await page.waitForTimeout(300);
+
+    const bseTab = page.locator('.exchange-tab-btn:has-text("BSE Listed")');
+    await expect(bseTab).toBeVisible();
+    await bseTab.click();
+    await page.waitForTimeout(300);
+
+    // Verify pagination bar is present
+    await expect(page.locator(".pagination-bar")).toBeVisible();
+  });
+
+  test("3B. Indian New IPOs Hub & Listings Tracker", async ({ page }) => {
+    await page.locator('.nav-link:has-text("New IPOs")').click();
+    await expect(page.locator(".page-header h1")).toContainText("Indian IPO Hub & New Listings Tracker");
+
+    // Live status badge and stats pills
+    await expect(page.locator(".ipo-stats-strip")).toBeVisible();
+    await expect(page.locator(".badge-live-pulse")).toBeVisible();
+
+    // Verify sections for Open, Upcoming, and Recently Listed
+    await expect(page.locator(".ipo-card-active").first()).toBeVisible();
+    await expect(page.locator(".ipo-card-upcoming").first()).toBeVisible();
+    await expect(page.locator(".recently-listed-section")).toBeVisible();
+
+    // Verify Swiggy and Waaree Energies are tracked in Recently Listed
+    const listedRows = page.locator(".recently-listed-section .data-table tbody tr");
+    await expect(listedRows).toContainText(["SWIGGY", "WAAREEENER"]);
+
+    // Test 1-click AI Bridge from IPO Hub
+    const aiBtn = listedRows.first().locator(".btn-stock-trend");
+    await aiBtn.click();
+    await expect(page.locator(".page-header h1")).toContainText("Hybrid AI Strategy Lab");
   });
 
   test("4. Indian Mutual Funds & SIP Compounding Studio", async ({ page }) => {

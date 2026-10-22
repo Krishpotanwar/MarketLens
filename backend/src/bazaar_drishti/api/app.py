@@ -12,9 +12,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from bazaar_drishti.market.live_feed import (
     fetch_all_nse_quotes,
     fetch_intraday_chart,
+    fetch_live_indian_ipos,
     fetch_live_indian_mutual_funds,
     fetch_live_stock_news,
     fetch_symbol_quote,
+    get_all_indian_stocks_paginated,
     search_nse_stocks,
 )
 
@@ -75,6 +77,26 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
     ) -> dict[str, Any]:
         results = await search_nse_stocks(q)
         return {"query": q, "count": len(results), "results": results}
+
+    @app.get(
+        "/api/v1/market/stocks/all",
+        summary="Get All Listed Indian Stocks with Pagination, Exchanges, and Search",
+    )
+    async def get_all_stocks(
+        page: int = Query(1, ge=1, description="Page number"),
+        limit: int = Query(50, ge=1, le=200, description="Items per page"),
+        exchange: str = Query("ALL", description="Filter by exchange: ALL, NSE, BSE"),
+        cap: str = Query("ALL", description="Filter by cap: ALL, Large Cap, Mid Cap, Small Cap"),
+        q: str = Query("", description="Search ticker or company name across all 13,000+ Indian stocks"),
+    ) -> dict[str, Any]:
+        return await get_all_indian_stocks_paginated(page, limit, exchange, cap, q)
+
+    @app.get(
+        "/api/v1/market/ipos",
+        summary="Get Live Indian IPOs (Active, Upcoming, and Recently Listed)",
+    )
+    async def get_indian_ipos() -> dict[str, Any]:
+        return await fetch_live_indian_ipos()
 
     @app.get(
         "/api/v1/market/funds",

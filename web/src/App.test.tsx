@@ -9,6 +9,7 @@ import { PaperTradingPage } from "./pages/PaperTradingPage";
 import { StocksExplorerPage } from "./pages/StocksExplorerPage";
 import { MutualFundsPage } from "./pages/MutualFundsPage";
 import { AIStrategyLabPage } from "./pages/AIStrategyLabPage";
+import { IPODiscoveryPage } from "./pages/IPODiscoveryPage";
 import { calculateIndianCharges } from "./types/paper";
 import { calculateSIP } from "./types/funds";
 import { TOP_INDIAN_MUTUAL_FUNDS } from "./data/mutualFundsData";
@@ -167,6 +168,23 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("ZOMATO");
     expect(markup).toContain("DIXON");
     expect(markup).toContain("Search ANY Indian stock");
+    expect(markup).toContain("All Exchanges (13,109+)");
+    expect(markup).toContain("NSE Listed (2,611)");
+    expect(markup).toContain("BSE Listed (10,498)");
+    expect(markup).toContain("Page <strong>1</strong> of <strong>263</strong>");
+  });
+
+  it("renders Indian IPO Discovery Hub with active, upcoming, and recently listed IPOs", () => {
+    const markup = renderToStaticMarkup(
+      <IPODiscoveryPage onSelectForAI={() => {}} onSelectForTrade={() => {}} />
+    );
+    expect(markup).toContain("Indian IPO Hub &amp; New Listings Tracker");
+    expect(markup).toContain("Currently Open for Subscription");
+    expect(markup).toContain("Upcoming SEBI-Approved Pipeline");
+    expect(markup).toContain("Recently Listed Companies &amp; Post-IPO Returns");
+    expect(markup).toContain("NTPC Green Energy Limited");
+    expect(markup).toContain("Swiggy Limited");
+    expect(markup).toContain("Waaree Energies Limited");
   });
 
   it("renders Indian mutual funds explorer with interactive SIP calculator", () => {
