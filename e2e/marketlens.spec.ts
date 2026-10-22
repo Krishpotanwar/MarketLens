@@ -28,6 +28,21 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(page.locator(".data-badge")).toBeVisible();
   });
 
+  test("1B. Topbar stays strictly 64px and does not intercept pointer events on tablet", async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto("/");
+    const topbar = page.locator(".topbar");
+    await expect(topbar).toBeVisible();
+    const box = await topbar.boundingBox();
+    expect(box?.height).toBeLessThanOrEqual(68);
+
+    // Verify page content is clickable
+    const searchInput = page.locator(".global-search-input");
+    await expect(searchInput).toBeEnabled();
+    await searchInput.click();
+    await expect(page.locator(".global-search-dropdown")).toBeVisible();
+  });
+
   test("2. Global Header Search (Groww / Angel One Style)", async ({ page }) => {
     const searchInput = page.locator(".global-search-input");
     await expect(searchInput).toBeVisible();

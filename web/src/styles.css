@@ -118,7 +118,9 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 4.5rem;
+  height: 4rem;
+  min-height: 4rem;
+  max-height: 4rem;
   padding: 0 1.5rem;
   border-bottom: 1px solid var(--border-app);
   font-size: 0.85rem;
@@ -616,8 +618,10 @@ main,
 
 .topbar-nav {
   display: flex;
+  align-items: center;
   gap: 0.35rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .nav-link {
