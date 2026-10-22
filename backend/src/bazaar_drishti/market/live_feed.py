@@ -1151,7 +1151,7 @@ async def fetch_live_indian_ipos() -> dict[str, Any]:
     ]
 
     # 3. Recently Listed Indian IPOs with live price hydration
-    recently_listed_templates = [
+    recently_listed_templates: list[dict[str, Any]] = [
         {"symbol": "SWIGGY", "name": "Swiggy Limited", "issuePrice": 390.0, "listingPrice": 420.0, "listingDate": "13-Nov-2024", "sector": "Q-Commerce & Food Delivery"},
         {"symbol": "WAAREEENER", "name": "Waaree Energies Limited", "issuePrice": 1503.0, "listingPrice": 2550.0, "listingDate": "28-Oct-2024", "sector": "Solar Energy Equipment"},
         {"symbol": "HYUNDAI", "name": "Hyundai Motor India Limited", "issuePrice": 1960.0, "listingPrice": 1931.0, "listingDate": "22-Oct-2024", "sector": "Passenger Automobiles"},
@@ -1162,31 +1162,36 @@ async def fetch_live_indian_ipos() -> dict[str, Any]:
         {"symbol": "SAGILITY", "name": "Sagility India Limited", "issuePrice": 30.0, "listingPrice": 31.06, "listingDate": "12-Nov-2024", "sector": "Healthcare BPM"},
     ]
 
-    listed_tasks = [fetch_symbol_quote(r["symbol"]) for r in recently_listed_templates]
+    listed_tasks = [fetch_symbol_quote(str(r["symbol"])) for r in recently_listed_templates]
     listed_quotes = await asyncio.gather(*listed_tasks, return_exceptions=True)
 
     listed_ipos = []
     for idx, r in enumerate(recently_listed_templates):
-        q = listed_quotes[idx] if idx < len(listed_quotes) and isinstance(listed_quotes[idx], dict) else {}
-        ltp = float(q.get("ltp") or r["listingPrice"])
-        chg_pct = float(q.get("change_percent") or 0.0)
-        listing_gain_pct = ((r["listingPrice"] - r["issuePrice"]) / r["issuePrice"]) * 100
-        current_gain_pct = ((ltp - r["issuePrice"]) / r["issuePrice"]) * 100
+        raw_val = listed_quotes[idx] if idx < len(listed_quotes) else None
+        q: dict[str, Any] = raw_val if isinstance(raw_val, dict) else {}
+        issue_price = float(r["issuePrice"])
+        listing_price = float(r["listingPrice"])
+        raw_ltp = q.get("ltp")
+        ltp = float(raw_ltp) if raw_ltp is not None else listing_price
+        raw_chg = q.get("change_percent")
+        chg_pct = float(raw_chg) if raw_chg is not None else 0.0
+        listing_gain_pct = ((listing_price - issue_price) / issue_price) * 100
+        current_gain_pct = ((ltp - issue_price) / issue_price) * 100
 
         listed_ipos.append(
             {
-                "symbol": r["symbol"],
-                "name": r["name"],
-                "issuePrice": r["issuePrice"],
-                "listingPrice": r["listingPrice"],
-                "listingDate": r["listingDate"],
-                "sector": r["sector"],
+                "symbol": str(r["symbol"]),
+                "name": str(r["name"]),
+                "issuePrice": issue_price,
+                "listingPrice": listing_price,
+                "listingDate": str(r["listingDate"]),
+                "sector": str(r["sector"]),
                 "ltp": ltp,
                 "dayChangePercent": chg_pct,
                 "listingGainPercent": listing_gain_pct,
                 "currentGainPercent": current_gain_pct,
                 "status": "LISTED",
-                "provider": q.get("provider", "NSE Telemetry (Live)"),
+                "provider": str(q.get("provider", "NSE Telemetry (Live)")),
             }
         )
 
