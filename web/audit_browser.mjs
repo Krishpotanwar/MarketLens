@@ -416,15 +416,19 @@ async function runAudit() {
         const screenerRes = await page.evaluate((searchTerm) => {
           const dropdown = document.querySelector(".screener-search-dropdown");
           const results = Array.from(document.querySelectorAll(".screener-search-result-btn"));
+          const rows = Array.from(document.querySelectorAll(".screener-row"));
           return {
             query: searchTerm,
             hasDropdown: !!dropdown,
             resultCount: results.length,
-            items: results.map((r) => r.textContent?.replace(/\s+/g, " ").trim()),
+            screenerRowsCount: rows.length,
+            items: results.length > 0
+              ? results.map((r) => r.textContent?.replace(/\s+/g, " ").trim())
+              : rows.map((r) => r.textContent?.replace(/\s+/g, " ").trim()),
           };
         }, sq);
 
-        console.log(`Trend Screener "${sq}": dropdown=${screenerRes.hasDropdown}, results count=${screenerRes.resultCount}`);
+        console.log(`Trend Screener "${sq}": dropdown=${screenerRes.hasDropdown}, results count=${screenerRes.resultCount}, watchlist rows=${screenerRes.screenerRowsCount}`);
         if (screenerRes.items.length > 0) {
           console.log(`  Results:`, screenerRes.items.slice(0, 3));
         } else {
@@ -515,6 +519,8 @@ async function runAudit() {
     console.log(`Testing SVG chart hover crosshair...`);
     const svgEl = await page.$(".trend-svg");
     if (svgEl) {
+      await svgEl.scrollIntoViewIfNeeded();
+      await sleep(300);
       const box = await svgEl.boundingBox();
       if (box) {
         await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.5);

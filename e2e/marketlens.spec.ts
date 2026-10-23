@@ -177,8 +177,11 @@ test.describe("MarketLens End-to-End Suite", () => {
     const listedRows = page.locator(".recently-listed-section .data-table tbody tr");
     await expect(listedRows).toContainText(["SWIGGY", "WAAREEENER"]);
 
-    // Test 1-click AI Bridge from IPO Hub
-    const aiBtn = listedRows.first().locator(".btn-stock-trend");
+    // Test 1-click Trend Analyze and AI Bridge from IPO Hub
+    const analyzeBtn = listedRows.first().locator(".btn-stock-trend");
+    await expect(analyzeBtn).toBeVisible();
+
+    const aiBtn = listedRows.first().locator(".btn-stock-ai");
     await aiBtn.click();
     await expect(page.locator(".page-header h1")).toContainText("Hybrid AI Strategy Lab");
   });

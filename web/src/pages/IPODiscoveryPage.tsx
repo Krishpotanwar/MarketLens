@@ -603,7 +603,7 @@ export function IPODiscoveryPage({
                           </button>
                           <button
                             type="button"
-                            className="btn-stock-trend"
+                            className="btn-stock-ai"
                             onClick={() => onSelectForAI(ipo.symbol)}
                             title={`Run AI Strategy Lab for ${ipo.symbol}`}
                           >

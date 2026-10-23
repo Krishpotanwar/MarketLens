@@ -2419,7 +2419,8 @@ h1 {
 }
 
 .btn-stock-trend,
-.btn-stock-trade {
+.btn-stock-trade,
+.btn-stock-ai {
   background: var(--bg-card-sub);
   border: 1px solid var(--border-app);
   color: var(--text-main);
@@ -2440,6 +2441,11 @@ h1 {
 .btn-stock-trade:hover {
   border-color: var(--gain);
   color: var(--gain);
+}
+
+.btn-stock-ai:hover {
+  border-color: #a855f7;
+  color: #c084fc;
 }
 
 .exchange-filter-row {
