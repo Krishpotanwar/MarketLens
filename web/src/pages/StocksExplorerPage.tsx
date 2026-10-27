@@ -626,6 +626,10 @@ export function StocksExplorerPage({
                           <span className="range-label">₹{low52.toFixed(0)}</span>
                           <div className="range-track">
                             <div
+                              className="range-fill"
+                              style={{ width: `${rangePct}%` }}
+                            />
+                            <div
                               className="range-indicator"
                               style={{ left: `${rangePct}%` }}
                             />
