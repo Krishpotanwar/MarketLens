@@ -51,6 +51,11 @@ const mockRun: RunMetadataResponse = {
 };
 
 describe("research dashboard shell and pages", () => {
+  it("renders without dot-background canvas class", () => {
+    const markup = renderToStaticMarkup(<App />);
+    expect(markup).not.toContain("dot-background");
+  });
+
   it("renders the default app with live market feed and stocks explorer", () => {
     const markup = renderToStaticMarkup(<App />);
     expect(markup).toContain("Live Feed");
