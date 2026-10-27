@@ -139,9 +139,9 @@ body {
   overflow-x: hidden;
   flex-direction: column;
   background: 
-    radial-gradient(ellipse 50% 60% at 94% 68%, rgba(245, 158, 11, 0.24) 0%, rgba(217, 119, 6, 0.08) 45%, transparent 75%),
-    radial-gradient(ellipse 40% 50% at 8% 35%, rgba(14, 165, 233, 0.12) 0%, transparent 65%),
-    linear-gradient(180deg, rgba(7, 10, 18, 0.45) 0%, rgba(7, 10, 18, 0.68) 100%);
+    radial-gradient(ellipse 55% 65% at 92% 55%, rgba(245, 158, 11, 0.32) 0%, rgba(217, 119, 6, 0.12) 42%, transparent 75%),
+    radial-gradient(ellipse 40% 50% at 8% 35%, rgba(14, 165, 233, 0.14) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(7, 10, 18, 0.38) 0%, rgba(7, 10, 18, 0.62) 100%);
   color: var(--text-main);
   padding: 0 clamp(0.75rem, 3vw, 4rem);
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -986,24 +986,23 @@ main,
   text-transform: uppercase;
 }
 
-.data-badge span {
-  width: 0.5rem;
-  aspect-ratio: 1;
+.data-badge .live-dot,
+.data-badge .data-badge-dot {
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: var(--gain);
+  display: inline-block;
+  flex-shrink: 0;
 }
 
-.data-badge.empty {
-  color: var(--text-muted);
-}
-.data-badge.empty span {
+.data-badge.empty .live-dot,
+.data-badge.empty .data-badge-dot {
   background: var(--text-faint);
 }
 
-.data-badge.synthetic {
-  color: var(--amber);
-}
-.data-badge.synthetic span {
+.data-badge.synthetic .live-dot,
+.data-badge.synthetic .data-badge-dot {
   background: var(--amber);
 }
 
@@ -1030,8 +1029,15 @@ main,
 main {
   width: min(100%, 82rem);
   flex: 1;
-  align-self: center;
+  align-self: flex-start;
   padding: 2.5rem 0 4rem;
+}
+
+@media (min-width: 1200px) {
+  main {
+    max-width: min(1140px, calc(100vw - 370px));
+    margin-right: auto;
+  }
 }
 
 .page-header {
