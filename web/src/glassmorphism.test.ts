@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import * as fs from "fs";
-import * as path from "path";
+import * as fs from "node:fs";
+import * as path from "node:path";
 
 describe("Glassmorphism and Background Theme Tokens", () => {
-  const cssPath = path.resolve(__dirname, "./styles.css");
+  const cssPath = path.resolve(process.cwd(), "src/styles.css");
   const cssContent = fs.readFileSync(cssPath, "utf-8");
 
   it("declares backgroundimg.png in body or page-shell background", () => {
