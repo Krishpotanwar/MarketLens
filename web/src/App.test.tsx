@@ -71,7 +71,8 @@ describe("research dashboard shell and pages", () => {
   it("renders the default app with live market feed and stocks explorer", () => {
     const markup = renderToStaticMarkup(<App />);
     expect(markup).toContain("Live Feed");
-    expect(markup).toContain("Indian Stocks &amp; Market Explorer");
+    expect(markup).toContain("Indian Stocks &amp; Market");
+    expect(markup).toContain("hero-explorer-highlight");
     expect(markup).not.toContain("₹837.91");
     expect(markup).not.toContain("SEBI RA compliant");
     expect(markup).toContain("MarketLens");
@@ -190,7 +191,8 @@ describe("research dashboard shell and pages", () => {
     const markup = renderToStaticMarkup(
       <StocksExplorerPage onSelectForTrend={() => {}} onSelectForTrade={() => {}} />
     );
-    expect(markup).toContain("Indian Stocks &amp; Market Explorer");
+    expect(markup).toContain("Indian Stocks &amp; Market");
+    expect(markup).toContain("hero-explorer-highlight");
     expect(markup).toContain("NIFTY 50");
     expect(markup).toContain("SENSEX");
     expect(markup).toContain("Top Gainers");

@@ -320,7 +320,7 @@ export function StocksExplorerPage({
       <header className="page-header">
         <div className="page-header-split">
           <div>
-            <h1>Indian Stocks & Market Explorer</h1>
+            <h1>Indian Stocks & Market <span className="hero-explorer-highlight">Explorer</span></h1>
             <p className="status-copy">
               Explore all 13,000+ listed Indian companies across NSE and BSE with live quotes, official exchange masters, top market shelves, and one-click paper trade execution.
             </p>
