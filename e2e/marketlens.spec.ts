@@ -147,6 +147,17 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(stockRows.first()).toContainText("STELLANT.BO");
     await expect(stockRows.first()).toContainText("Stellant Securities (India) Limited");
 
+    // Verify high-density table numerical formatting: right-aligned and tabular figures
+    const priceCell = stockRows.first().locator(".table-num.table-price");
+    await expect(priceCell).toBeVisible();
+    await expect(priceCell).toHaveCSS("text-align", "right");
+    await expect(priceCell).toHaveCSS("font-variant-numeric", "tabular-nums");
+
+    const changeCell = stockRows.first().locator(".table-num.table-change");
+    await expect(changeCell).toBeVisible();
+    await expect(changeCell).toHaveCSS("text-align", "right");
+    await expect(changeCell).toHaveCSS("font-variant-numeric", "tabular-nums");
+
     // Clear search and test exchange filters and pagination
     await page.locator(".clear-search-btn").click();
     await page.waitForTimeout(300);

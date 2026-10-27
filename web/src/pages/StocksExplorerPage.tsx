@@ -7,6 +7,7 @@ const API_BASE = import.meta.env.VITE_API_URL || "";
 interface StocksExplorerPageProps {
   onSelectForTrend: (symbol: string) => void;
   onSelectForTrade: (symbol: string) => void;
+  onSelectForAI?: (symbol: string) => void;
   initialSearchQuery?: string;
 }
 
@@ -37,6 +38,7 @@ interface ListedStockItem {
 export function StocksExplorerPage({
   onSelectForTrend,
   onSelectForTrade,
+  onSelectForAI,
   initialSearchQuery = "",
 }: StocksExplorerPageProps) {
   // Shelves state (top gainers/losers/active)
@@ -385,8 +387,8 @@ export function StocksExplorerPage({
                     <span className="shelf-company">{stock.name}</span>
                   </div>
                   <div className="shelf-price-col">
-                    <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                    <span className="shelf-pct text-gain">
+                    <span className="shelf-ltp table-num">₹{stock.ltp.toFixed(2)}</span>
+                    <span className="shelf-pct text-gain table-num">
                       +{stock.changePercent.toFixed(2)}%
                     </span>
                   </div>
@@ -415,8 +417,8 @@ export function StocksExplorerPage({
                     <span className="shelf-company">{stock.name}</span>
                   </div>
                   <div className="shelf-price-col">
-                    <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
-                    <span className="shelf-pct text-loss">
+                    <span className="shelf-ltp table-num">₹{stock.ltp.toFixed(2)}</span>
+                    <span className="shelf-pct text-loss table-num">
                       {stock.changePercent.toFixed(2)}%
                     </span>
                   </div>
@@ -447,9 +449,9 @@ export function StocksExplorerPage({
                     </span>
                   </div>
                   <div className="shelf-price-col">
-                    <span className="shelf-ltp">₹{stock.ltp.toFixed(2)}</span>
+                    <span className="shelf-ltp table-num">₹{stock.ltp.toFixed(2)}</span>
                     <span
-                      className={`shelf-pct ${stock.change >= 0 ? "text-gain" : "text-loss"}`}
+                      className={`shelf-pct ${stock.change >= 0 ? "text-gain" : "text-loss"} table-num`}
                     >
                       {stock.change >= 0 ? "+" : ""}
                       {stock.changePercent.toFixed(2)}%
@@ -554,10 +556,10 @@ export function StocksExplorerPage({
               <tr>
                 <th scope="col">Company & Symbol</th>
                 <th scope="col">Exchange</th>
-                <th scope="col">Category</th>
+                <th scope="col" className="table-num">Category</th>
                 <th scope="col">Sector</th>
-                <th scope="col">Market Price (LTP)</th>
-                <th scope="col">Day Change</th>
+                <th scope="col" className="table-num">Market Price (LTP)</th>
+                <th scope="col" className="table-num">Day Change</th>
                 <th scope="col">52-Week Range</th>
                 <th scope="col">Actions</th>
               </tr>
@@ -605,16 +607,16 @@ export function StocksExplorerPage({
                           {stock.exchange}
                         </span>
                       </td>
-                      <td>
+                      <td className="table-num">
                         <span className="cap-badge">
                           {stock.marketCapCategory || "Mid Cap"}
                         </span>
                       </td>
                       <td>{stock.sector}</td>
-                      <td>
+                      <td className="table-num table-price">
                         ₹{stock.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                       </td>
-                      <td className={isPositive ? "text-gain" : "text-loss"}>
+                      <td className={`table-num table-change ${isPositive ? "text-gain" : "text-loss"}`}>
                         {isPositive ? "+" : ""}₹{stock.change.toFixed(2)} (
                         {isPositive ? "+" : ""}
                         {stock.changePercent.toFixed(2)}%)
@@ -647,6 +649,15 @@ export function StocksExplorerPage({
                           >
                             Trade
                           </button>
+                          {onSelectForAI && (
+                            <button
+                              type="button"
+                              className="btn-stock-ai"
+                              onClick={() => onSelectForAI(stock.symbol)}
+                            >
+                              AI Lab
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

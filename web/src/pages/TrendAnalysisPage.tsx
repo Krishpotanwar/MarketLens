@@ -742,10 +742,10 @@ export function TrendAnalysisPage({
                     <span className="screener-name">{stock.name}</span>
                   </div>
                   <div className="screener-right">
-                    <span className="screener-ltp">
+                    <span className="screener-ltp table-num">
                       ₹{stock.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
                     </span>
-                    <span className={`screener-chg ${isPositive ? "text-gain" : "text-loss"}`}>
+                    <span className={`screener-chg table-num ${isPositive ? "text-gain" : "text-loss"}`}>
                       {isPositive ? "+" : ""}
                       {stock.changePercent.toFixed(2)}%
                     </span>
@@ -779,6 +779,25 @@ export function TrendAnalysisPage({
                 {activeStock.change >= 0 ? "+" : ""}
                 {activeStock.changePercent.toFixed(2)}%)
               </span>
+            </div>
+
+            <div className="stock-action-group">
+              <button
+                type="button"
+                className="btn-stock-trade"
+                onClick={() => onSelectForTrade(activeStock.symbol)}
+              >
+                Trade
+              </button>
+              {onSelectForAI && (
+                <button
+                  type="button"
+                  className="btn-stock-ai"
+                  onClick={() => onSelectForAI(activeStock.symbol)}
+                >
+                  AI Strategy
+                </button>
+              )}
             </div>
           </div>
 
