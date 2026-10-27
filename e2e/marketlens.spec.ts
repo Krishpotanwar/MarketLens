@@ -8,7 +8,7 @@ test.describe("MarketLens End-to-End Suite", () => {
   test("1. Shell, Navigation, and Dotted Dark Theme Canvas", async ({ page }) => {
     // Wordmark & Title
     await expect(page.locator(".wordmark")).toContainText("MarketLens");
-    await expect(page.locator(".dot-background")).toBeVisible();
+    await expect(page.locator(".page-shell")).toBeVisible();
 
     // Verify all primary tabs exist
     const navLinks = page.locator(".topbar-nav .nav-link");

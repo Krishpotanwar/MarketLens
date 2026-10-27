@@ -454,31 +454,31 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
       <section className="portfolio-banner" aria-label="Paper Portfolio Summary">
         <div className="banner-item">
           <span className="banner-label">Total Portfolio Value</span>
-          <span className="banner-val highlight-val">₹{totalPortfolioValue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="banner-val highlight-val font-mono">₹{totalPortfolioValue.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         <div className="banner-item">
           <span className="banner-label">Available Cash</span>
-          <span className="banner-val">₹{cashBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span className="banner-val font-mono">₹{cashBalance.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         </div>
         <div className="banner-item">
           <span className="banner-label">Open Unrealized P&L</span>
-          <span className={`banner-val ${totalUnrealizedPnl >= 0 ? "text-gain" : "text-loss"}`}>
+          <span className={`banner-val font-mono ${totalUnrealizedPnl >= 0 ? "text-gain" : "text-loss"}`}>
             {totalUnrealizedPnl >= 0 ? "+" : ""}₹{totalUnrealizedPnl.toFixed(2)}
           </span>
         </div>
         <div className="banner-item">
           <span className="banner-label">Realized Net P&L</span>
-          <span className={`banner-val ${totalRealizedPnl >= 0 ? "text-gain" : "text-loss"}`}>
+          <span className={`banner-val font-mono ${totalRealizedPnl >= 0 ? "text-gain" : "text-loss"}`}>
             {totalRealizedPnl >= 0 ? "+" : ""}₹{totalRealizedPnl.toFixed(2)}
           </span>
         </div>
         <div className="banner-item">
           <span className="banner-label">Win Rate</span>
-          <span className="banner-val text-accent">{winRate.toFixed(1)}% ({tradeHistory.length} trades)</span>
+          <span className="banner-val text-accent font-mono">{winRate.toFixed(1)}% ({tradeHistory.length} trades)</span>
         </div>
         <div className="banner-item">
           <span className="banner-label">Total Statutory Taxes Paid</span>
-          <span className="banner-val text-muted">₹{totalTaxesPaid.toFixed(2)}</span>
+          <span className="banner-val text-muted font-mono">₹{totalTaxesPaid.toFixed(2)}</span>
         </div>
         <div className="banner-item reset-col">
           <button type="button" className="btn-reset-account" onClick={handleResetAccount}>
@@ -568,6 +568,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                   id="limit-price-input"
                   type="number"
                   step="0.05"
+                  className="font-mono"
                   value={limitPrice}
                   onChange={(e) => setLimitPrice(parseFloat(e.target.value) || 0)}
                 />
@@ -597,6 +598,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                 type="number"
                 min="1"
                 step="1"
+                className="font-mono"
                 value={quantity}
                 onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 1)}
               />
@@ -610,43 +612,43 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
               </div>
               <div className="slip-row">
                 <span>Gross Turnover</span>
-                <span>₹{charges.turnover.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                <span className="font-mono">₹{charges.turnover.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
               </div>
               <div className="slip-row">
                 <span>Brokerage</span>
-                <span>₹{charges.brokerage.toFixed(2)}</span>
+                <span className="font-mono">₹{charges.brokerage.toFixed(2)}</span>
               </div>
               <div className="slip-row">
                 <span>STT / CTT ({product === "CNC" ? "0.1%" : "0.025%"})</span>
-                <span>₹{charges.stt.toFixed(2)}</span>
+                <span className="font-mono">₹{charges.stt.toFixed(2)}</span>
               </div>
               <div className="slip-row">
                 <span>Exchange Txn Charges (0.00345%)</span>
-                <span>₹{charges.exchangeCharges.toFixed(2)}</span>
+                <span className="font-mono">₹{charges.exchangeCharges.toFixed(2)}</span>
               </div>
               <div className="slip-row">
                 <span>Stamp Duty (0.015% Buy)</span>
-                <span>₹{charges.stampDuty.toFixed(2)}</span>
+                <span className="font-mono">₹{charges.stampDuty.toFixed(2)}</span>
               </div>
               <div className="slip-row">
                 <span>SEBI Fee (₹10/Cr)</span>
-                <span>₹{charges.sebiCharges.toFixed(2)}</span>
+                <span className="font-mono">₹{charges.sebiCharges.toFixed(2)}</span>
               </div>
               <div className="slip-row">
                 <span>GST (18% on fees)</span>
-                <span>₹{charges.gst.toFixed(2)}</span>
+                <span className="font-mono">₹{charges.gst.toFixed(2)}</span>
               </div>
               <div className="slip-row">
                 <span>Simulated Slippage (0.05%)</span>
-                <span>₹{charges.slippage.toFixed(2)}</span>
+                <span className="font-mono">₹{charges.slippage.toFixed(2)}</span>
               </div>
               <div className="slip-row total-tax-row">
                 <span>Total Statutory Deductions</span>
-                <span className="text-loss">₹{charges.totalCharges.toFixed(2)}</span>
+                <span className="text-loss font-mono">₹{charges.totalCharges.toFixed(2)}</span>
               </div>
               <div className="slip-row net-amount-row">
                 <span>{side === "BUY" ? "Net Capital Required" : "Net Proceeds Receivable"}</span>
-                <span className="highlight-val">₹{charges.netEffectiveAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
+                <span className="highlight-val font-mono">₹{charges.netEffectiveAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span>
               </div>
             </div>
 
@@ -673,11 +675,11 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                   <tr>
                     <th scope="col">Symbol</th>
                     <th scope="col">Side</th>
-                    <th scope="col">Qty</th>
-                    <th scope="col">Entry Price</th>
-                    <th scope="col">LTP</th>
-                    <th scope="col">Market Value</th>
-                    <th scope="col">Unrealized P&L</th>
+                    <th scope="col" className="table-num">Qty</th>
+                    <th scope="col" className="table-num">Entry Price</th>
+                    <th scope="col" className="table-num">LTP</th>
+                    <th scope="col" className="table-num">Market Value</th>
+                    <th scope="col" className="table-num">Unrealized P&L</th>
                     <th scope="col">Action</th>
                   </tr>
                 </thead>
@@ -702,11 +704,11 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                               {pos.side}
                             </span>
                           </td>
-                          <td>{pos.quantity}</td>
-                          <td>₹{pos.avgEntryPrice.toFixed(2)}</td>
-                          <td>₹{pos.currentLtp.toFixed(2)}</td>
-                          <td>₹{(pos.currentLtp * pos.quantity).toFixed(2)}</td>
-                          <td className={isGain ? "text-gain" : "text-loss"}>
+                          <td className="table-num font-mono">{pos.quantity}</td>
+                          <td className="table-num font-mono">₹{pos.avgEntryPrice.toFixed(2)}</td>
+                          <td className="table-num font-mono">₹{pos.currentLtp.toFixed(2)}</td>
+                          <td className="table-num font-mono">₹{(pos.currentLtp * pos.quantity).toFixed(2)}</td>
+                          <td className={`table-num font-mono ${isGain ? "text-gain" : "text-loss"}`}>
                             {isGain ? "+" : ""}₹{pos.unrealizedPnl.toFixed(2)} ({isGain ? "+" : ""}{pos.unrealizedPnlPercent.toFixed(2)}%)
                           </td>
                           <td>
@@ -736,12 +738,12 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                   <tr>
                     <th scope="col">Symbol</th>
                     <th scope="col">Side</th>
-                    <th scope="col">Qty</th>
+                    <th scope="col" className="table-num">Qty</th>
                     <th scope="col">Entry & Exit</th>
-                    <th scope="col">Gross P&L</th>
-                    <th scope="col">Taxes & Charges</th>
-                    <th scope="col">Net Realized P&L</th>
-                    <th scope="col">Return %</th>
+                    <th scope="col" className="table-num">Gross P&L</th>
+                    <th scope="col" className="table-num">Taxes & Charges</th>
+                    <th scope="col" className="table-num">Net Realized P&L</th>
+                    <th scope="col" className="table-num">Return %</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -758,17 +760,17 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                         <tr key={t.id}>
                           <th scope="row">{t.symbol}</th>
                           <td>{t.side} ({t.product})</td>
-                          <td>{t.quantity}</td>
+                          <td className="table-num font-mono">{t.quantity}</td>
                           <td>
-                            <div>₹{t.entryPrice.toFixed(2)} &rarr; ₹{t.exitPrice.toFixed(2)}</div>
+                            <div className="font-mono">₹{t.entryPrice.toFixed(2)} &rarr; ₹{t.exitPrice.toFixed(2)}</div>
                             <span className="table-sub">{t.entryTimestamp} - {t.exitTimestamp}</span>
                           </td>
-                          <td>₹{t.grossPnl.toFixed(2)}</td>
-                          <td className="text-muted">₹{t.totalCharges.toFixed(2)}</td>
-                          <td className={`highlight-cell ${isGain ? "text-gain" : "text-loss"}`}>
+                          <td className="table-num font-mono">₹{t.grossPnl.toFixed(2)}</td>
+                          <td className="table-num font-mono text-muted">₹{t.totalCharges.toFixed(2)}</td>
+                          <td className={`table-num font-mono highlight-cell ${isGain ? "text-gain" : "text-loss"}`}>
                             {isGain ? "+" : ""}₹{t.netPnl.toFixed(2)}
                           </td>
-                          <td className={isGain ? "text-gain" : "text-loss"}>
+                          <td className={`table-num font-mono ${isGain ? "text-gain" : "text-loss"}`}>
                             {isGain ? "+" : ""}{t.netReturnPercent.toFixed(2)}%
                           </td>
                         </tr>

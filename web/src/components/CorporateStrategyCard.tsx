@@ -14,11 +14,11 @@ export function CorporateStrategyCard({
       <div
         className="corporate-strategy-grid"
         style={{
-          background: "#000000",
-          border: "1px solid #1c2638",
-          borderRadius: "8px",
+          background: "var(--bg-surface, #161b22)",
+          border: "1px solid var(--border-default, #30363d)",
+          borderRadius: "6px",
           padding: "24px",
-          color: "#94a3b8",
+          color: "var(--text-secondary, #8b949e)",
           textAlign: "center",
         }}
       >
@@ -36,11 +36,11 @@ export function CorporateStrategyCard({
       className="corporate-strategy-grid"
       aria-label={`Corporate Strategy Deconstruction for ${symbol}`}
       style={{
-        background: "#000000",
-        border: "1px solid #1c2638",
-        borderRadius: "8px",
+        background: "var(--bg-surface, #161b22)",
+        border: "1px solid var(--border-default, #30363d)",
+        borderRadius: "6px",
         padding: "16px 20px",
-        color: "#f8fafc",
+        color: "var(--text-primary, #e6edf3)",
         display: "flex",
         flexDirection: "column",
         gap: "16px",
@@ -54,7 +54,7 @@ export function CorporateStrategyCard({
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          borderBottom: "1px solid #1c2638",
+          borderBottom: "1px solid var(--border-default, #30363d)",
           paddingBottom: "12px",
         }}
       >
@@ -66,18 +66,17 @@ export function CorporateStrategyCard({
                 width: "8px",
                 height: "8px",
                 borderRadius: "50%",
-                background: "#38bdf8",
-                boxShadow: "0 0 8px #38bdf8",
+                background: "#388bfd",
               }}
               aria-hidden="true"
             />
             <h3
               style={{
-                fontSize: "15px",
+                fontSize: "14px",
                 fontWeight: 600,
                 letterSpacing: "0.02em",
                 margin: 0,
-                color: "#f8fafc",
+                color: "var(--text-primary, #e6edf3)",
               }}
             >
               Corporate Strategy Deconstruction
@@ -85,12 +84,13 @@ export function CorporateStrategyCard({
             <span
               style={{
                 fontSize: "11px",
-                fontWeight: 700,
+                fontWeight: 600,
                 padding: "2px 6px",
                 borderRadius: "4px",
-                background: "rgba(56, 189, 248, 0.15)",
-                color: "#38bdf8",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
+                background: "rgba(56, 139, 253, 0.12)",
+                color: "var(--accent-blue, #388bfd)",
+                border: "1px solid rgba(56, 139, 253, 0.25)",
+                fontFamily: "var(--font-figures)",
               }}
             >
               {symbol}
@@ -99,7 +99,7 @@ export function CorporateStrategyCard({
           <p
             style={{
               fontSize: "12px",
-              color: "#94a3b8",
+              color: "var(--text-secondary, #8b949e)",
               margin: "4px 0 0 0",
             }}
           >
@@ -112,8 +112,8 @@ export function CorporateStrategyCard({
       {keyCatalysts.length > 0 && (
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
             borderRadius: "6px",
             padding: "8px 12px",
             display: "flex",
@@ -128,13 +128,12 @@ export function CorporateStrategyCard({
               fontWeight: 700,
               textTransform: "uppercase",
               letterSpacing: "0.04em",
-              color: "#38bdf8",
+              color: "var(--accent-blue, #388bfd)",
               display: "flex",
               alignItems: "center",
               gap: "4px",
             }}
           >
-            <span>⚡</span>
             <span>Key Catalysts:</span>
           </span>
           {keyCatalysts.map((cat, i) => (
@@ -142,11 +141,11 @@ export function CorporateStrategyCard({
               key={i}
               style={{
                 fontSize: "11px",
-                background: "rgba(56, 189, 248, 0.08)",
-                border: "1px solid rgba(56, 189, 248, 0.25)",
-                color: "#e2e8f0",
+                background: "var(--bg-surface, #161b22)",
+                border: "1px solid var(--border-default, #30363d)",
+                color: "var(--text-secondary, #8b949e)",
                 padding: "2px 8px",
-                borderRadius: "4px",
+                borderRadius: "3px",
               }}
             >
               {cat}
@@ -166,9 +165,9 @@ export function CorporateStrategyCard({
         {/* Card 1: Management Guidance & Capex */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
-            borderRadius: "8px",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
+            borderRadius: "6px",
             padding: "14px 16px",
             display: "flex",
             flexDirection: "column",
@@ -178,23 +177,23 @@ export function CorporateStrategyCard({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
                 fontWeight: 700,
                 padding: "2px 6px",
-                borderRadius: "4px",
-                background: "rgba(56, 189, 248, 0.12)",
-                color: "#38bdf8",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
+                borderRadius: "3px",
+                background: "rgba(56, 139, 253, 0.12)",
+                color: "var(--accent-blue, #388bfd)",
+                border: "1px solid rgba(56, 139, 253, 0.25)",
               }}
             >
               CAPEX & TARGETS
             </span>
           </div>
           <div>
-            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "#f8fafc" }}>
+            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "var(--text-primary, #e6edf3)" }}>
               Management Guidance & Capex
             </h4>
-            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", marginTop: "2px" }}>
               Capital expenditure, revenue targets & capital allocation
             </div>
           </div>
@@ -208,7 +207,7 @@ export function CorporateStrategyCard({
               flexDirection: "column",
               gap: "8px",
               fontSize: "12px",
-              color: "#cbd5e1",
+              color: "var(--text-secondary, #8b949e)",
               lineHeight: "1.4",
             }}
           >
@@ -222,12 +221,12 @@ export function CorporateStrategyCard({
                     gap: "6px",
                   }}
                 >
-                  <span style={{ color: "#38bdf8", flexShrink: 0, marginTop: "1px" }}>▸</span>
+                  <span style={{ color: "var(--accent-blue, #388bfd)", flexShrink: 0, marginTop: "1px" }}>▸</span>
                   <span>{item}</span>
                 </li>
               ))
             ) : (
-              <li style={{ color: "#64748b" }}>No specific guidance revisions noted in latest concall.</li>
+              <li style={{ color: "var(--text-tertiary, #6e7681)" }}>No specific guidance revisions noted in latest concall.</li>
             )}
           </ul>
         </div>
@@ -235,9 +234,9 @@ export function CorporateStrategyCard({
         {/* Card 2: Margin Outlook */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
-            borderRadius: "8px",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
+            borderRadius: "6px",
             padding: "14px 16px",
             display: "flex",
             flexDirection: "column",
@@ -247,23 +246,23 @@ export function CorporateStrategyCard({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
                 fontWeight: 700,
                 padding: "2px 6px",
-                borderRadius: "4px",
-                background: "rgba(16, 185, 129, 0.12)",
-                color: "#10b981",
-                border: "1px solid rgba(16, 185, 129, 0.3)",
+                borderRadius: "3px",
+                background: "rgba(63, 185, 80, 0.12)",
+                color: "var(--trade-gain, #3fb950)",
+                border: "1px solid rgba(63, 185, 80, 0.25)",
               }}
             >
               MARGIN SENSITIVITY
             </span>
           </div>
           <div>
-            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "#f8fafc" }}>
+            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "var(--text-primary, #e6edf3)" }}>
               Margin Outlook & Pricing Power
             </h4>
-            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", marginTop: "2px" }}>
               Raw material inflation pass-through & operating leverage
             </div>
           </div>
@@ -271,7 +270,7 @@ export function CorporateStrategyCard({
           <p
             style={{
               fontSize: "12px",
-              color: "#cbd5e1",
+              color: "var(--text-secondary, #8b949e)",
               lineHeight: "1.5",
               margin: "4px 0 0 0",
             }}
@@ -283,9 +282,9 @@ export function CorporateStrategyCard({
         {/* Card 3: Competitive Moat */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
-            borderRadius: "8px",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
+            borderRadius: "6px",
             padding: "14px 16px",
             display: "flex",
             flexDirection: "column",
@@ -295,23 +294,23 @@ export function CorporateStrategyCard({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
                 fontWeight: 700,
                 padding: "2px 6px",
-                borderRadius: "4px",
-                background: "rgba(96, 165, 250, 0.12)",
-                color: "#60a5fa",
-                border: "1px solid rgba(96, 165, 250, 0.3)",
+                borderRadius: "3px",
+                background: "rgba(56, 139, 253, 0.12)",
+                color: "var(--accent-blue, #388bfd)",
+                border: "1px solid rgba(56, 139, 253, 0.25)",
               }}
             >
               STRATEGIC MOAT
             </span>
           </div>
           <div>
-            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "#f8fafc" }}>
+            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "var(--text-primary, #e6edf3)" }}>
               Competitive Moat & Barriers
             </h4>
-            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", marginTop: "2px" }}>
               Market share, distribution network & switching barriers
             </div>
           </div>
@@ -319,7 +318,7 @@ export function CorporateStrategyCard({
           <p
             style={{
               fontSize: "12px",
-              color: "#cbd5e1",
+              color: "var(--text-secondary, #8b949e)",
               lineHeight: "1.5",
               margin: "4px 0 0 0",
             }}
@@ -331,9 +330,9 @@ export function CorporateStrategyCard({
         {/* Card 4: Tail Risks & Red Flags */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
-            borderRadius: "8px",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
+            borderRadius: "6px",
             padding: "14px 16px",
             display: "flex",
             flexDirection: "column",
@@ -343,23 +342,23 @@ export function CorporateStrategyCard({
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <span
               style={{
-                fontSize: "11px",
+                fontSize: "10px",
                 fontWeight: 700,
                 padding: "2px 6px",
-                borderRadius: "4px",
-                background: "rgba(244, 63, 94, 0.12)",
-                color: "#f43f5e",
-                border: "1px solid rgba(244, 63, 94, 0.3)",
+                borderRadius: "3px",
+                background: "rgba(248, 81, 73, 0.12)",
+                color: "var(--trade-loss, #f85149)",
+                border: "1px solid rgba(248, 81, 73, 0.25)",
               }}
             >
               TAIL RISKS & GOVERNANCE
             </span>
           </div>
           <div>
-            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "#f8fafc" }}>
+            <h4 style={{ fontSize: "13px", fontWeight: 600, margin: 0, color: "var(--text-primary, #e6edf3)" }}>
               Tail Risks & Red Flags
             </h4>
-            <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>
+            <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", marginTop: "2px" }}>
               Regulatory scrutiny, leverage covenants & commodity vulnerability
             </div>
           </div>
@@ -373,7 +372,7 @@ export function CorporateStrategyCard({
               flexDirection: "column",
               gap: "8px",
               fontSize: "12px",
-              color: "#cbd5e1",
+              color: "var(--text-secondary, #8b949e)",
               lineHeight: "1.4",
             }}
           >
@@ -387,12 +386,12 @@ export function CorporateStrategyCard({
                     gap: "6px",
                   }}
                 >
-                  <span style={{ color: "#f43f5e", flexShrink: 0, marginTop: "1px" }}>⚠</span>
+                  <span style={{ color: "var(--trade-loss, #f85149)", flexShrink: 0, marginTop: "1px" }}>⚠</span>
                   <span>{risk}</span>
                 </li>
               ))
             ) : (
-              <li style={{ color: "#64748b" }}>No material governance or systemic red flags identified.</li>
+              <li style={{ color: "var(--text-tertiary, #6e7681)" }}>No material governance or systemic red flags identified.</li>
             )}
           </ul>
         </div>

@@ -46,7 +46,7 @@ export function Header({
             <span>MarketLens</span>
           </a>
           <span
-            className="badge-live-pulse data-badge live"
+            className="data-badge live"
             role="status"
             title="Real-time Indian Exchange Telemetry Feed Active"
           >

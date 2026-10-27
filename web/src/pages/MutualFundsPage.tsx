@@ -144,7 +144,7 @@ export function MutualFundsPage() {
             <div className="sip-slider-group">
               <div className="slider-label-row">
                 <label htmlFor="sip-monthly-input">Monthly Investment</label>
-                <span className="slider-val-tag">₹{monthlyAmount.toLocaleString("en-IN")}</span>
+                <span className="slider-val-tag font-mono">₹{monthlyAmount.toLocaleString("en-IN")}</span>
               </div>
               <input
                 id="sip-monthly-input"
@@ -174,7 +174,7 @@ export function MutualFundsPage() {
             <div className="sip-slider-group">
               <div className="slider-label-row">
                 <label htmlFor="sip-rate-input">Expected Annual Return (CAGR)</label>
-                <span className="slider-val-tag">{returnRate}%</span>
+                <span className="slider-val-tag font-mono">{returnRate}%</span>
               </div>
               <input
                 id="sip-rate-input"
@@ -209,7 +209,7 @@ export function MutualFundsPage() {
             <div className="sip-slider-group">
               <div className="slider-label-row">
                 <label htmlFor="sip-years-input">Investment Horizon</label>
-                <span className="slider-val-tag">{years} Years ({years * 12} Months)</span>
+                <span className="slider-val-tag font-mono">{years} Years ({years * 12} Months)</span>
               </div>
               <input
                 id="sip-years-input"
@@ -240,7 +240,7 @@ export function MutualFundsPage() {
           <div className="sip-results-card">
             <span className="sip-card-title">Projected Maturity Corpus</span>
             <div className="maturity-total-block">
-              <span className="maturity-num">₹{sipResult.totalMaturityValue.toLocaleString("en-IN")}</span>
+              <span className="maturity-num font-mono">₹{sipResult.totalMaturityValue.toLocaleString("en-IN")}</span>
               <span className="maturity-sub">at age {years} years</span>
             </div>
 
@@ -255,7 +255,7 @@ export function MutualFundsPage() {
                 <div className="sip-dot dot-invested" />
                 <div className="sip-stat-text">
                   <span className="stat-name">Total Amount Invested</span>
-                  <span className="stat-fig">₹{sipResult.totalInvestedAmount.toLocaleString("en-IN")}</span>
+                  <span className="stat-fig font-mono">₹{sipResult.totalInvestedAmount.toLocaleString("en-IN")}</span>
                 </div>
               </div>
 
@@ -263,7 +263,7 @@ export function MutualFundsPage() {
                 <div className="sip-dot dot-returns" />
                 <div className="sip-stat-text">
                   <span className="stat-name">Estimated Wealth Returns</span>
-                  <span className="stat-fig text-gain">₹{sipResult.estimatedReturnsAmount.toLocaleString("en-IN")}</span>
+                  <span className="stat-fig text-gain font-mono">₹{sipResult.estimatedReturnsAmount.toLocaleString("en-IN")}</span>
                 </div>
               </div>
             </div>
@@ -318,35 +318,35 @@ export function MutualFundsPage() {
               <div className="fund-nav-row">
                 <div className="nav-col">
                   <span className="card-stat-label">Current NAV</span>
-                  <span className="card-nav-val">₹{fund.nav.toFixed(2)}</span>
+                  <span className="card-nav-val font-mono">₹{fund.nav.toFixed(2)}</span>
                 </div>
                 <div className="returns-highlight">
                   <span className="card-stat-label">3Y CAGR</span>
-                  <span className="cagr-val text-gain">+{fund.cagr3y.toFixed(1)}%</span>
+                  <span className="cagr-val text-gain font-mono">+{fund.cagr3y.toFixed(1)}%</span>
                 </div>
               </div>
 
               <div className="fund-details-grid">
                 <div className="detail-item">
                   <span className="detail-lbl">1Y Return</span>
-                  <span className="detail-val text-gain">+{fund.cagr1y.toFixed(1)}%</span>
+                  <span className="detail-val text-gain font-mono">+{fund.cagr1y.toFixed(1)}%</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-lbl">5Y CAGR</span>
-                  <span className="detail-val text-gain">+{fund.cagr5y.toFixed(1)}%</span>
+                  <span className="detail-val text-gain font-mono">+{fund.cagr5y.toFixed(1)}%</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-lbl">AUM (₹ Cr)</span>
-                  <span className="detail-val">₹{fund.aumCr.toLocaleString("en-IN")}</span>
+                  <span className="detail-val font-mono">₹{fund.aumCr.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="detail-item">
                   <span className="detail-lbl">Expense Ratio</span>
-                  <span className="detail-val">{fund.expenseRatio}%</span>
+                  <span className="detail-val font-mono">{fund.expenseRatio}%</span>
                 </div>
               </div>
 
               <div className="fund-card-footer">
-                <span className="min-sip-tag">Min SIP: ₹{fund.minSipAmount}</span>
+                <span className="min-sip-tag font-mono">Min SIP: ₹{fund.minSipAmount}</span>
                 <span className="fund-risk-tag">{fund.risk} Risk</span>
               </div>
             </div>

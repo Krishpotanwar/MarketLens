@@ -173,11 +173,11 @@ export function MonteCarloFanChart({
       <div
         className="monte-carlo-fan-container"
         style={{
-          background: "#000000",
-          border: "1px solid #1c2638",
-          borderRadius: "8px",
+          background: "var(--bg-surface, #161b22)",
+          border: "1px solid var(--border-default, #30363d)",
+          borderRadius: "6px",
           padding: "24px",
-          color: "#94a3b8",
+          color: "var(--text-secondary, #8b949e)",
           textAlign: "center",
         }}
       >
@@ -191,11 +191,11 @@ export function MonteCarloFanChart({
       className="monte-carlo-fan-container"
       aria-label={`Monte Carlo Jump-Diffusion Fan Chart for ${result.symbol}`}
       style={{
-        background: "#000000",
-        border: "1px solid #1c2638",
-        borderRadius: "8px",
+        background: "var(--bg-surface, #161b22)",
+        border: "1px solid var(--border-default, #30363d)",
+        borderRadius: "6px",
         padding: "16px 20px",
-        color: "#f8fafc",
+        color: "var(--text-primary, #e6edf3)",
         display: "flex",
         flexDirection: "column",
         gap: "16px",
@@ -209,7 +209,7 @@ export function MonteCarloFanChart({
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          borderBottom: "1px solid #1c2638",
+          borderBottom: "1px solid var(--border-default, #30363d)",
           paddingBottom: "12px",
         }}
       >
@@ -221,18 +221,17 @@ export function MonteCarloFanChart({
                 width: "8px",
                 height: "8px",
                 borderRadius: "50%",
-                background: "#38bdf8",
-                boxShadow: "0 0 8px #38bdf8",
+                background: "#388bfd",
               }}
               aria-hidden="true"
             />
             <h3
               style={{
-                fontSize: "15px",
+                fontSize: "14px",
                 fontWeight: 600,
                 letterSpacing: "0.02em",
                 margin: 0,
-                color: "#f8fafc",
+                color: "var(--text-primary, #e6edf3)",
               }}
             >
               Monte Carlo Jump-Diffusion Fan Chart
@@ -240,12 +239,13 @@ export function MonteCarloFanChart({
             <span
               style={{
                 fontSize: "11px",
-                fontWeight: 700,
+                fontWeight: 600,
                 padding: "2px 6px",
                 borderRadius: "4px",
-                background: "rgba(56, 189, 248, 0.15)",
-                color: "#38bdf8",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
+                background: "rgba(56, 139, 253, 0.12)",
+                color: "var(--accent-blue, #388bfd)",
+                border: "1px solid rgba(56, 139, 253, 0.25)",
+                fontFamily: "var(--font-figures)",
               }}
             >
               {result.symbol}
@@ -254,7 +254,7 @@ export function MonteCarloFanChart({
           <p
             style={{
               fontSize: "12px",
-              color: "#94a3b8",
+              color: "var(--text-secondary, #8b949e)",
               margin: "4px 0 0 0",
             }}
           >
@@ -270,7 +270,7 @@ export function MonteCarloFanChart({
             flexWrap: "wrap",
             gap: "14px",
             fontSize: "11px",
-            color: "#94a3b8",
+            color: "var(--text-secondary, #8b949e)",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -279,8 +279,8 @@ export function MonteCarloFanChart({
                 width: "14px",
                 height: "8px",
                 borderRadius: "2px",
-                background: "rgba(56, 189, 248, 0.25)",
-                border: "1px solid rgba(56, 189, 248, 0.6)",
+                background: "rgba(56, 139, 253, 0.2)",
+                border: "1px solid rgba(56, 139, 253, 0.4)",
               }}
               aria-hidden="true"
             />
@@ -291,8 +291,7 @@ export function MonteCarloFanChart({
               style={{
                 width: "14px",
                 height: "2px",
-                background: "#38bdf8",
-                boxShadow: "0 0 4px #38bdf8",
+                background: "#388bfd",
               }}
               aria-hidden="true"
             />
@@ -303,7 +302,7 @@ export function MonteCarloFanChart({
               style={{
                 width: "14px",
                 height: "2px",
-                borderTop: "2px dashed #f59e0b",
+                borderTop: "2px dashed #d29922",
               }}
               aria-hidden="true"
             />
@@ -315,11 +314,11 @@ export function MonteCarloFanChart({
                 style={{
                   width: "14px",
                   height: "2px",
-                  borderTop: "2px dashed #10b981",
+                  borderTop: "2px dashed #3fb950",
                 }}
                 aria-hidden="true"
               />
-              <span style={{ color: "#10b981" }}>Target</span>
+              <span style={{ color: "#3fb950" }}>Target</span>
             </div>
           )}
           {typeof selectedStopLoss === "number" && (
@@ -328,11 +327,11 @@ export function MonteCarloFanChart({
                 style={{
                   width: "14px",
                   height: "2px",
-                  borderTop: "2px dashed #f43f5e",
+                  borderTop: "2px dashed #f85149",
                 }}
                 aria-hidden="true"
               />
-              <span style={{ color: "#f43f5e" }}>Stop Loss</span>
+              <span style={{ color: "#f85149" }}>Stop Loss</span>
             </div>
           )}
         </div>
@@ -349,20 +348,21 @@ export function MonteCarloFanChart({
         {/* Median Terminal */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
             borderRadius: "6px",
             padding: "10px 12px",
           }}
         >
-          <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
             Median Terminal Price
           </div>
           <div
             style={{
-              fontSize: "17px",
+              fontSize: "16px",
               fontWeight: 700,
-              color: "#38bdf8",
+              color: "var(--accent-blue, #388bfd)",
+              fontFamily: "var(--font-figures)",
               fontVariantNumeric: "tabular-nums",
               marginTop: "3px",
             }}
@@ -372,8 +372,10 @@ export function MonteCarloFanChart({
           <div
             style={{
               fontSize: "11px",
-              color: terminalDiff >= 0 ? "#10b981" : "#f43f5e",
+              color: terminalDiff >= 0 ? "var(--trade-gain, #3fb950)" : "var(--trade-loss, #f85149)",
               fontWeight: 600,
+              fontFamily: "var(--font-figures)",
+              fontVariantNumeric: "tabular-nums",
               marginTop: "2px",
             }}
           >
@@ -385,27 +387,28 @@ export function MonteCarloFanChart({
         {/* Probability of Profit */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
             borderRadius: "6px",
             padding: "10px 12px",
           }}
         >
-          <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
             Probability of Profit
           </div>
           <div
             style={{
-              fontSize: "17px",
+              fontSize: "16px",
               fontWeight: 700,
-              color: profitPct >= 50 ? "#10b981" : "#f59e0b",
+              color: profitPct >= 50 ? "var(--trade-gain, #3fb950)" : "#d29922",
+              fontFamily: "var(--font-figures)",
               fontVariantNumeric: "tabular-nums",
               marginTop: "3px",
             }}
           >
             {profitPct.toFixed(1)}%
           </div>
-          <div style={{ fontSize: "11px", color: "#94a3b8", marginTop: "2px" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-secondary, #8b949e)", marginTop: "2px" }}>
             {profitPct >= 50 ? "Favorable Odds (Bull Edge)" : "Defensive Odds (Base/Bear)"}
           </div>
         </div>
@@ -413,27 +416,28 @@ export function MonteCarloFanChart({
         {/* 95% VaR Loss Limit */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
             borderRadius: "6px",
             padding: "10px 12px",
           }}
         >
-          <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
             95% Value-at-Risk (p5)
           </div>
           <div
             style={{
-              fontSize: "17px",
+              fontSize: "16px",
               fontWeight: 700,
-              color: "#f59e0b",
+              color: "#d29922",
+              fontFamily: "var(--font-figures)",
               fontVariantNumeric: "tabular-nums",
               marginTop: "3px",
             }}
           >
             ₹{result.valueAtRisk95Percent.toFixed(2)}
           </div>
-          <div style={{ fontSize: "11px", color: "#f59e0b", fontWeight: 600, marginTop: "2px" }}>
+          <div style={{ fontSize: "11px", color: "#d29922", fontWeight: 600, fontFamily: "var(--font-figures)", fontVariantNumeric: "tabular-nums", marginTop: "2px" }}>
             {var95LossPercent.toFixed(2)}% tail loss floor
           </div>
         </div>
@@ -441,27 +445,28 @@ export function MonteCarloFanChart({
         {/* 99% VaR Tail Risk */}
         <div
           style={{
-            background: "#090d16",
-            border: "1px solid #1c2638",
+            background: "var(--bg-ground, #0d1117)",
+            border: "1px solid var(--border-default, #30363d)",
             borderRadius: "6px",
             padding: "10px 12px",
           }}
         >
-          <div style={{ fontSize: "11px", color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.04em" }}>
+          <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)", textTransform: "uppercase", letterSpacing: "0.04em" }}>
             99% VaR Tail Risk (p1)
           </div>
           <div
             style={{
-              fontSize: "17px",
+              fontSize: "16px",
               fontWeight: 700,
-              color: "#f43f5e",
+              color: "var(--trade-loss, #f85149)",
+              fontFamily: "var(--font-figures)",
               fontVariantNumeric: "tabular-nums",
               marginTop: "3px",
             }}
           >
             ₹{result.valueAtRisk99Percent.toFixed(2)}
           </div>
-          <div style={{ fontSize: "11px", color: "#f43f5e", fontWeight: 600, marginTop: "2px" }}>
+          <div style={{ fontSize: "11px", color: "var(--trade-loss, #f85149)", fontWeight: 600, fontFamily: "var(--font-figures)", fontVariantNumeric: "tabular-nums", marginTop: "2px" }}>
             {var99LossPercent.toFixed(2)}% extreme shock
           </div>
         </div>
@@ -472,33 +477,34 @@ export function MonteCarloFanChart({
         style={{
           minHeight: "24px",
           fontSize: "12px",
-          color: activeHoverRibbon ? "#f8fafc" : "#64748b",
+          color: activeHoverRibbon ? "var(--text-primary, #e6edf3)" : "var(--text-tertiary, #6e7681)",
           display: "flex",
           alignItems: "center",
           gap: "12px",
           padding: "4px 8px",
-          background: activeHoverRibbon ? "#090d16" : "transparent",
-          border: activeHoverRibbon ? "1px solid #1c2638" : "1px solid transparent",
+          background: activeHoverRibbon ? "var(--bg-ground, #0d1117)" : "transparent",
+          border: activeHoverRibbon ? "1px solid var(--border-default, #30363d)" : "1px solid transparent",
           borderRadius: "4px",
+          fontFamily: "var(--font-figures)",
           fontVariantNumeric: "tabular-nums",
         }}
       >
         {activeHoverRibbon ? (
           <>
-            <span style={{ color: "#38bdf8", fontWeight: 700 }}>
+            <span style={{ color: "var(--accent-blue, #388bfd)", fontWeight: 700 }}>
               Day {activeHoverRibbon.day}:
             </span>
             <span>
-              Median: <strong style={{ color: "#38bdf8" }}>₹{activeHoverRibbon.p50.toFixed(2)}</strong>
+              Median: <strong style={{ color: "var(--accent-blue, #388bfd)" }}>₹{activeHoverRibbon.p50.toFixed(2)}</strong>
             </span>
             <span>
-              80% CI: <strong style={{ color: "#94a3b8" }}>₹{activeHoverRibbon.p10.toFixed(2)} – ₹{activeHoverRibbon.p90.toFixed(2)}</strong>
+              80% CI: <strong style={{ color: "var(--text-secondary, #8b949e)" }}>₹{activeHoverRibbon.p10.toFixed(2)} – ₹{activeHoverRibbon.p90.toFixed(2)}</strong>
             </span>
             <span>
-              95% VaR: <strong style={{ color: "#f59e0b" }}>₹{activeHoverRibbon.p5.toFixed(2)}</strong>
+              95% VaR: <strong style={{ color: "#d29922" }}>₹{activeHoverRibbon.p5.toFixed(2)}</strong>
             </span>
             <span>
-              p95 High: <strong style={{ color: "#10b981" }}>₹{activeHoverRibbon.p95.toFixed(2)}</strong>
+              p95 High: <strong style={{ color: "var(--trade-gain, #3fb950)" }}>₹{activeHoverRibbon.p95.toFixed(2)}</strong>
             </span>
           </>
         ) : (
@@ -526,13 +532,13 @@ export function MonteCarloFanChart({
           <defs>
             {/* Linear gradient for 80% CI ribbon */}
             <linearGradient id={`fanGrad80-${gradientId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.14" />
+              <stop offset="0%" stopColor="#388bfd" stopOpacity="0.20" />
+              <stop offset="100%" stopColor="#388bfd" stopOpacity="0.10" />
             </linearGradient>
             {/* Linear gradient for 90% CI ribbon */}
             <linearGradient id={`fanGrad90-${gradientId}`} x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.10" />
-              <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.05" />
+              <stop offset="0%" stopColor="#388bfd" stopOpacity="0.08" />
+              <stop offset="100%" stopColor="#388bfd" stopOpacity="0.03" />
             </linearGradient>
           </defs>
 
@@ -546,16 +552,16 @@ export function MonteCarloFanChart({
                   y1={y}
                   x2={marginLeft + chartW}
                   y2={y}
-                  stroke="#1c2638"
+                  stroke="#21262d"
                   strokeWidth="1"
                 />
                 <text
                   x={marginLeft - 8}
                   y={y + 3.5}
                   textAnchor="end"
-                  fill="#64748b"
+                  fill="#8b949e"
                   fontSize="10"
-                  fontFamily="monospace"
+                  fontFamily="var(--font-figures)"
                 >
                   ₹{price.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                 </text>
@@ -573,7 +579,7 @@ export function MonteCarloFanChart({
                   y1={marginTop}
                   x2={x}
                   y2={marginTop + chartH}
-                  stroke="rgba(28, 38, 56, 0.45)"
+                  stroke="rgba(48, 54, 61, 0.45)"
                   strokeWidth="1"
                   strokeDasharray="2 3"
                 />
@@ -581,9 +587,9 @@ export function MonteCarloFanChart({
                   x={x}
                   y={marginTop + chartH + 18}
                   textAnchor="middle"
-                  fill="#94a3b8"
+                  fill="#8b949e"
                   fontSize="10"
-                  fontFamily="monospace"
+                  fontFamily="var(--font-figures)"
                 >
                   D{day}
                 </text>
@@ -609,8 +615,8 @@ export function MonteCarloFanChart({
           <path
             d={paths.p95}
             fill="none"
-            stroke="rgba(56, 189, 248, 0.45)"
-            strokeWidth="1.2"
+            stroke="rgba(56, 139, 253, 0.4)"
+            strokeWidth="1"
             strokeDasharray="3 3"
           />
 
@@ -618,17 +624,17 @@ export function MonteCarloFanChart({
           <path
             d={paths.var95}
             fill="none"
-            stroke="#f59e0b"
-            strokeWidth="1.8"
-            strokeDasharray="5 4"
+            stroke="#d29922"
+            strokeWidth="1.5"
+            strokeDasharray="4 3"
           />
 
           {/* Median Trajectory (p50) */}
           <path
             d={paths.median}
             fill="none"
-            stroke="#38bdf8"
-            strokeWidth="2.5"
+            stroke="#388bfd"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
@@ -639,16 +645,16 @@ export function MonteCarloFanChart({
             y1={getY(result.currentPrice)}
             x2={marginLeft + chartW}
             y2={getY(result.currentPrice)}
-            stroke="rgba(148, 163, 184, 0.35)"
-            strokeWidth="1.2"
+            stroke="rgba(110, 118, 129, 0.4)"
+            strokeWidth="1"
             strokeDasharray="2 2"
           />
           <text
             x={marginLeft + chartW + 6}
             y={getY(result.currentPrice) + 3.5}
-            fill="#94a3b8"
+            fill="#8b949e"
             fontSize="10"
-            fontFamily="monospace"
+            fontFamily="var(--font-figures)"
           >
             LTP ₹{result.currentPrice.toFixed(0)}
           </text>
@@ -661,17 +667,17 @@ export function MonteCarloFanChart({
                 y1={getY(selectedTarget)}
                 x2={marginLeft + chartW}
                 y2={getY(selectedTarget)}
-                stroke="#10b981"
-                strokeWidth="1.6"
+                stroke="#3fb950"
+                strokeWidth="1.5"
                 strokeDasharray="4 3"
               />
               <text
                 x={marginLeft + chartW + 6}
                 y={getY(selectedTarget) + 3.5}
-                fill="#10b981"
+                fill="#3fb950"
                 fontSize="10"
-                fontWeight="700"
-                fontFamily="monospace"
+                fontWeight="600"
+                fontFamily="var(--font-figures)"
               >
                 TGT ₹{selectedTarget.toFixed(0)}
               </text>
@@ -686,17 +692,17 @@ export function MonteCarloFanChart({
                 y1={getY(selectedStopLoss)}
                 x2={marginLeft + chartW}
                 y2={getY(selectedStopLoss)}
-                stroke="#f43f5e"
-                strokeWidth="1.6"
+                stroke="#f85149"
+                strokeWidth="1.5"
                 strokeDasharray="4 3"
               />
               <text
                 x={marginLeft + chartW + 6}
                 y={getY(selectedStopLoss) + 3.5}
-                fill="#f43f5e"
+                fill="#f85149"
                 fontSize="10"
-                fontWeight="700"
-                fontFamily="monospace"
+                fontWeight="600"
+                fontFamily="var(--font-figures)"
               >
                 SL ₹{selectedStopLoss.toFixed(0)}
               </text>
@@ -707,9 +713,9 @@ export function MonteCarloFanChart({
           <circle
             cx={getX(0)}
             cy={getY(result.currentPrice)}
-            r="4.5"
-            fill="#38bdf8"
-            stroke="#000000"
+            r="4"
+            fill="#388bfd"
+            stroke="#0d1117"
             strokeWidth="1.5"
           />
 
@@ -721,8 +727,8 @@ export function MonteCarloFanChart({
                 y1={marginTop}
                 x2={getX(activeHoverRibbon.day)}
                 y2={marginTop + chartH}
-                stroke="rgba(248, 250, 252, 0.4)"
-                strokeWidth="1.2"
+                stroke="rgba(230, 237, 243, 0.3)"
+                strokeWidth="1"
                 strokeDasharray="3 3"
               />
               {/* Dots at p90, p50, p10, p5 */}
@@ -730,27 +736,27 @@ export function MonteCarloFanChart({
                 cx={getX(activeHoverRibbon.day)}
                 cy={getY(activeHoverRibbon.p90)}
                 r="3"
-                fill="#38bdf8"
+                fill="#388bfd"
               />
               <circle
                 cx={getX(activeHoverRibbon.day)}
                 cy={getY(activeHoverRibbon.p50)}
-                r="4.5"
-                fill="#38bdf8"
-                stroke="#000000"
+                r="4"
+                fill="#388bfd"
+                stroke="#0d1117"
                 strokeWidth="1.5"
               />
               <circle
                 cx={getX(activeHoverRibbon.day)}
                 cy={getY(activeHoverRibbon.p10)}
                 r="3"
-                fill="#38bdf8"
+                fill="#388bfd"
               />
               <circle
                 cx={getX(activeHoverRibbon.day)}
                 cy={getY(activeHoverRibbon.p5)}
                 r="3.5"
-                fill="#f59e0b"
+                fill="#d29922"
               />
             </g>
           )}

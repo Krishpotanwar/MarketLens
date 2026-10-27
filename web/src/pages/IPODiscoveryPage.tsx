@@ -407,7 +407,7 @@ export function IPODiscoveryPage({
       {(activeTab === "ALL" || activeTab === "ACTIVE") && (
         <section className="ipo-section" aria-label="Active IPO Issues">
           <div className="ipo-section-header">
-            <h2>⚡ Currently Open for Subscription</h2>
+            <h2>Currently Open for Subscription</h2>
             <span className="badge-live-pulse">● Accepting Bids via UPI / ASBA</span>
           </div>
 
@@ -419,7 +419,7 @@ export function IPODiscoveryPage({
                     <span className="ipo-symbol">{ipo.symbol}</span>
                     <span className="ipo-name">{ipo.name}</span>
                   </div>
-                  <span className="ipo-status-pill open">OPEN</span>
+                  <span className="ipo-status-pill ipo-status-tag open">[OPEN]</span>
                 </div>
 
                 <div className="ipo-card-metrics">
@@ -460,14 +460,14 @@ export function IPODiscoveryPage({
                     className="btn-apply-ipo"
                     onClick={() => onSelectForTrade(ipo.symbol)}
                   >
-                    ⚡ Apply / Paper Bid (1 Lot)
+                    Apply / Paper Bid (1 Lot)
                   </button>
                   <button
                     type="button"
                     className="btn-ai-ipo"
                     onClick={() => onSelectForAI(ipo.symbol)}
                   >
-                    🤖 Simulate Timelines
+                    Simulate Timelines
                   </button>
                 </div>
               </div>
@@ -480,7 +480,7 @@ export function IPODiscoveryPage({
       {(activeTab === "ALL" || activeTab === "UPCOMING") && (
         <section className="ipo-section" aria-label="Upcoming IPO Issues">
           <div className="ipo-section-header">
-            <h2>📅 Upcoming SEBI-Approved Pipeline</h2>
+            <h2>Upcoming SEBI-Approved Pipeline</h2>
             <span className="ipo-sub-note">Expected opening dates & preliminary price bands</span>
           </div>
 
@@ -492,7 +492,7 @@ export function IPODiscoveryPage({
                     <span className="ipo-symbol">{ipo.symbol}</span>
                     <span className="ipo-name">{ipo.name}</span>
                   </div>
-                  <span className="ipo-status-pill upcoming">UPCOMING</span>
+                  <span className="ipo-status-pill ipo-status-tag upcoming">[UPCOMING]</span>
                 </div>
 
                 <div className="ipo-card-metrics">
@@ -525,7 +525,7 @@ export function IPODiscoveryPage({
                     className="btn-ai-ipo"
                     onClick={() => onSelectForAI(ipo.symbol)}
                   >
-                    🤖 Run Pre-IPO AI Valuation
+                    Run Pre-IPO AI Valuation
                   </button>
                 </div>
               </div>
@@ -538,7 +538,7 @@ export function IPODiscoveryPage({
       {(activeTab === "ALL" || activeTab === "LISTED") && (
         <section className="ipo-section recently-listed-section" aria-label="Recently Listed IPOs">
           <div className="ipo-section-header">
-            <h2>🚀 Recently Listed Companies & Post-IPO Returns</h2>
+            <h2>Recently Listed Companies & Post-IPO Returns</h2>
             <span className="ipo-sub-note">Live NSE telemetry with listing gains vs current market price</span>
           </div>
 
@@ -547,13 +547,14 @@ export function IPODiscoveryPage({
               <thead>
                 <tr>
                   <th scope="col">Company & Symbol</th>
+                  <th scope="col">Status</th>
                   <th scope="col">Sector</th>
                   <th scope="col">Listing Date</th>
-                  <th scope="col">Issue Price</th>
-                  <th scope="col">Listing Day Price</th>
-                  <th scope="col">Current LTP</th>
-                  <th scope="col">Listing Gain</th>
-                  <th scope="col">Total Return</th>
+                  <th scope="col" className="table-num">Issue Price</th>
+                  <th scope="col" className="table-num">Listing Day Price</th>
+                  <th scope="col" className="table-num">Current LTP</th>
+                  <th scope="col" className="table-num">Listing Gain</th>
+                  <th scope="col" className="table-num">Total Return</th>
                   <th scope="col">Actions</th>
                 </tr>
               </thead>
@@ -568,17 +569,20 @@ export function IPODiscoveryPage({
                         <span className="table-symbol">{ipo.symbol}</span>
                         <span className="table-sub">{ipo.name}</span>
                       </th>
+                      <td>
+                        <span className="ipo-status-pill ipo-status-tag listed">[LISTED]</span>
+                      </td>
                       <td>{ipo.sector}</td>
                       <td>{ipo.listingDate}</td>
-                      <td>₹{ipo.issuePrice.toFixed(2)}</td>
-                      <td>₹{ipo.listingPrice.toFixed(2)}</td>
-                      <td className="font-mono font-semibold">
+                      <td className="table-num">₹{ipo.issuePrice.toFixed(2)}</td>
+                      <td className="table-num">₹{ipo.listingPrice.toFixed(2)}</td>
+                      <td className="table-num font-mono font-semibold">
                         ₹{ipo.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </td>
-                      <td className={isListingGain ? "text-gain" : "text-loss"}>
+                      <td className={`table-num ${isListingGain ? "text-gain" : "text-loss"}`}>
                         {isListingGain ? "+" : ""}{ipo.listingGainPercent.toFixed(1)}%
                       </td>
-                      <td className={isCurrentGain ? "text-gain" : "text-loss"}>
+                      <td className={`table-num ${isCurrentGain ? "text-gain" : "text-loss"}`}>
                         {isCurrentGain ? "+" : ""}{ipo.currentGainPercent.toFixed(1)}%
                       </td>
                       <td>
@@ -590,7 +594,7 @@ export function IPODiscoveryPage({
                               onClick={() => onSelectForTrend(ipo.symbol)}
                               title={`View live price action and trend analysis for ${ipo.symbol}`}
                             >
-                              📈 Analyze
+                              Analyze
                             </button>
                           )}
                           <button
@@ -599,7 +603,7 @@ export function IPODiscoveryPage({
                             onClick={() => onSelectForTrade(ipo.symbol)}
                             title={`Place Paper Trade for ${ipo.symbol}`}
                           >
-                            ⚡ Trade
+                            Trade
                           </button>
                           <button
                             type="button"
@@ -607,7 +611,7 @@ export function IPODiscoveryPage({
                             onClick={() => onSelectForAI(ipo.symbol)}
                             title={`Run AI Strategy Lab for ${ipo.symbol}`}
                           >
-                            🤖 AI
+                            AI Strategy
                           </button>
                         </div>
                       </td>

@@ -735,19 +735,19 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
                   <div className="setup-matrix-grid">
                     <div className="setup-cell">
                       <span className="cell-label">Entry Level (LTP)</span>
-                      <span className="cell-val">₹{activeStock.ltp.toFixed(2)}</span>
+                      <span className="cell-val font-mono">₹{activeStock.ltp.toFixed(2)}</span>
                     </div>
                     <div className="setup-cell">
                       <span className="cell-label">Target Price</span>
-                      <span className="cell-val text-gain">₹{activeTimeline.targetPrice.toFixed(2)}</span>
+                      <span className="cell-val text-gain font-mono">₹{activeTimeline.targetPrice.toFixed(2)}</span>
                     </div>
                     <div className="setup-cell">
                       <span className="cell-label">Stop-Loss</span>
-                      <span className="cell-val text-loss">₹{activeTimeline.stopLossPrice.toFixed(2)}</span>
+                      <span className="cell-val text-loss font-mono">₹{activeTimeline.stopLossPrice.toFixed(2)}</span>
                     </div>
                     <div className="setup-cell">
                       <span className="cell-label">Risk : Reward</span>
-                      <span className="cell-val text-accent">{riskRewardRatio}</span>
+                      <span className="cell-val text-accent font-mono">{riskRewardRatio}</span>
                     </div>
                   </div>
 
@@ -759,27 +759,27 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
                     <div className="friction-grid">
                       <div className="friction-cell">
                         <span className="f-label">Brokerage</span>
-                        <span className="f-val">₹{statutoryFriction.brokerage.toFixed(2)}</span>
+                        <span className="f-val font-mono">₹{statutoryFriction.brokerage.toFixed(2)}</span>
                       </div>
                       <div className="friction-cell">
                         <span className="f-label">STT (0.1%)</span>
-                        <span className="f-val">₹{statutoryFriction.stt.toFixed(2)}</span>
+                        <span className="f-val font-mono">₹{statutoryFriction.stt.toFixed(2)}</span>
                       </div>
                       <div className="friction-cell">
                         <span className="f-label">Stamp Duty</span>
-                        <span className="f-val">₹{statutoryFriction.stampDuty.toFixed(2)}</span>
+                        <span className="f-val font-mono">₹{statutoryFriction.stampDuty.toFixed(2)}</span>
                       </div>
                       <div className="friction-cell">
-                        <span className="f-label">Exchange & SEBI</span>
-                        <span className="f-val">₹{statutoryFriction.exchangeAndSebi.toFixed(2)}</span>
+                        <span className="f-label">Exchange & SEBI Fee</span>
+                        <span className="f-val font-mono">₹{statutoryFriction.exchangeAndSebi.toFixed(2)}</span>
                       </div>
                       <div className="friction-cell">
                         <span className="f-label">GST (18%)</span>
-                        <span className="f-val">₹{statutoryFriction.gst.toFixed(2)}</span>
+                        <span className="f-val font-mono">₹{statutoryFriction.gst.toFixed(2)}</span>
                       </div>
                       <div className="friction-cell">
                         <span className="f-label">Total Levies</span>
-                        <span className="f-val text-loss">
+                        <span className="f-val text-loss font-mono">
                           ₹{statutoryFriction.totalCharges.toFixed(2)} ({statutoryFriction.frictionPercent.toFixed(3)}%)
                         </span>
                       </div>

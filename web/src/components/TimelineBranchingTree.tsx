@@ -23,40 +23,40 @@ const SCENARIO_THEMES: Record<TimelineScenarioId, ScenarioTheme> = {
     label: "Bullish Expansion",
     badgeLabel: "BULL",
     icon: "▲",
-    accent: "#10b981",
-    accentBg: "rgba(16, 185, 129, 0.12)",
-    borderHover: "#10b981",
-    glow: "rgba(16, 185, 129, 0.28)",
+    accent: "#3fb950",
+    accentBg: "rgba(63, 185, 80, 0.12)",
+    borderHover: "#3fb950",
+    glow: "none",
     description: "Upside breakout, margin expansion & institutional accumulation",
   },
   BASE: {
     label: "Base Consolidation",
     badgeLabel: "BASE",
     icon: "◆",
-    accent: "#38bdf8",
-    accentBg: "rgba(56, 189, 248, 0.12)",
-    borderHover: "#38bdf8",
-    glow: "rgba(56, 189, 248, 0.28)",
+    accent: "#388bfd",
+    accentBg: "rgba(56, 139, 253, 0.12)",
+    borderHover: "#388bfd",
+    glow: "none",
     description: "VWAP mean-reversion, rangebound accumulation & steady earnings",
   },
   BEAR: {
     label: "Bearish Breakdown",
     badgeLabel: "BEAR",
     icon: "▼",
-    accent: "#f59e0b",
-    accentBg: "rgba(245, 158, 11, 0.12)",
-    borderHover: "#f59e0b",
-    glow: "rgba(245, 158, 11, 0.28)",
+    accent: "#d29922",
+    accentBg: "rgba(210, 153, 34, 0.12)",
+    borderHover: "#d29922",
+    glow: "none",
     description: "Support violation, multiple contraction & margin compression",
   },
   BLACK_SWAN: {
     label: "Black Swan Shock",
     badgeLabel: "BLACK SWAN",
     icon: "⚡",
-    accent: "#f43f5e",
-    accentBg: "rgba(244, 63, 94, 0.12)",
-    borderHover: "#f43f5e",
-    glow: "rgba(244, 63, 94, 0.28)",
+    accent: "#f85149",
+    accentBg: "rgba(248, 81, 73, 0.12)",
+    borderHover: "#f85149",
+    glow: "none",
     description: "Exogenous tail-risk event, regulatory action or systemic liquidation",
   },
 };
@@ -83,11 +83,11 @@ export function TimelineBranchingTree({
       <div
         className="timeline-branching-tree"
         style={{
-          background: "#000000",
-          border: "1px solid #1c2638",
-          borderRadius: "8px",
+          background: "var(--bg-surface, #161b22)",
+          border: "1px solid var(--border-default, #30363d)",
+          borderRadius: "6px",
           padding: "24px",
-          color: "#94a3b8",
+          color: "var(--text-secondary, #8b949e)",
           textAlign: "center",
         }}
       >
@@ -101,11 +101,11 @@ export function TimelineBranchingTree({
       className="timeline-branching-tree"
       aria-label="Multi-Timeline Scenario Branching Tree"
       style={{
-        background: "#000000",
-        border: "1px solid #1c2638",
-        borderRadius: "8px",
+        background: "var(--bg-surface, #161b22)",
+        border: "1px solid var(--border-default, #30363d)",
+        borderRadius: "6px",
         padding: "16px 20px",
-        color: "#f8fafc",
+        color: "var(--text-primary, #e6edf3)",
         display: "flex",
         flexDirection: "column",
         gap: "16px",
@@ -119,7 +119,7 @@ export function TimelineBranchingTree({
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          borderBottom: "1px solid #1c2638",
+          borderBottom: "1px solid var(--border-default, #30363d)",
           paddingBottom: "12px",
         }}
       >
@@ -131,18 +131,17 @@ export function TimelineBranchingTree({
                 width: "8px",
                 height: "8px",
                 borderRadius: "50%",
-                background: "#38bdf8",
-                boxShadow: "0 0 8px #38bdf8",
+                background: "#388bfd",
               }}
               aria-hidden="true"
             />
             <h3
               style={{
-                fontSize: "15px",
+                fontSize: "14px",
                 fontWeight: 600,
                 letterSpacing: "0.02em",
                 margin: 0,
-                color: "#f8fafc",
+                color: "var(--text-primary, #e6edf3)",
               }}
             >
               Multi-Timeline Branching Tree
@@ -150,12 +149,13 @@ export function TimelineBranchingTree({
             <span
               style={{
                 fontSize: "11px",
-                fontWeight: 700,
+                fontWeight: 600,
                 padding: "2px 6px",
                 borderRadius: "4px",
-                background: "rgba(56, 189, 248, 0.15)",
-                color: "#38bdf8",
-                border: "1px solid rgba(56, 189, 248, 0.3)",
+                background: "rgba(56, 139, 253, 0.12)",
+                color: "var(--accent-blue, #388bfd)",
+                border: "1px solid rgba(56, 139, 253, 0.25)",
+                fontFamily: "var(--font-figures)",
               }}
             >
               4 Branches · 100% Calibrated
@@ -164,7 +164,7 @@ export function TimelineBranchingTree({
           <p
             style={{
               fontSize: "12px",
-              color: "#94a3b8",
+              color: "var(--text-secondary, #8b949e)",
               margin: "4px 0 0 0",
             }}
           >
@@ -172,8 +172,8 @@ export function TimelineBranchingTree({
           </p>
         </div>
 
-        <div style={{ fontSize: "11px", color: "#64748b" }}>
-          Selected: <strong style={{ color: SCENARIO_THEMES[activeTimelineId]?.accent || "#38bdf8" }}>
+        <div style={{ fontSize: "11px", color: "var(--text-tertiary, #6e7681)" }}>
+          Selected: <strong style={{ color: SCENARIO_THEMES[activeTimelineId]?.accent || "#388bfd" }}>
             {SCENARIO_THEMES[activeTimelineId]?.label || activeTimelineId}
           </strong>
         </div>
@@ -182,8 +182,8 @@ export function TimelineBranchingTree({
       {/* Visual Branching Tree SVG Diagram */}
       <div
         style={{
-          background: "#090d16",
-          border: "1px solid #1c2638",
+          background: "var(--bg-ground, #0d1117)",
+          border: "1px solid var(--border-default, #30363d)",
           borderRadius: "6px",
           padding: "10px 14px",
           overflow: "hidden",
@@ -198,9 +198,9 @@ export function TimelineBranchingTree({
         >
           {/* Origin Node (Left) */}
           <g>
-            <circle cx="50" cy="55" r="14" fill="#101624" stroke="#38bdf8" strokeWidth="2" />
-            <circle cx="50" cy="55" r="5" fill="#38bdf8" />
-            <text x="50" y="85" textAnchor="middle" fill="#94a3b8" fontSize="10" fontWeight="600">
+            <circle cx="50" cy="55" r="14" fill="#161b22" stroke="#388bfd" strokeWidth="1.5" />
+            <circle cx="50" cy="55" r="4" fill="#388bfd" />
+            <text x="50" y="85" textAnchor="middle" fill="#8b949e" fontSize="10" fontWeight="600" fontFamily="var(--font-interface)">
               LTP Origin
             </text>
           </g>
@@ -237,7 +237,7 @@ export function TimelineBranchingTree({
                   d={dCurve}
                   fill="none"
                   stroke={theme.accent}
-                  strokeWidth={isActive ? 3 : 1.2}
+                  strokeWidth={isActive ? 2.5 : 1}
                   strokeOpacity={isActive ? 1 : 0.4}
                   strokeDasharray={isActive ? "none" : "3 2"}
                 />
@@ -248,9 +248,9 @@ export function TimelineBranchingTree({
                   y={targetY - 10}
                   width="160"
                   height="20"
-                  rx="4"
-                  fill={isActive ? theme.accentBg : "#090d16"}
-                  stroke={isActive ? theme.accent : "#1c2638"}
+                  rx="3"
+                  fill={isActive ? theme.accentBg : "#161b22"}
+                  stroke={isActive ? theme.accent : "#30363d"}
                   strokeWidth={isActive ? 1.5 : 1}
                 />
 
@@ -260,7 +260,8 @@ export function TimelineBranchingTree({
                   y={targetY + 4}
                   fill={theme.accent}
                   fontSize="11"
-                  fontWeight="700"
+                  fontWeight="600"
+                  fontFamily="var(--font-interface)"
                 >
                   {theme.icon} {theme.badgeLabel}
                 </text>
@@ -268,10 +269,10 @@ export function TimelineBranchingTree({
                   x={targetX + 85}
                   y={targetY + 4}
                   textAnchor="end"
-                  fill={isActive ? "#f8fafc" : "#94a3b8"}
+                  fill={isActive ? "#e6edf3" : "#8b949e"}
                   fontSize="10"
                   fontWeight="600"
-                  fontFamily="monospace"
+                  fontFamily="var(--font-figures)"
                 >
                   {sc.probabilityPercent}% prob
                 </text>
@@ -307,16 +308,15 @@ export function TimelineBranchingTree({
                 }
               }}
               style={{
-                background: isActive ? "#0d1422" : "#090d16",
-                border: `1px solid ${isActive ? theme.accent : "#1c2638"}`,
-                boxShadow: isActive ? `0 0 16px ${theme.glow}` : "none",
-                borderRadius: "8px",
+                background: isActive ? "var(--bg-subtle, #21262d)" : "var(--bg-ground, #0d1117)",
+                border: `1px solid ${isActive ? theme.accent : "var(--border-default, #30363d)"}`,
+                borderRadius: "6px",
                 padding: "14px 16px",
                 display: "flex",
                 flexDirection: "column",
                 gap: "12px",
                 cursor: "pointer",
-                transition: "border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease",
+                transition: "border-color 0.15s ease, background 0.15s ease",
                 position: "relative",
               }}
             >
@@ -333,9 +333,9 @@ export function TimelineBranchingTree({
                   <span
                     style={{
                       fontSize: "11px",
-                      fontWeight: 700,
+                      fontWeight: 600,
                       padding: "2px 8px",
-                      borderRadius: "4px",
+                      borderRadius: "3px",
                       background: theme.accentBg,
                       color: theme.accent,
                       border: `1px solid ${theme.accent}`,
@@ -351,7 +351,8 @@ export function TimelineBranchingTree({
                     style={{
                       fontSize: "11px",
                       fontWeight: 600,
-                      color: "#94a3b8",
+                      color: "var(--text-secondary, #8b949e)",
+                      fontFamily: "var(--font-figures)",
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
@@ -367,9 +368,9 @@ export function TimelineBranchingTree({
                       letterSpacing: "0.04em",
                       textTransform: "uppercase",
                       padding: "2px 6px",
-                      borderRadius: "4px",
+                      borderRadius: "3px",
                       background: theme.accent,
-                      color: "#000000",
+                      color: "#0d1117",
                     }}
                   >
                     Active
@@ -378,7 +379,7 @@ export function TimelineBranchingTree({
                   <span
                     style={{
                       fontSize: "10px",
-                      color: "#64748b",
+                      color: "var(--text-tertiary, #6e7681)",
                     }}
                   >
                     Click to select
@@ -390,20 +391,21 @@ export function TimelineBranchingTree({
               <div>
                 <h4
                   style={{
-                    fontSize: "14px",
+                    fontSize: "13px",
                     fontWeight: 600,
                     margin: 0,
-                    color: "#f8fafc",
+                    color: "var(--text-primary, #e6edf3)",
                   }}
                 >
                   {scenario.name}
                 </h4>
                 <div
                   style={{
-                    fontSize: "18px",
+                    fontSize: "16px",
                     fontWeight: 700,
                     color: theme.accent,
                     marginTop: "4px",
+                    fontFamily: "var(--font-figures)",
                     fontVariantNumeric: "tabular-nums",
                   }}
                 >
@@ -417,26 +419,27 @@ export function TimelineBranchingTree({
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
                   gap: "8px",
-                  background: "#000000",
-                  border: "1px solid #1c2638",
-                  borderRadius: "6px",
+                  background: "var(--bg-surface, #161b22)",
+                  border: "1px solid var(--border-default, #30363d)",
+                  borderRadius: "4px",
                   padding: "8px 10px",
+                  fontFamily: "var(--font-figures)",
                   fontVariantNumeric: "tabular-nums",
                 }}
               >
                 <div>
-                  <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase" }}>
+                  <div style={{ fontSize: "10px", color: "var(--text-tertiary, #6e7681)", textTransform: "uppercase" }}>
                     Target Price
                   </div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#10b981", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--trade-gain, #3fb950)", marginTop: "2px" }}>
                     ₹{scenario.targetPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: "10px", color: "#94a3b8", textTransform: "uppercase" }}>
+                  <div style={{ fontSize: "10px", color: "var(--text-tertiary, #6e7681)", textTransform: "uppercase" }}>
                     Stop Loss Price
                   </div>
-                  <div style={{ fontSize: "13px", fontWeight: 700, color: "#f43f5e", marginTop: "2px" }}>
+                  <div style={{ fontSize: "12px", fontWeight: 700, color: "var(--trade-loss, #f85149)", marginTop: "2px" }}>
                     ₹{scenario.stopLossPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </div>
                 </div>
@@ -448,8 +451,8 @@ export function TimelineBranchingTree({
                   <div
                     style={{
                       fontSize: "10px",
-                      fontWeight: 700,
-                      color: "#94a3b8",
+                      fontWeight: 600,
+                      color: "var(--text-secondary, #8b949e)",
                       textTransform: "uppercase",
                       letterSpacing: "0.04em",
                       marginBottom: "6px",
@@ -466,7 +469,7 @@ export function TimelineBranchingTree({
                       flexDirection: "column",
                       gap: "4px",
                       fontSize: "11px",
-                      color: "#cbd5e1",
+                      color: "var(--text-secondary, #8b949e)",
                     }}
                   >
                     {scenario.catalystTriggers.map((cat, i) => (
@@ -491,12 +494,12 @@ export function TimelineBranchingTree({
               {scenario.invalidationCondition && (
                 <div
                   style={{
-                    background: "rgba(245, 158, 11, 0.08)",
-                    border: "1px solid rgba(245, 158, 11, 0.25)",
+                    background: "rgba(210, 153, 34, 0.08)",
+                    border: "1px solid rgba(210, 153, 34, 0.25)",
                     borderRadius: "4px",
                     padding: "6px 8px",
                     fontSize: "11px",
-                    color: "#f59e0b",
+                    color: "#d29922",
                     lineHeight: "1.35",
                   }}
                 >
@@ -512,16 +515,16 @@ export function TimelineBranchingTree({
                 style={{
                   marginTop: "auto",
                   paddingTop: "6px",
-                  borderTop: "1px solid #1c2638",
+                  borderTop: "1px solid var(--border-muted, #21262d)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "space-between",
                   fontSize: "10px",
-                  color: "#64748b",
+                  color: "var(--text-tertiary, #6e7681)",
                 }}
               >
                 <span>SEBI / Exchange Levies:</span>
-                <span style={{ color: "#94a3b8", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
+                <span style={{ color: "var(--text-secondary, #8b949e)", fontWeight: 600, fontFamily: "var(--font-figures)", fontVariantNumeric: "tabular-nums" }}>
                   ~{scenario.estimatedFrictionPercent.toFixed(2)}% friction
                 </span>
               </div>
