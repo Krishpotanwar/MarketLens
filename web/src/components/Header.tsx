@@ -75,7 +75,7 @@ export function Header({
         <div className="topbar-right">
           {onSelectStock && (
             <div className="command-search-wrap">
-              <GlobalSearchBar onSelectStock={onSelectStock} />
+              <GlobalSearchBar onSelectStock={onSelectStock} activeTab={currentTab} />
             </div>
           )}
           <div className="cash-blotter" title="Virtual Capital Available">

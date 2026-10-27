@@ -387,6 +387,7 @@ interface GlobalSearchBarProps {
   initialOpen?: boolean;
   initialSearching?: boolean;
   initialQuery?: string;
+  activeTab?: string;
 }
 
 export function GlobalSearchBar({
@@ -394,8 +395,15 @@ export function GlobalSearchBar({
   initialOpen = false,
   initialSearching = false,
   initialQuery = "",
+  activeTab,
 }: GlobalSearchBarProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
+
+  useEffect(() => {
+    if (activeTab) {
+      setIsOpen(false);
+    }
+  }, [activeTab]);
   const [query, setQuery] = useState(initialQuery);
   const [selectedCap, setSelectedCap] = useState<string>("ALL");
   const [isSearching, setIsSearching] = useState(initialSearching);

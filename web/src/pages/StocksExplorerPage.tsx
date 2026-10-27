@@ -248,7 +248,7 @@ export function StocksExplorerPage({
 
     const timer = setTimeout(() => {
       fetchStockCatalog(page, selectedExchange, selectedCap, searchQuery);
-    }, 250);
+    }, 150);
 
     return () => clearTimeout(timer);
   }, [fetchStockCatalog, page, selectedExchange, selectedCap, searchQuery]);

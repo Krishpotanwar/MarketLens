@@ -101,7 +101,7 @@ async function runRealUserAudit() {
         await searchInput.fill("Tata");
         await sleep(500);
         await searchInput.fill("XYZABCDEF12345");
-        await sleep(500);
+        await page.waitForSelector(".empty-table-cell", { timeout: 3000 }).catch(() => null);
         // Verify empty state text appears
         const emptyCell = await page.$(".empty-table-cell");
         if (!emptyCell) {
@@ -181,7 +181,7 @@ async function runRealUserAudit() {
       }
 
       // Search in screener
-      const screenerSearch = await page.$(".screener-search-input, input[placeholder*='screener' i], input[placeholder*='search' i]");
+      const screenerSearch = await page.$(".screener-search-input");
       if (screenerSearch) {
         await screenerSearch.fill("INFY");
         await sleep(400);
