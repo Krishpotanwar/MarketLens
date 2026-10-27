@@ -54,7 +54,7 @@ body {
   min-width: 320px;
   min-height: 100vh;
   font-family: var(--font-interface);
-  background: #07090e url('/backgroundimg.png') no-repeat center top fixed;
+  background: #07090e url('/backgroundimg.png') no-repeat right top fixed;
   background-size: cover;
   color: var(--text-primary);
 }
@@ -138,7 +138,10 @@ body {
   max-width: 100vw;
   overflow-x: hidden;
   flex-direction: column;
-  background: linear-gradient(180deg, rgba(7, 10, 18, 0.78) 0%, rgba(7, 10, 18, 0.88) 100%);
+  background: 
+    radial-gradient(ellipse 50% 60% at 94% 68%, rgba(245, 158, 11, 0.24) 0%, rgba(217, 119, 6, 0.08) 45%, transparent 75%),
+    radial-gradient(ellipse 40% 50% at 8% 35%, rgba(14, 165, 233, 0.12) 0%, transparent 65%),
+    linear-gradient(180deg, rgba(7, 10, 18, 0.45) 0%, rgba(7, 10, 18, 0.68) 100%);
   color: var(--text-main);
   padding: 0 clamp(0.75rem, 3vw, 4rem);
   transition: background-color 0.2s ease, color 0.2s ease;
@@ -224,29 +227,28 @@ main,
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--text-secondary, #8b949e);
-  background: var(--bg-surface, #161b22);
-  border: 1px solid var(--border-default, #30363d);
+  background: rgba(18, 24, 38, 0.75);
+  border: 1px solid rgba(48, 64, 88, 0.45);
   border-radius: 4px;
   line-height: 1.2;
 }
 
 .badge-live-pulse .live-dot,
 .data-badge.live .live-dot {
-  color: var(--trade-gain, #3fb950);
-  font-size: 0.65rem;
-  line-height: 1;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-emerald, #10b981);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.6);
   display: inline-block;
-  animation: liveDotPulse 2s ease-in-out infinite;
+  font-size: 0;
+  color: transparent;
+  line-height: 1;
 }
 
 .badge-exchange-tag {
   color: var(--text-tertiary, #6e7681);
   font-size: 0.65rem;
-}
-
-@keyframes liveDotPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.35; transform: scale(0.85); }
 }
 
 /* Center Indices Tape Ribbon */
@@ -1006,11 +1008,7 @@ main,
 }
 
 .data-badge.live {
-  color: var(--gain);
-}
-.data-badge.live span {
-  background: var(--gain);
-  animation: pulse-live 2s infinite ease-in-out;
+  color: var(--text-secondary);
 }
 .badge-exchange-tag {
   opacity: 0.85;
