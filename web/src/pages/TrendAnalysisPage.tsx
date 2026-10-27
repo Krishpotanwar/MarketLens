@@ -822,7 +822,10 @@ export function TrendAnalysisPage({
                     role="tab"
                     aria-selected={timeframe === tf}
                     className={`tf-btn ${timeframe === tf ? "active" : ""}`}
-                    onClick={() => setTimeframe(tf)}
+                    onClick={() => {
+                      setTimeframe(tf);
+                      setHoverIndex(null);
+                    }}
                   >
                     {tf}
                   </button>
@@ -831,12 +834,7 @@ export function TrendAnalysisPage({
 
               <div className="chart-legend">
                 <span className="legend-item">
-                  <span
-                    className={`legend-dot ${
-                      chartDataSummary.isPositive ? "dot-gain" : "dot-loss"
-                    }`}
-                  />{" "}
-                  Price
+                  <span className="legend-dot dot-price" /> Price
                 </span>
                 <span className="legend-item">
                   <span className="legend-dot dot-sma20" /> 20 SMA
@@ -851,7 +849,7 @@ export function TrendAnalysisPage({
             </div>
 
             {/* Hover Tooltip Overlay */}
-            {hoveredBar && (
+            {hoveredBar ? (
               <div className="chart-hover-tooltip" role="status">
                 <span className="hover-time">
                   {new Date(hoveredBar.timestamp * 1000).toLocaleString("en-IN", {
@@ -864,10 +862,32 @@ export function TrendAnalysisPage({
                 <span className="hover-price">₹{hoveredBar.close.toFixed(2)}</span>
                 <span className="hover-sub">
                   O: ₹{hoveredBar.open.toFixed(2)} | H: ₹{hoveredBar.high.toFixed(2)} | L: ₹
-                  {hoveredBar.low.toFixed(2)} | Vol: {(hoveredBar.volume / 1000).toFixed(1)}k
+                  {hoveredBar.low.toFixed(2)} | C: ₹{hoveredBar.close.toFixed(2)} | Vol:{" "}
+                  {(hoveredBar.volume / 1000).toFixed(1)}k
                 </span>
               </div>
-            )}
+            ) : chartBars.length > 0 ? (
+              <div className="chart-hover-tooltip chart-hover-tooltip-idle" role="status">
+                <span className="hover-time">
+                  {new Date(chartBars[chartBars.length - 1].timestamp * 1000).toLocaleString("en-IN", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <span className="hover-price">
+                  ₹{chartBars[chartBars.length - 1].close.toFixed(2)}
+                </span>
+                <span className="hover-sub">
+                  O: ₹{chartBars[chartBars.length - 1].open.toFixed(2)} | H: ₹
+                  {chartBars[chartBars.length - 1].high.toFixed(2)} | L: ₹
+                  {chartBars[chartBars.length - 1].low.toFixed(2)} | C: ₹
+                  {chartBars[chartBars.length - 1].close.toFixed(2)} | Vol:{" "}
+                  {(chartBars[chartBars.length - 1].volume / 1000).toFixed(1)}k
+                </span>
+              </div>
+            ) : null}
 
             {/* Chart Error Banner */}
             {chartError && (
@@ -889,24 +909,45 @@ export function TrendAnalysisPage({
               viewBox="0 0 700 210"
               preserveAspectRatio="none"
               onMouseMove={(e) => {
+                if (chartBars.length === 0) return;
                 const rect = e.currentTarget.getBoundingClientRect();
                 if (rect.width <= 0) return;
                 const xPos = e.clientX - rect.left;
                 const svgX = (xPos / rect.width) * 700;
                 const ratio = Math.max(0, Math.min(1, (svgX - 15) / 620));
-                const idx = Math.round(ratio * (chartBars.length - 1));
+                const idx = Math.max(
+                  0,
+                  Math.min(chartBars.length - 1, Math.round(ratio * (chartBars.length - 1)))
+                );
+                setHoverIndex(idx);
+              }}
+              onMouseEnter={(e) => {
+                if (chartBars.length === 0) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                if (rect.width <= 0) return;
+                const xPos = e.clientX - rect.left;
+                const svgX = (xPos / rect.width) * 700;
+                const ratio = Math.max(0, Math.min(1, (svgX - 15) / 620));
+                const idx = Math.max(
+                  0,
+                  Math.min(chartBars.length - 1, Math.round(ratio * (chartBars.length - 1)))
+                );
                 setHoverIndex(idx);
               }}
               onMouseLeave={() => setHoverIndex(null)}
             >
               <defs>
+                <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#388bfd" stopOpacity="0.06" />
+                  <stop offset="100%" stopColor="#388bfd" stopOpacity="0.0" />
+                </linearGradient>
                 <linearGradient id="gainGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.28" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#388bfd" stopOpacity="0.06" />
+                  <stop offset="100%" stopColor="#388bfd" stopOpacity="0.0" />
                 </linearGradient>
                 <linearGradient id="lossGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#ef4444" stopOpacity="0.28" />
-                  <stop offset="100%" stopColor="#ef4444" stopOpacity="0.0" />
+                  <stop offset="0%" stopColor="#388bfd" stopOpacity="0.06" />
+                  <stop offset="100%" stopColor="#388bfd" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
 
@@ -916,18 +957,18 @@ export function TrendAnalysisPage({
                   <path
                     d="M 15 110 Q 90 70, 175 115 T 335 100 T 495 125 T 635 95"
                     fill="none"
-                    stroke="#1c2638"
-                    strokeWidth="2.5"
-                    strokeDasharray="6 6"
+                    stroke="#21262d"
+                    strokeWidth="1.5"
+                    strokeDasharray="4 4"
                     className="skeleton-wave-line"
                   />
                   <text
                     x="325"
                     y="115"
                     textAnchor="middle"
-                    fill="#64748b"
+                    fill="#6e7681"
                     fontSize="12"
-                    fontFamily="sans-serif"
+                    fontFamily="var(--font-interface)"
                   >
                     Loading live exchange candles from BSE/NSE...
                   </text>
@@ -942,16 +983,16 @@ export function TrendAnalysisPage({
                     y1={chartDataSummary.prevCloseY}
                     x2="635"
                     y2={chartDataSummary.prevCloseY}
-                    stroke="#475569"
-                    strokeWidth="1.2"
+                    stroke="#30363d"
+                    strokeWidth="1"
                     strokeDasharray="4 4"
                   />
                   <text
                     x="640"
                     y={chartDataSummary.prevCloseY + 4}
-                    fill="#94a3b8"
+                    fill="#8b949e"
                     fontSize="10"
-                    fontFamily="monospace"
+                    fontFamily="var(--font-figures)"
                   >
                     ₹{chartDataSummary.prevCloseVal.toFixed(1)}
                   </text>
@@ -961,7 +1002,7 @@ export function TrendAnalysisPage({
               {/* Area Gradient Under Price Line */}
               {chartBars.length > 1 && (
                 <polygon
-                  fill={`url(#${chartDataSummary.isPositive ? "gainGradient" : "lossGradient"})`}
+                  fill="url(#priceGradient)"
                   points={`15,165 ${chartDataSummary.points} 635,165`}
                 />
               )}
@@ -970,8 +1011,8 @@ export function TrendAnalysisPage({
               {chartDataSummary.points && (
                 <polyline
                   fill="none"
-                  stroke={chartDataSummary.isPositive ? "#10b981" : "#ef4444"}
-                  strokeWidth="2.5"
+                  stroke="#388bfd"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   points={chartDataSummary.points}
@@ -982,8 +1023,8 @@ export function TrendAnalysisPage({
               {chartDataSummary.sma20Points && (
                 <polyline
                   fill="none"
-                  stroke="#f59e0b"
-                  strokeWidth="1.3"
+                  stroke="#d29922"
+                  strokeWidth="1.2"
                   strokeDasharray="4 3"
                   points={chartDataSummary.sma20Points}
                 />
@@ -993,8 +1034,8 @@ export function TrendAnalysisPage({
               {chartDataSummary.sma50Points && (
                 <polyline
                   fill="none"
-                  stroke="#38bdf8"
-                  strokeWidth="1.3"
+                  stroke="#58a6ff"
+                  strokeWidth="1.2"
                   strokeDasharray="3 3"
                   points={chartDataSummary.sma50Points}
                 />
@@ -1005,38 +1046,61 @@ export function TrendAnalysisPage({
                 const x = (i / Math.max(1, chartBars.length - 1)) * 620 + 15;
                 const vHeight = Math.max(2, (b.volume / maxVolume) * 28);
                 const isGreen = b.close >= b.open;
+                const isHovered = hoverIndex === i;
                 return (
-                  <rect
-                    key={`${b.timestamp}-${i}`}
-                    x={x - 1.5}
-                    y={205 - vHeight}
-                    width={3}
-                    height={vHeight}
-                    fill={isGreen ? "#10b981" : "#ef4444"}
-                    opacity={hoverIndex === i ? 0.9 : 0.35}
-                  />
+                  <g key={`${b.timestamp}-${i}`} className="volume-bar-item">
+                    {/* Flat muted base bar */}
+                    <rect
+                      x={x - 1.5}
+                      y={205 - vHeight}
+                      width={3}
+                      height={vHeight}
+                      fill="#21262d"
+                    />
+                    {/* Directional tint overlay */}
+                    <rect
+                      x={x - 1.5}
+                      y={205 - vHeight}
+                      width={3}
+                      height={vHeight}
+                      fill={isGreen ? "#3fb950" : "#f85149"}
+                      opacity={isHovered ? 0.9 : 0.55}
+                    />
+                  </g>
                 );
               })}
 
               {/* Hover Cursor Guideline and Indicator Point */}
               {hoverIndex !== null && chartBars[hoverIndex] && (
                 <g className="hover-cursor-group">
+                  {/* Vertical Crosshair Line: 1px dashed #8b949e */}
                   <line
                     x1={(hoverIndex / Math.max(1, chartBars.length - 1)) * 620 + 15}
                     y1="15"
                     x2={(hoverIndex / Math.max(1, chartBars.length - 1)) * 620 + 15}
                     y2="205"
-                    stroke="#94a3b8"
+                    stroke="#8b949e"
                     strokeWidth="1"
                     strokeDasharray="3 3"
                   />
+                  {/* Horizontal Crosshair Line: 1px dashed #8b949e */}
+                  <line
+                    x1="15"
+                    y1={chartDataSummary.getY?.(chartBars[hoverIndex].close) ?? 80}
+                    x2="635"
+                    y2={chartDataSummary.getY?.(chartBars[hoverIndex].close) ?? 80}
+                    stroke="#8b949e"
+                    strokeWidth="1"
+                    strokeDasharray="3 3"
+                  />
+                  {/* Indicator Point at Intersection */}
                   <circle
                     cx={(hoverIndex / Math.max(1, chartBars.length - 1)) * 620 + 15}
-                    cy={chartDataSummary.getY?.(chartBars[hoverIndex].close) || 80}
-                    r="4.5"
-                    fill={chartDataSummary.isPositive ? "#10b981" : "#ef4444"}
-                    stroke="#ffffff"
-                    strokeWidth="2"
+                    cy={chartDataSummary.getY?.(chartBars[hoverIndex].close) ?? 80}
+                    r="3.5"
+                    fill="#388bfd"
+                    stroke="#0d1117"
+                    strokeWidth="1.5"
                   />
                 </g>
               )}
