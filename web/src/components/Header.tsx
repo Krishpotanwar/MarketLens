@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { GlobalSearchBar } from "./GlobalSearchBar";
+import { getMarketSessionStatus, type MarketStatus } from "../utils/marketHours";
 
 export type PageTab =
   | "stocks"
@@ -28,6 +30,16 @@ export function Header({
   onToggleTheme,
   onSelectStock,
 }: HeaderProps) {
+  const [marketStatus, setMarketStatus] = useState<MarketStatus>(() =>
+    getMarketSessionStatus(new Date())
+  );
+
+  useEffect(() => {
+    const update = () => setMarketStatus(getMarketSessionStatus(new Date()));
+    const interval = setInterval(update, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <header className="workstation-shell" role="banner">
       {/* 44px Top Command Bar */}
@@ -46,12 +58,12 @@ export function Header({
             <span>MarketLens</span>
           </a>
           <span
-            className="data-badge live"
+            className={`data-badge ${marketStatus.isOpen ? "live" : "closed"}`}
             role="status"
-            title="Real-time Indian Exchange Telemetry Feed Active"
+            title={`Exchange Session: ${marketStatus.message} (${marketStatus.istTimeFormatted})`}
           >
             <span className="live-dot" aria-hidden="true">●</span>
-            <span>Live Feed</span>
+            <span>{marketStatus.isOpen ? "Live Feed" : "Market Closed"}</span>
             <span className="badge-exchange-tag">(NSE/BSE)</span>
           </span>
         </div>

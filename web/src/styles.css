@@ -1014,6 +1014,16 @@ main,
 .data-badge.live {
   color: var(--text-secondary);
 }
+
+.data-badge.closed {
+  color: var(--text-secondary);
+}
+
+.data-badge.closed .live-dot {
+  background: var(--loss, #ef4444);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+  animation: none;
+}
 .badge-exchange-tag {
   opacity: 0.85;
   font-weight: 500;
@@ -1993,6 +2003,153 @@ h1 {
 /* ------------------------------------------------------------- */
 /* Paper Trading Terminal                                        */
 /* ------------------------------------------------------------- */
+
+/* Market Session & 3:15 PM Square-off Bar */
+.market-session-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  background: var(--bg-surface, #161b22);
+  border: 1px solid var(--border-default, #30363d);
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  font-size: 0.8rem;
+}
+
+.session-status-cluster {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.session-indicator-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+}
+
+.session-indicator-pill.state-open {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.35);
+  color: var(--gain, #10b981);
+}
+
+.session-indicator-pill.state-mis_closed {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.35);
+  color: var(--amber, #f59e0b);
+}
+
+.session-indicator-pill.state-closed {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: var(--loss, #ef4444);
+}
+
+.session-indicator-pill.bypassed {
+  background: rgba(56, 139, 253, 0.15);
+  border-color: rgba(56, 139, 253, 0.4);
+  color: var(--accent-blue, #388bfd);
+}
+
+.session-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  display: inline-block;
+}
+
+.state-open .session-dot {
+  animation: pulse-live 2s infinite ease-in-out;
+}
+
+.session-clock {
+  font-size: 0.78rem;
+  color: var(--text-primary, #e6edf3);
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-default, #30363d);
+}
+
+.session-event-msg {
+  color: var(--text-secondary, #8b949e);
+  font-size: 0.76rem;
+}
+
+.session-controls-cluster {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+}
+
+.btn-trigger-squareoff {
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  color: var(--amber, #f59e0b);
+  border-radius: 4px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-trigger-squareoff:hover {
+  background: rgba(245, 158, 11, 0.25);
+  border-color: var(--amber, #f59e0b);
+}
+
+.session-mode-switch {
+  display: inline-flex;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid var(--border-default, #30363d);
+  background: var(--bg-ground, #0d1117);
+}
+
+.session-mode-switch .mode-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-tertiary, #6e7681);
+  padding: 0.35rem 0.65rem;
+  font-size: 0.74rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.session-mode-switch .mode-btn.active {
+  background: var(--accent-blue, #388bfd);
+  color: #fff;
+  font-weight: 600;
+}
+
+.trade-note-pill {
+  display: inline-block;
+  margin-top: 0.2rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  color: var(--amber, #f59e0b);
+}
 
 .portfolio-banner {
   display: grid;

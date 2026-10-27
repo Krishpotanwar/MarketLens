@@ -278,7 +278,13 @@ async function runRealUserAudit() {
           recordProblem("Financial Data Missing", "medium", "Paper Trading", vp.name, "Account virtual capital metric not found on blotter");
         }
 
-        // Real user enters quantity and executes an order
+        // Real user enters quantity and executes an order (activates Simulator mode if market is off-hours)
+        const simModeBtn = await page.$('button.mode-btn:has-text("Simulator")');
+        if (simModeBtn) {
+          await simModeBtn.click();
+          await sleep(200);
+        }
+
         const qtyInput = await page.$("input[type='number'], .order-qty-input");
         if (qtyInput) {
           await qtyInput.fill("10");

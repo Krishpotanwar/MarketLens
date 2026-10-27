@@ -9,6 +9,11 @@ import {
   type ProductType,
   type StockTrendInfo,
 } from "../types/paper";
+import {
+  getMarketSessionStatus,
+  validateOrderMarketHours,
+  type MarketStatus,
+} from "../utils/marketHours";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -19,6 +24,7 @@ interface PaperTradingPageProps {
 const STORAGE_KEY_POSITIONS = "marketlens_paper_positions";
 const STORAGE_KEY_TRADES = "marketlens_paper_trades";
 const STORAGE_KEY_CASH = "marketlens_paper_cash";
+const STORAGE_KEY_BYPASS_HOURS = "marketlens_paper_bypass_hours";
 const INITIAL_CASH = 1000000; // 10 Lakhs INR
 
 export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPageProps) {
@@ -242,6 +248,121 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
 
   const [notice, setNotice] = useState<string | null>(null);
 
+  const [bypassMarketHours, setBypassMarketHours] = useState<boolean>(() => {
+    if (typeof window === "undefined" || typeof localStorage === "undefined") return false;
+    return localStorage.getItem(STORAGE_KEY_BYPASS_HOURS) === "true";
+  });
+
+  const [marketStatus, setMarketStatus] = useState<MarketStatus>(() =>
+    getMarketSessionStatus(new Date(), bypassMarketHours)
+  );
+
+  // Sync state to localStorage
+  useEffect(() => {
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      localStorage.setItem(STORAGE_KEY_BYPASS_HOURS, bypassMarketHours ? "true" : "false");
+    }
+  }, [bypassMarketHours]);
+
+  // Batch auto square-off for intraday MIS positions
+  const handleAutoSquareOffMIS = useCallback(
+    (isManualSimulation: boolean = false) => {
+      setPositions((prevPositions) => {
+        const misPositions = prevPositions.filter((p) => p.product === "MIS");
+        if (misPositions.length === 0) {
+          if (isManualSimulation) {
+            setNotice("No active intraday (MIS) positions found to square off.");
+          }
+          return prevPositions;
+        }
+
+        let cashDelta = 0;
+        const newTrades: PaperTradeRecord[] = [];
+        const exitTimestamp = new Date().toLocaleTimeString("en-IN", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+
+        for (const pos of misPositions) {
+          const currentStock = stocks.find((s) => s.symbol === pos.symbol);
+          const exitPrice = currentStock ? currentStock.ltp : pos.avgEntryPrice;
+          const exitCharges = calculateIndianCharges(
+            pos.side === "BUY" ? "SELL" : "BUY",
+            pos.product,
+            exitPrice,
+            pos.quantity
+          );
+
+          const grossPnl =
+            (exitPrice - pos.avgEntryPrice) * pos.quantity * (pos.side === "BUY" ? 1 : -1);
+          const totalCharges = pos.totalEntryCharges + exitCharges.totalCharges;
+          const netPnl = grossPnl - totalCharges;
+          const netReturnPercent = (netPnl / (pos.avgEntryPrice * pos.quantity)) * 100;
+
+          if (pos.side === "BUY") {
+            cashDelta += exitCharges.turnover - exitCharges.totalCharges;
+          } else {
+            cashDelta += netPnl;
+          }
+
+          newTrades.push({
+            id: `trade-mis-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+            symbol: pos.symbol,
+            side: pos.side,
+            product: pos.product,
+            quantity: pos.quantity,
+            entryPrice: pos.avgEntryPrice,
+            exitPrice,
+            entryTimestamp: pos.entryTimestamp,
+            exitTimestamp,
+            grossPnl,
+            totalCharges,
+            netPnl,
+            netReturnPercent,
+            note: isManualSimulation
+              ? "Simulated 3:15 PM Auto Square-Off"
+              : "NSE 3:15 PM MIS Auto Square-Off",
+          });
+        }
+
+        setCashBalance((prevCash) => prevCash + cashDelta);
+        setTradeHistory((prevTrades) => [...newTrades, ...prevTrades]);
+        setNotice(
+          `⚠️ 3:15 PM Auto Square-Off executed: Closed ${misPositions.length} intraday (MIS) position(s) at current market price.`
+        );
+
+        return prevPositions.filter((p) => p.product !== "MIS");
+      });
+    },
+    [stocks]
+  );
+
+  // Real-time market status ticker & 3:15 PM auto square-off monitor
+  useEffect(() => {
+    const updateMarket = () => {
+      const now = new Date();
+      const status = getMarketSessionStatus(now, bypassMarketHours);
+      setMarketStatus(status);
+
+      // If strict mode is active and we reached MIS square-off cutoff or market close,
+      // trigger auto square-off if any MIS positions exist
+      if (!bypassMarketHours && (status.state === "MIS_CLOSED" || status.state === "CLOSED")) {
+        setPositions((currentPositions) => {
+          const hasMis = currentPositions.some((p) => p.product === "MIS");
+          if (hasMis) {
+            setTimeout(() => handleAutoSquareOffMIS(false), 0);
+          }
+          return currentPositions;
+        });
+      }
+    };
+
+    updateMarket();
+    const interval = setInterval(updateMarket, 1000);
+    return () => clearInterval(interval);
+  }, [bypassMarketHours, handleAutoSquareOffMIS]);
+
   // Sync state to localStorage
   useEffect(() => {
     if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
@@ -298,6 +419,14 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
 
   function handleExecuteOrder(e: React.FormEvent) {
     e.preventDefault();
+
+    // Indian Exchange Market Hours Enforcement
+    const marketCheck = validateOrderMarketHours(product, new Date(), bypassMarketHours);
+    if (!marketCheck.allowed) {
+      setNotice(marketCheck.reason || "Order rejected: Market is currently closed.");
+      return;
+    }
+
     if (isQuoteLoading) {
       setNotice("Order blocked: Still syncing live price from exchange feed.");
       return;
@@ -449,6 +578,62 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
           </div>
         </div>
       </header>
+
+      {/* Indian Market Session & Auto Square-off Bar */}
+      <section className="market-session-bar" aria-label="NSE/BSE Exchange Session Status">
+        <div className="session-status-cluster">
+          <div className={`session-indicator-pill state-${marketStatus.state.toLowerCase()} ${bypassMarketHours ? "bypassed" : ""}`}>
+            <span className="session-dot" aria-hidden="true" />
+            <span className="session-state-text">
+              {bypassMarketHours
+                ? "⚡ SIMULATOR MODE (24/7 ACTIVE)"
+                : marketStatus.state === "OPEN"
+                ? "🟢 NSE/BSE TRADING OPEN (09:15 - 15:15 IST)"
+                : marketStatus.state === "MIS_CLOSED"
+                ? "🟡 MIS AUTO SQUARE-OFF CUTOFF (DELIVERY ONLY)"
+                : "🔴 NSE/BSE MARKET CLOSED"}
+            </span>
+          </div>
+          <span className="session-clock font-mono" title="Current Indian Standard Time">
+            IST: {marketStatus.istTimeFormatted}
+          </span>
+          <span className="session-event-msg">
+            {marketStatus.nextEventDescription}
+          </span>
+        </div>
+
+        <div className="session-controls-cluster">
+          {positions.some((p) => p.product === "MIS") && (
+            <button
+              type="button"
+              className="btn-trigger-squareoff"
+              onClick={() => handleAutoSquareOffMIS(true)}
+              title="Immediately square off all open intraday (MIS) positions at current market prices"
+            >
+              ⚡ Test 3:15 PM Auto Square-Off
+            </button>
+          )}
+
+          <div className="session-mode-switch" role="group" aria-label="Market Hours Mode">
+            <button
+              type="button"
+              className={`mode-btn ${!bypassMarketHours ? "active" : ""}`}
+              onClick={() => setBypassMarketHours(false)}
+              title="Enforce official NSE/BSE trading window (09:15 - 15:15 IST) and 3:15 PM auto square-off"
+            >
+              Strict Market Hours
+            </button>
+            <button
+              type="button"
+              className={`mode-btn ${bypassMarketHours ? "active" : ""}`}
+              onClick={() => setBypassMarketHours(true)}
+              title="Bypass market hours to place virtual orders anytime (24/7)"
+            >
+              Simulator (24/7)
+            </button>
+          </div>
+        </div>
+      </section>
 
       {/* Portfolio Performance Banner */}
       <section className="portfolio-banner" aria-label="Paper Portfolio Summary">
@@ -652,15 +837,34 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
               </div>
             </div>
 
-            <button
-              type="submit"
-              className={`btn-submit-order ${side === "BUY" ? "btn-submit-buy" : "btn-submit-sell"}`}
-              disabled={isQuoteLoading}
-            >
-              {isQuoteLoading
-                ? "Syncing Live Price..."
-                : `Execute ${side} Order (${quantity} ${symbol})`}
-            </button>
+            {(() => {
+              const isBlocked =
+                !bypassMarketHours &&
+                (!marketStatus.isOpen ||
+                  (marketStatus.state === "MIS_CLOSED" && product === "MIS"));
+              let label = `Execute ${side} Order (${quantity} ${symbol})`;
+              if (isQuoteLoading) {
+                label = "Syncing Live Price...";
+              } else if (!bypassMarketHours && !marketStatus.isOpen) {
+                label = "Market Closed (Opens 9:15 AM IST Mon-Fri)";
+              } else if (
+                !bypassMarketHours &&
+                marketStatus.state === "MIS_CLOSED" &&
+                product === "MIS"
+              ) {
+                label = "MIS Blocked after 3:15 PM (Delivery Only)";
+              }
+
+              return (
+                <button
+                  type="submit"
+                  className={`btn-submit-order ${side === "BUY" ? "btn-submit-buy" : "btn-submit-sell"}`}
+                  disabled={isQuoteLoading || isBlocked}
+                >
+                  {label}
+                </button>
+              );
+            })()}
           </form>
         </section>
 
@@ -759,7 +963,10 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                       return (
                         <tr key={t.id}>
                           <th scope="row">{t.symbol}</th>
-                          <td>{t.side} ({t.product})</td>
+                          <td>
+                            <div>{t.side} ({t.product})</div>
+                            {t.note && <span className="trade-note-pill">{t.note}</span>}
+                          </td>
                           <td className="table-num font-mono">{t.quantity}</td>
                           <td>
                             <div className="font-mono">₹{t.entryPrice.toFixed(2)} &rarr; ₹{t.exitPrice.toFixed(2)}</div>

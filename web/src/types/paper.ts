@@ -43,6 +43,7 @@ export interface PaperTradeRecord {
   totalCharges: number;
   netPnl: number;
   netReturnPercent: number;
+  note?: string;
 }
 
 export interface StockTrendInfo {
