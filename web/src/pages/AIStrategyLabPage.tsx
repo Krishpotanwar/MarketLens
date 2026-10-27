@@ -77,17 +77,32 @@ function getInitialConcallText(symbol: string): string {
 
 export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrategyLabPageProps) {
   const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
+  const envGroqKey = (import.meta.env?.VITE_GROQ_API_KEY as string) || "";
+  const envGeminiKey = (import.meta.env?.VITE_GEMINI_API_KEY as string) || "";
+  const envGrokKey = (import.meta.env?.VITE_GROK_API_KEY as string) || "";
+  const envGeneralKey = (import.meta.env?.VITE_AI_API_KEY as string) || "";
+
   const [selectedSymbol, setSelectedSymbol] = useState<string>(initialSymbol || "RELIANCE");
-  const [selectedProvider, setSelectedProvider] = useState<AIEngineProvider>("OFFLINE_HEURISTIC");
+  const [selectedProvider, setSelectedProvider] = useState<AIEngineProvider>(() => {
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      const stored = localStorage.getItem("marketlens_ai_provider") as AIEngineProvider | null;
+      if (stored) return stored;
+    }
+    if (envGroqKey) return "GROQ";
+    if (envGeminiKey) return "GEMINI";
+    if (envGrokKey) return "GROK";
+    return "OFFLINE_HEURISTIC";
+  });
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyPresetId>("TREND_CROSSOVER");
   const [customPrompt, setCustomPrompt] = useState<string>(
     "Look for stocks with high relative volume (>1.5x) consolidating near VWAP, buy on 5-minute bar breakout with 1:2 risk-reward."
   );
   const [apiKey, setApiKey] = useState<string>(() => {
     if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-      return localStorage.getItem("marketlens_ai_api_key") || "";
+      const stored = localStorage.getItem("marketlens_ai_api_key");
+      if (stored) return stored;
     }
-    return "";
+    return envGroqKey || envGeminiKey || envGrokKey || envGeneralKey || "";
   });
 
   const [selectedNewsId, setSelectedNewsId] = useState<string>(() => {
@@ -266,7 +281,18 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
   function handleSaveApiKey(key: string) {
     setApiKey(key);
     if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
-      localStorage.setItem("marketlens_ai_api_key", key);
+      if (key.trim()) {
+        localStorage.setItem("marketlens_ai_api_key", key);
+      } else {
+        localStorage.removeItem("marketlens_ai_api_key");
+      }
+    }
+  }
+
+  function handleProviderChange(provider: AIEngineProvider) {
+    setSelectedProvider(provider);
+    if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
+      localStorage.setItem("marketlens_ai_provider", provider);
     }
   }
 
@@ -384,11 +410,19 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
     if (selectedProvider === "OFFLINE_HEURISTIC") {
       return "Using MarketLens built-in deterministic reasoning engine (no API key required).";
     }
-    if (!apiKey) {
-      return `Enter your ${selectedProvider} API key (saved locally in browser). Falls back to offline heuristic if omitted.`;
+    const envKeyForProvider =
+      selectedProvider === "GROQ" ? envGroqKey :
+      selectedProvider === "GEMINI" ? envGeminiKey :
+      selectedProvider === "GROK" ? envGrokKey : envGeneralKey;
+
+    if (apiKey) {
+      if (apiKey === envKeyForProvider) {
+        return `Using active environment key (VITE_${selectedProvider}_API_KEY).`;
+      }
+      return `Using custom ${selectedProvider} key (saved locally in browser).`;
     }
-    return `Using custom ${selectedProvider} key (saved locally in browser).`;
-  }, [selectedProvider, apiKey]);
+    return `Enter your ${selectedProvider} API key (saved locally in browser or via VITE_${selectedProvider}_API_KEY in .env). Falls back to offline heuristic if omitted.`;
+  }, [selectedProvider, apiKey, envGroqKey, envGeminiKey, envGrokKey, envGeneralKey]);
 
   return (
     <div className="page-content" tabIndex={-1}>
@@ -426,7 +460,7 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
             <select
               id="ai-provider-select"
               value={selectedProvider}
-              onChange={(e) => setSelectedProvider(e.target.value as AIEngineProvider)}
+              onChange={(e) => handleProviderChange(e.target.value as AIEngineProvider)}
             >
               {AI_PROVIDERS.map((p) => (
                 <option key={p.id} value={p.id}>

@@ -316,8 +316,14 @@ export async function generateAIStrategyAnalysis(
 ): Promise<AIGatewayResponse> {
   const fallback = buildOfflineHeuristicResponse(req, stockData, onProgress);
 
-  // If offline engine or apiKey is empty/missing, return offline heuristic directly
-  const apiKey = req.apiKey?.trim();
+  // Resolve API key from request payload or environment variables
+  const envKey =
+    (req.provider === "GROQ" ? (import.meta.env?.VITE_GROQ_API_KEY as string) : "") ||
+    (req.provider === "GEMINI" ? (import.meta.env?.VITE_GEMINI_API_KEY as string) : "") ||
+    (req.provider === "GROK" ? (import.meta.env?.VITE_GROK_API_KEY as string) : "") ||
+    (import.meta.env?.VITE_AI_API_KEY as string) ||
+    "";
+  const apiKey = (req.apiKey?.trim() || envKey?.trim() || "").trim();
   if (req.provider === "OFFLINE_HEURISTIC" || !apiKey) {
     return fallback;
   }

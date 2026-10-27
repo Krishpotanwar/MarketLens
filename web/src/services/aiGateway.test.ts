@@ -128,6 +128,63 @@ describe("aiGateway", () => {
       expect(res.reasoningSteps.length).toBeGreaterThan(0);
     });
 
+    it("uses VITE_GROQ_API_KEY from environment when req.apiKey is omitted", async () => {
+      const fetchSpy = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  reasoningSteps: ["Volume surge", "VWAP test", "Order flow"],
+                  timelines: [
+                    { id: "BULL", name: "High Growth", probabilityPercent: 40, expectedReturnRange: "+8% to +14%", targetPrice: 3200, stopLossPrice: 2880, catalystTriggers: ["Volume"], invalidationCondition: "Break below 2880", estimatedFrictionPercent: 0.15 },
+                    { id: "BASE", name: "Rangebound", probabilityPercent: 35, expectedReturnRange: "+1% to +4%", targetPrice: 3020, stopLossPrice: 2850, catalystTriggers: ["50 DMA"], invalidationCondition: "Break below 2850", estimatedFrictionPercent: 0.15 },
+                    { id: "BEAR", name: "Headwinds", probabilityPercent: 20, expectedReturnRange: "-5% to -9%", targetPrice: 2750, stopLossPrice: 3000, catalystTriggers: ["Crude"], invalidationCondition: "Reclaim 3000", estimatedFrictionPercent: 0.15 },
+                    { id: "BLACK_SWAN", name: "Tail Risk", probabilityPercent: 5, expectedReturnRange: "-15% to -25%", targetPrice: 2500, stopLossPrice: 3100, catalystTriggers: ["Policy"], invalidationCondition: "Clarification", estimatedFrictionPercent: 0.15 },
+                  ],
+                  strategyDeconstruction: {
+                    managementGuidance: ["Maintain 15% revenue CAGR"],
+                    marginOutlook: "18-20% steady",
+                    competitiveMoat: "High market share",
+                    tailRisks: ["Regulatory risks"],
+                    keyCatalysts: ["Capex growth"],
+                  },
+                }),
+              },
+            },
+          ],
+        }),
+      });
+      globalThis.fetch = fetchSpy;
+
+      const originalEnv = import.meta.env.VITE_GROQ_API_KEY;
+      (import.meta.env as any).VITE_GROQ_API_KEY = "gsk_test_env_key";
+
+      try {
+        const req: AIGatewayRequest = {
+          symbol: "RELIANCE",
+          provider: "GROQ",
+          apiKey: "",
+        };
+
+        const res = await generateAIStrategyAnalysis(req, mockStockData);
+
+        expect(fetchSpy).toHaveBeenCalledWith(
+          "https://api.groq.com/openai/v1/chat/completions",
+          expect.objectContaining({
+            headers: expect.objectContaining({
+              Authorization: "Bearer gsk_test_env_key",
+            }),
+          })
+        );
+        expect(res.timelines).toHaveLength(4);
+        expect(res.strategyDeconstruction.competitiveMoat).toBe("High market share");
+      } finally {
+        (import.meta.env as any).VITE_GROQ_API_KEY = originalEnv;
+      }
+    });
+
     it("falls back to OFFLINE_HEURISTIC when API returns invalid non-JSON payload", async () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
