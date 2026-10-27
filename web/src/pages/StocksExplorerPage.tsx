@@ -368,7 +368,7 @@ export function StocksExplorerPage({
       {!searchQuery.trim() && (
         <section className="discovery-shelves-grid" aria-label="Market Shelves">
           {/* Top Gainers Shelf */}
-          <div className="shelf-card">
+          <div className="shelf-card shelf-card-gainers">
             <div className="shelf-head">
               <span className="shelf-title text-gain">Top Gainers</span>
               <span className="shelf-sub">Today's leaders</span>
@@ -398,7 +398,7 @@ export function StocksExplorerPage({
           </div>
 
           {/* Top Losers Shelf */}
-          <div className="shelf-card">
+          <div className="shelf-card shelf-card-losers">
             <div className="shelf-head">
               <span className="shelf-title text-loss">Top Losers</span>
               <span className="shelf-sub">Pullback setups</span>
@@ -428,7 +428,7 @@ export function StocksExplorerPage({
           </div>
 
           {/* Most Active Volume Shelf */}
-          <div className="shelf-card">
+          <div className="shelf-card shelf-card-active">
             <div className="shelf-head">
               <span className="shelf-title text-accent">Most Active</span>
               <span className="shelf-sub">Highest daily turnover</span>

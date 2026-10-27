@@ -2499,13 +2499,33 @@ h1 {
 }
 
 .shelf-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-app);
-  border-radius: 6px;
+  background: var(--bg-glass-card, rgba(11, 17, 28, 0.78));
+  backdrop-filter: var(--backdrop-blur, blur(12px));
+  -webkit-backdrop-filter: var(--backdrop-blur, blur(12px));
+  border: 1px solid var(--border-glass, rgba(48, 64, 88, 0.5));
+  border-radius: 8px;
   padding: 1.15rem;
   display: flex;
   flex-direction: column;
   gap: 0.85rem;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.shelf-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.shelf-card-gainers {
+  border-top: 2px solid #10b981;
+}
+
+.shelf-card-losers {
+  border-top: 2px solid #ef4444;
+}
+
+.shelf-card-active {
+  border-top: 2px solid #0ea5e9;
 }
 
 .shelf-head {
@@ -2538,17 +2558,17 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0.65rem;
-  border-radius: 4px;
+  padding: 0.55rem 0.75rem;
+  border-radius: 6px;
   cursor: pointer;
-  background: var(--bg-card-sub);
-  border: 1px solid transparent;
-  transition: all 0.12s ease;
+  background: var(--bg-glass-card-sub, rgba(18, 26, 42, 0.65));
+  border: 1px solid var(--border-glass-subtle, rgba(48, 64, 88, 0.3));
+  transition: all 0.15s ease;
 }
 
 .shelf-row:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-app);
+  background: rgba(30, 43, 68, 0.75);
+  border-color: rgba(56, 139, 253, 0.4);
 }
 
 .shelf-sym-col {
@@ -2603,19 +2623,22 @@ h1 {
 
 .search-input {
   width: 100%;
-  background: var(--bg-surface, #161b22);
-  border: 1px solid var(--border-default, #30363d);
+  background: var(--bg-glass-card, rgba(11, 17, 28, 0.78));
+  backdrop-filter: var(--backdrop-blur, blur(10px));
+  -webkit-backdrop-filter: var(--backdrop-blur, blur(10px));
+  border: 1px solid var(--border-glass, rgba(48, 64, 88, 0.5));
   color: var(--text-primary, #e6edf3);
-  padding: 0.5rem 0.85rem;
+  padding: 0.55rem 0.85rem;
   border-radius: 6px;
   font-family: inherit;
   font-size: 0.82rem;
   outline: none;
-  transition: border-color 0.15s ease;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-input:focus {
   border-color: var(--accent-blue, #388bfd);
+  box-shadow: 0 0 0 1px var(--accent-blue, #388bfd);
 }
 
 .clear-search-btn {
@@ -2648,8 +2671,8 @@ h1 {
 }
 
 .cap-tab-btn {
-  background: var(--bg-surface, #161b22);
-  border: 1px solid var(--border-default, #30363d);
+  background: var(--bg-glass-card, rgba(11, 17, 28, 0.78));
+  border: 1px solid var(--border-glass, rgba(48, 64, 88, 0.5));
   color: var(--text-secondary, #8b949e);
   padding: 0.25rem 0.65rem;
   border-radius: 4px;
@@ -2657,25 +2680,26 @@ h1 {
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
 }
 
 .cap-tab-btn:hover {
-  background: var(--bg-subtle, #21262d);
+  background: rgba(30, 43, 68, 0.75);
   color: var(--text-primary, #e6edf3);
-  border-color: var(--text-secondary, #8b949e);
+  border-color: rgba(56, 139, 253, 0.5);
 }
 
 .cap-tab-btn.active {
-  background: var(--bg-subtle, #21262d);
-  color: var(--text-primary, #e6edf3);
+  background: rgba(30, 43, 68, 0.9);
+  color: #ffffff;
   border-color: var(--accent-blue, #388bfd);
   font-weight: 600;
+  box-shadow: 0 0 8px rgba(56, 139, 253, 0.25);
 }
 
 .sector-select {
-  background: var(--bg-surface, #161b22);
-  border: 1px solid var(--border-default, #30363d);
+  background: var(--bg-glass-card, rgba(11, 17, 28, 0.78));
+  border: 1px solid var(--border-glass, rgba(48, 64, 88, 0.5));
   color: var(--text-primary, #e6edf3);
   padding: 0.25rem 0.65rem;
   border-radius: 4px;
@@ -2766,8 +2790,8 @@ h1 {
 }
 
 .exchange-tab-btn {
-  background: var(--bg-surface, #161b22);
-  border: 1px solid var(--border-default, #30363d);
+  background: var(--bg-glass-card, rgba(11, 17, 28, 0.78));
+  border: 1px solid var(--border-glass, rgba(48, 64, 88, 0.5));
   color: var(--text-secondary, #8b949e);
   padding: 0.3rem 0.75rem;
   border-radius: 4px;
@@ -2775,20 +2799,21 @@ h1 {
   font-size: 0.78rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.12s ease;
+  transition: all 0.15s ease;
 }
 
 .exchange-tab-btn:hover {
-  background: var(--bg-subtle, #21262d);
+  background: rgba(30, 43, 68, 0.75);
   color: var(--text-primary, #e6edf3);
-  border-color: var(--text-secondary, #8b949e);
+  border-color: rgba(56, 139, 253, 0.5);
 }
 
 .exchange-tab-btn.active {
-  background: var(--bg-subtle, #21262d);
-  color: var(--text-primary, #e6edf3);
+  background: rgba(30, 43, 68, 0.9);
+  color: #ffffff;
   border-color: var(--accent-blue, #388bfd);
   font-weight: 600;
+  box-shadow: 0 0 8px rgba(56, 139, 253, 0.25);
 }
 
 .exchange-badge-nse {
