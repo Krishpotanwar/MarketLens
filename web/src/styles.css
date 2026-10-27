@@ -1543,6 +1543,7 @@ h1 {
 
 .chart-hover-tooltip {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.85rem;
   padding: 0.45rem 0.85rem;
@@ -3162,40 +3163,6 @@ h1 {
   gap: 0.75rem;
 }
 
-.stock-action-group {
-  display: inline-flex;
-  gap: 0.35rem;
-}
-
-.btn-stock-trend,
-.btn-stock-trade,
-.btn-stock-ai {
-  background: var(--bg-subtle, #21262d);
-  border: 1px solid var(--border-default, #30363d);
-  color: var(--text-secondary, #8b949e);
-  padding: 0.2rem 0.5rem;
-  border-radius: 3px;
-  font-family: inherit;
-  font-size: 0.72rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-
-.btn-stock-trend:hover {
-  border-color: var(--accent-blue, #388bfd);
-  color: var(--accent-blue, #388bfd);
-}
-
-.btn-stock-trade:hover {
-  border-color: var(--trade-gain, #3fb950);
-  color: var(--trade-gain, #3fb950);
-}
-
-.btn-stock-ai:hover {
-  border-color: var(--accent-blue, #388bfd);
-  color: var(--text-primary, #e6edf3);
-}
 
 /* ------------------------------------------------------------- */
 /* Mutual Funds & SIP Studio                                     */
