@@ -556,7 +556,7 @@ export function StocksExplorerPage({
               <tr>
                 <th scope="col">Company & Symbol</th>
                 <th scope="col">Exchange</th>
-                <th scope="col" className="table-num">Category</th>
+                <th scope="col">Category</th>
                 <th scope="col">Sector</th>
                 <th scope="col" className="table-num">Market Price (LTP)</th>
                 <th scope="col" className="table-num">Day Change</th>
@@ -607,7 +607,7 @@ export function StocksExplorerPage({
                           {stock.exchange}
                         </span>
                       </td>
-                      <td className="table-num">
+                      <td>
                         <span className="cap-badge">
                           {stock.marketCapCategory || "Mid Cap"}
                         </span>

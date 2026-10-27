@@ -23,4 +23,5 @@ backend/tests_root/
 .claude-flow/
 claude-seo/
 marketlens-audit/
+*audit_raw_results.json
 

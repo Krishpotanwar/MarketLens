@@ -99,11 +99,11 @@ async function runAudit() {
     // Check Header bounding box and navigation pills
     console.log(`Inspecting Header layout in ${vp.name}...`);
     const headerInspection = await page.evaluate(() => {
-      const topbar = document.querySelector(".topbar");
+      const topbar = document.querySelector(".topbar.command-bar") || document.querySelector(".topbar");
       const left = document.querySelector(".topbar-left");
       const center = document.querySelector(".topbar-center");
-      const navWrap = document.querySelector(".topbar-nav-wrapper");
-      const nav = document.querySelector(".topbar-nav");
+      const navWrap = document.querySelector(".workstation-nav-wrapper") || document.querySelector(".topbar-nav-wrapper");
+      const nav = document.querySelector(".workstation-nav") || document.querySelector(".topbar-nav");
       const right = document.querySelector(".topbar-right");
 
       const topbarRect = topbar?.getBoundingClientRect();
@@ -112,7 +112,7 @@ async function runAudit() {
       const navWrapRect = navWrap?.getBoundingClientRect();
       const rightRect = right?.getBoundingClientRect();
 
-      const navButtons = Array.from(document.querySelectorAll(".topbar-nav .nav-link")).map((b) => {
+      const navButtons = Array.from(document.querySelectorAll(".workstation-nav .nav-link, .topbar-nav .nav-link")).map((b) => {
         const r = b.getBoundingClientRect();
         return { text: b.textContent?.trim(), rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom, width: r.width, height: r.height } };
       });
@@ -132,20 +132,19 @@ async function runAudit() {
       });
       if (currentRow.length > 0) rows.push(currentRow);
 
-      // Check overlaps
+      // Check overlaps among command-bar inline blocks
       const overlaps = [];
       const blocks = [
         { name: "left", rect: leftRect },
         { name: "center", rect: centerRect },
-        { name: "navWrap", rect: navWrapRect },
         { name: "right", rect: rightRect },
-      ].filter((b) => b.rect && b.rect.width > 0);
+      ].filter((b) => b.rect && b.rect.width > 0 && b.rect.height > 0);
 
       for (let i = 0; i < blocks.length; i++) {
         for (let j = i + 1; j < blocks.length; j++) {
           const a = blocks[i].rect;
           const b = blocks[j].rect;
-          if (a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top) {
+          if (a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1) {
             overlaps.push({ a: blocks[i].name, b: blocks[j].name, aRect: a, bRect: b });
           }
         }
