@@ -11,6 +11,13 @@ describe("GlobalSearchBar Component", () => {
     expect(markup).toContain("global-search-bar");
   });
 
+  it("renders compact 30px command input trigger with shortcut", () => {
+    const markup = renderToStaticMarkup(<GlobalSearchBar onSelectStock={() => {}} />);
+    expect(markup).toContain("compact-trigger");
+    expect(markup).toContain("global-search-bar");
+    expect(markup).toContain("⌘K");
+  });
+
   it("contains accessible label for universal search", () => {
     const markup = renderToStaticMarkup(<GlobalSearchBar onSelectStock={() => {}} />);
     expect(markup).toContain('aria-label="Universal stock search (like Groww / Angel One)"');

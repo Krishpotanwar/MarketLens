@@ -56,6 +56,18 @@ describe("research dashboard shell and pages", () => {
     expect(markup).not.toContain("dot-background");
   });
 
+  it("renders 44px command header and active tab indicator", () => {
+    const markup = renderToStaticMarkup(<App />);
+    expect(markup).toContain('role="banner"');
+    expect(markup).toMatch(/MarketLens/i);
+    expect(markup).toMatch(/Live/i);
+    expect(markup).toContain("command-bar");
+    expect(markup).toContain("workstation-nav");
+    expect(markup).toContain("NIFTY 50");
+    expect(markup).toContain("SENSEX");
+    expect(markup).toContain("₹10,00,000");
+  });
+
   it("renders the default app with live market feed and stocks explorer", () => {
     const markup = renderToStaticMarkup(<App />);
     expect(markup).toContain("Live Feed");

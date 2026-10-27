@@ -91,6 +91,7 @@ export default function App() {
 
   return (
     <div className={`page-shell ${darkMode ? "dark-terminal" : "light-desk"}`}>
+      {/* Bloomberg Launchpad Workstation Command Shell & Sub-Navigation */}
       <Header
         currentTab={currentTab}
         onSelectTab={setCurrentTab}

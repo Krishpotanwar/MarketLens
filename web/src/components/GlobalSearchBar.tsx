@@ -527,9 +527,9 @@ export function GlobalSearchBar({
 
   return (
     <div className="global-search-container">
-      {/* Sleek Header Trigger Bar (Groww & Angel One Style) */}
+      {/* 30px Compact Command Search Trigger */}
       <div
-        className={`global-search-bar ${isOpen ? "active" : ""}`}
+        className={`global-search-bar compact-trigger ${isOpen ? "active" : ""}`}
         onClick={() => {
           setIsOpen(true);
           inputRef.current?.focus();

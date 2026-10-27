@@ -29,30 +29,75 @@ export function Header({
   onSelectStock,
 }: HeaderProps) {
   return (
-    <header className="topbar">
-      <div className="topbar-left">
-        <a
-          className="wordmark"
-          href="#"
-          onClick={(e) => {
-            e.preventDefault();
-            onSelectTab("stocks");
-          }}
-          aria-label="MarketLens home"
-        >
-          <span className="wordmark-icon" aria-hidden="true">ML</span>
-          <span>MarketLens</span>
-        </a>
+    <header className="workstation-shell" role="banner">
+      {/* 44px Top Command Bar */}
+      <div className="topbar command-bar">
+        <div className="topbar-left">
+          <a
+            className="wordmark"
+            href="#"
+            onClick={(e) => {
+              e.preventDefault();
+              onSelectTab("stocks");
+            }}
+            aria-label="MarketLens home"
+          >
+            <span className="wordmark-icon" aria-hidden="true">ML</span>
+            <span>MarketLens</span>
+          </a>
+          <span
+            className="badge-live-pulse data-badge live"
+            role="status"
+            title="Real-time Indian Exchange Telemetry Feed Active"
+          >
+            <span className="live-dot" aria-hidden="true">●</span>
+            <span>Live Feed</span>
+            <span className="badge-exchange-tag">(NSE/BSE)</span>
+          </span>
+        </div>
+
+        <div className="topbar-center command-bar-indices">
+          <div className="indices-ribbon" role="region" aria-label="Market Indices Ribbon">
+            <div className="index-tape-item">
+              <span className="index-tape-name">NIFTY 50</span>
+              <span className="index-tape-price">24,854.20</span>
+              <span className="index-tape-change gain">+0.58%</span>
+            </div>
+            <span className="index-tape-divider" aria-hidden="true">|</span>
+            <div className="index-tape-item">
+              <span className="index-tape-name">SENSEX</span>
+              <span className="index-tape-price">81,420.50</span>
+              <span className="index-tape-change gain">+0.62%</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="topbar-right">
+          {onSelectStock && (
+            <div className="command-search-wrap">
+              <GlobalSearchBar onSelectStock={onSelectStock} />
+            </div>
+          )}
+          <div className="cash-blotter" title="Virtual Capital Available">
+            <span className="cash-blotter-label">CASH:</span>
+            <span className="cash-blotter-value">₹10,00,000</span>
+          </div>
+          {onToggleTheme && (
+            <button
+              type="button"
+              className="theme-toggle-btn"
+              onClick={onToggleTheme}
+              aria-label={`Switch to ${darkMode ? "light" : "dark"} mode`}
+            >
+              {darkMode ? "Light Desk" : "Dark Terminal"}
+            </button>
+          )}
+        </div>
       </div>
 
-      {onSelectStock && (
-        <div className="topbar-center">
-          <GlobalSearchBar onSelectStock={onSelectStock} />
-        </div>
-      )}
-
-      <div className="topbar-nav-wrapper">
-        <nav className="topbar-nav" aria-label="Main Navigation">
+      {/* 34px Sub-Navigation Tab Strip */}
+      <div className="topbar-nav-wrapper workstation-nav-wrapper">
+        <nav className="topbar-nav workstation-nav" aria-label="Main Navigation">
           <button
             type="button"
             className={`nav-link ${currentTab === "stocks" ? "active" : ""}`}
@@ -91,7 +136,7 @@ export function Header({
             onClick={() => onSelectTab("trends")}
             aria-current={currentTab === "trends" ? "page" : undefined}
           >
-            Trends & Signals
+            Trends &amp; Signals
           </button>
           <button
             type="button"
@@ -126,23 +171,6 @@ export function Header({
             Run Receipt
           </button>
         </nav>
-      </div>
-
-      <div className="topbar-right">
-        {onToggleTheme && (
-          <button
-            type="button"
-            className="theme-toggle-btn"
-            onClick={onToggleTheme}
-            aria-label={`Switch to ${darkMode ? "light" : "dark"} mode`}
-          >
-            {darkMode ? "Light Desk" : "Dark Terminal"}
-          </button>
-        )}
-        <p className="data-badge live" role="status" title="Real-time Indian Exchange Telemetry Feed Active">
-          <span aria-hidden="true" />
-          Live Feed <span className="badge-exchange-tag">(NSE/BSE)</span>
-        </p>
       </div>
     </header>
   );
