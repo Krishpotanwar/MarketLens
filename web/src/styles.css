@@ -133,6 +133,19 @@ body {
   border-bottom-color: var(--border-glass-subtle);
 }
 
+/* The dark theme tints the active tab with translucent blue under white text. On a light page that is
+   white on near-white, so the light theme uses the strong blue as text on a faint tint instead. */
+.page-shell.light-desk .nav-link.active,
+.page-shell.light-desk .tf-btn.active,
+.page-shell.light-desk .sip-chip.active,
+.page-shell.light-desk .preset-btn.active,
+.page-shell.light-desk .btn-stock-trend:hover {
+  color: var(--accent-blue-strong);
+  background: rgba(3, 105, 161, 0.1);
+  border-color: rgba(3, 105, 161, 0.35);
+  box-shadow: none;
+}
+
 .page-shell.light-desk .ai-results-wrapper {
   background: rgba(7, 10, 18, 0.94);
   color: var(--text-primary);
