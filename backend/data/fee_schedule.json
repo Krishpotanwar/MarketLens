@@ -1,0 +1,17 @@
+{
+  "schedule_id": "NSE-CASH-EQUITY",
+  "status": "unverified: mirrors published broker schedules; confirm against current NSE and SEBI circulars before any scored run",
+  "gst": 0.18,
+  "slippage_bps": 5,
+  "sebi_turnover": 0.000001,
+  "exchange_txn": 0.0000297,
+  "brokerage": {
+    "MIS": { "percent": 0.0003, "cap": 20 },
+    "CNC": { "percent": 0, "cap": 0 }
+  },
+  "stt": {
+    "MIS": { "buy": 0, "sell": 0.00025 },
+    "CNC": { "buy": 0.001, "sell": 0.001 }
+  },
+  "stamp_duty_buy": { "MIS": 0.00003, "CNC": 0.00015 }
+}

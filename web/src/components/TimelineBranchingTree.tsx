@@ -33,9 +33,9 @@ const SCENARIO_THEMES: Record<TimelineScenarioId, ScenarioTheme> = {
     label: "Base Consolidation",
     badgeLabel: "BASE",
     icon: "◆",
-    accent: "#388bfd",
+    accent: "#58a6ff", // #388bfd was 4.1:1 on its own tinted chip
     accentBg: "rgba(56, 139, 253, 0.12)",
-    borderHover: "#388bfd",
+    borderHover: "#58a6ff",
     glow: "none",
     description: "VWAP mean-reversion, rangebound accumulation & steady earnings",
   },
@@ -158,7 +158,7 @@ export function TimelineBranchingTree({
                 fontFamily: "var(--font-figures)",
               }}
             >
-              4 Branches · 100% Calibrated
+              4 Branches · weights sum to 100%
             </span>
           </div>
           <p
@@ -192,7 +192,7 @@ export function TimelineBranchingTree({
         <svg
           viewBox="0 0 760 110"
           preserveAspectRatio="xMidYMid meet"
-          role="img"
+          role="group" /* not "img": the four scenario nodes inside are focusable buttons */
           aria-label="Branching tree diagram connecting decision node to four scenarios"
           style={{ width: "100%", height: "auto", display: "block" }}
         >
@@ -246,7 +246,7 @@ export function TimelineBranchingTree({
                 <rect
                   x={targetX - 60}
                   y={targetY - 10}
-                  width="160"
+                  width="176"
                   height="20"
                   rx="3"
                   fill={isActive ? theme.accentBg : "#161b22"}
@@ -266,7 +266,7 @@ export function TimelineBranchingTree({
                   {theme.icon} {theme.badgeLabel}
                 </text>
                 <text
-                  x={targetX + 85}
+                  x={targetX + 101}
                   y={targetY + 4}
                   textAnchor="end"
                   fill={isActive ? "#e6edf3" : "#8b949e"}

@@ -24,7 +24,7 @@ Active trading desks and web browsers used during Indian market sessions (09:15â
 - Trend and momentum analysis for key Indian equities (Nifty 50, Bluechips).
 - Directional probability forecast lab with causal feature attribution.
 - Live interactive paper trading terminal with virtual capital (â‚¹10,00,000 starting cash), order book, position management, and trade execution.
-- Real-time Indian statutory tax and charge ledger (STT 0.1%, Brokerage â‚¹20 cap, Exchange charges, GST 18%, Stamp Duty 0.015%, SEBI fees).
+- Itemised Indian statutory charges on every order (STT, brokerage with a â‚¹20 cap, exchange charges, GST 18%, stamp duty 0.003% intraday and 0.015% delivery, SEBI fees), all read from one schedule file.
 - Full compatibility with the published FastAPI backend API (`/api/v1/runs/current`, `/api/v1/runs/{run_id}`).
 
 ## Brand Commitments
@@ -34,7 +34,7 @@ Active trading desks and web browsers used during Indian market sessions (09:15â
 
 ## Evidence on Hand
 - Deterministic synthetic verification runs and historical backtest fixtures in the backend repository.
-- Fully tested statutory cost calculation engine adhering to NSE cash-equity delivery/intraday schedules.
+- Statutory cost engine tested against its own schedule file. The rates mirror published broker schedules and are not yet verified against current NSE/SEBI circulars.
 - Live backend API deployed on Render (`https://marketlens-87wo.onrender.com`).
 
 ## Product Principles

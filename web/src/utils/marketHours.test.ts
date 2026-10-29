@@ -6,6 +6,16 @@ import {
   validateOrderMarketHours,
 } from "./marketHours";
 
+describe("marketHours holiday calendar coverage", () => {
+  it("says so when the bundled holiday table no longer covers the date", () => {
+    // Tuesday 2027-01-12, 10:00 IST: a weekday the 2025-2026 table knows nothing about.
+    const in2027 = getMarketSessionStatus(new Date(Date.UTC(2027, 0, 12, 4, 30, 0)));
+    expect(in2027.message).toContain("holiday calendar covers only through 2026");
+    const in2026 = getMarketSessionStatus(new Date(Date.UTC(2026, 9, 27, 4, 30, 0)));
+    expect(in2026.message).not.toContain("holiday calendar");
+  });
+});
+
 describe("marketHours utility", () => {
   it("accurately converts UTC dates to IST (UTC+05:30)", () => {
     // 2026-10-27 03:45:00 UTC = 2026-10-27 09:15:00 IST

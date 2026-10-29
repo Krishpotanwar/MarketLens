@@ -7,13 +7,13 @@
 **An auditable, after-cost quantitative research workstation and institutional paper trading platform for Indian cash equities (NSE/BSE).**
 
 [![Vercel Deployment](https://img.shields.io/badge/Vercel-Live%20Production-10b981?style=flat-square&logo=vercel&logoColor=white)](https://market-lens-kappa.vercel.app)
-[![Vitest](https://img.shields.io/badge/Vitest-81%2F81%20Passing-38bdf8?style=flat-square&logo=vitest&logoColor=white)](file:///Users/krish/Desktop/study/project/Dav%20Sem%205/web)
-[![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178c6?style=flat-square&logo=typescript&logoColor=white)](file:///Users/krish/Desktop/study/project/Dav%20Sem%205/web/tsconfig.json)
-[![React](https://img.shields.io/badge/React-19.3.0-61dafb?style=flat-square&logo=react&logoColor=black)](file:///Users/krish/Desktop/study/project/Dav%20Sem%205/web/package.json)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.156-009688?style=flat-square&logo=fastapi&logoColor=white)](file:///Users/krish/Desktop/study/project/Dav%20Sem%205/backend/pyproject.toml)
-[![Python](https://img.shields.io/badge/Python-3.14%2B-3776ab?style=flat-square&logo=python&logoColor=white)](file:///Users/krish/Desktop/study/project/Dav%20Sem%205/backend/pyproject.toml)
-[![Liquid Glass UI](https://img.shields.io/badge/Design-Apple%20Liquid%20Glass-f59e0b?style=flat-square&logo=apple&logoColor=white)](file:///Users/krish/Desktop/study/project/Dav%20Sem%205/web/src/styles.css)
-[![Zero Real Risk](https://img.shields.io/badge/SEBI-Zero%20Live%20Execution%20Risk-purple?style=flat-square)](file:///Users/krish/Desktop/study/project/Dav%20Sem%205/docs/compliance/MARKET-DATA-AND-PUBLICATION.md)
+[![Vitest](https://img.shields.io/badge/Tests-Vitest%20%7C%20unittest%20%7C%20Playwright-38bdf8?style=flat-square&logo=vitest&logoColor=white)](web)
+[![TypeScript](https://img.shields.io/badge/TypeScript-7.0.2-3178c6?style=flat-square&logo=typescript&logoColor=white)](web/tsconfig.json)
+[![React](https://img.shields.io/badge/React-19.3.0-61dafb?style=flat-square&logo=react&logoColor=black)](web/package.json)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.156-009688?style=flat-square&logo=fastapi&logoColor=white)](backend/pyproject.toml)
+[![Python](https://img.shields.io/badge/Python-3.12%2B-3776ab?style=flat-square&logo=python&logoColor=white)](backend/pyproject.toml)
+[![Liquid Glass UI](https://img.shields.io/badge/Design-Apple%20Liquid%20Glass-f59e0b?style=flat-square&logo=apple&logoColor=white)](web/src/styles.css)
+[![Zero Real Risk](https://img.shields.io/badge/SEBI-Zero%20Live%20Execution%20Risk-purple?style=flat-square)](docs/compliance/MARKET-DATA-AND-PUBLICATION.md)
 
 [Live Demo](https://market-lens-kappa.vercel.app) • [Architecture](#system-architecture) • [Key Features](#key-features) • [Quickstart](#local-setup--quickstart) • [API Keys Guide](#environment--api-keys) • [Documentation](docs/README.md)
 
@@ -30,7 +30,7 @@ MarketLens solves this by delivering an **auditable, after-cost research platfor
 2. **Itemized Statutory Tax Slip Reconciliation** calculating brokerage caps, STT, exchange turnover fees, SEBI charges, stamp duty, and 18% GST down to the paise.
 3. **Hybrid AI Strategy Lab & Grok Reasoning Sandbox** combining technical indicators, earnings conference call transcripts, and live Indian news sentiment into multi-timeline probabilistic simulations (Bull, Base, Bear, Black Swan).
 4. **Apple Liquid Frosted Glass Interface** engineered to Apple Human Interface Guidelines with tactile feedback, zero horizontal overflow, and responsive fidelity across all viewports.
-5. **Zero Mandatory API Keys**: Runs 100% functional out-of-the-box using direct live NSE telemetry and built-in deterministic offline heuristic reasoning, with optional plug-and-play support for Groq (Llama 3.3 70B), Google Gemini (1.5 Flash), and Angel One SmartAPI.
+5. **Zero Mandatory API Keys**: Runs out of the box: prices come from the unofficial Yahoo Finance feed (delayed, and the app says so when the feed is down), and the AI lab has a built-in rule-based reasoning engine, with optional support for Groq (Llama 3.3 70B), Google Gemini (1.5 Flash) and xAI Grok when you paste your own key.
 
 ---
 
@@ -57,17 +57,17 @@ flowchart TD
         ViteProxy["Vite Dev / API Reverse Proxy"]
     end
 
-    subgraph BackendLayer["Backend Services (FastAPI + Asynchronous Python 3.14+)"]
+    subgraph BackendLayer["Backend Services (FastAPI + Asynchronous Python 3.12+)"]
         API["FastAPI REST & Telemetry Endpoints\n(/api/v1/market/...)"]
-        LiveFeed["Live Market Feed Manager\n(Sub-Second In-Memory Cache)"]
+        LiveFeed["Live Market Feed Manager\n(10-Second In-Memory Cache)"]
         CostEngine["Statutory Cost Accounting Engine\n(Brokerage, STT, GST, Stamp Duty)"]
         HoursEngine["Market Hours State Machine\n(IST Clock, Square-Off Trigger)"]
         SyntheticEngine["Synthetic Fixture Generator\n(Academic Fallback)"]
     end
 
     subgraph ExternalServices["External Telemetry & AI Providers"]
-        NSEDirect["NSE Direct Live Telemetry\n(Real-Time Equity Quotes)"]
-        AngelSmart["Angel One SmartAPI\n(Institutional Broker Gateway)"]
+        YahooFeed["Yahoo Finance (unofficial)\n(Delayed Quotes, Charts, Symbol Search)"]
+        OtherFeeds["NSE website (IPOs) · mfapi.in (NAVs)\nGoogle News RSS"]
         GroqCloud["Groq Cloud API\n(Llama 3.3 70B Versatile, ~800 t/s)"]
         GoogleGemini["Google AI Studio\n(Gemini 1.5 Flash)"]
         xAI["xAI Grok API\n(Grok-2)"]
@@ -76,8 +76,8 @@ flowchart TD
     ClientLayer --> EdgeLayer
     EdgeLayer --> BackendLayer
     BackendLayer --> LiveFeed
-    LiveFeed --> NSEDirect
-    LiveFeed --> AngelSmart
+    LiveFeed --> YahooFeed
+    LiveFeed --> OtherFeeds
     AILab -.->|Client-Side HTTPS| GroqCloud
     AILab -.->|Client-Side HTTPS| GoogleGemini
     AILab -.->|Client-Side HTTPS| xAI
@@ -90,10 +90,10 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    NSE["NSE India Exchange"] -->|Live REST Scraping| Ingest["Feed Normalizer\n(Symbol Aliasing & Tick Validation)"]
-    Broker["Angel One SmartAPI"] -->|Encrypted REST/WebSocket| Ingest
+    Yahoo["Yahoo Finance (unofficial)"] -->|HTTPS JSON| Ingest["Feed Normalizer\n(Symbol Aliasing & Validation)"]
+    Other["NSE website · mfapi.in · Google News RSS"] -->|HTTPS| Ingest
     
-    Ingest --> MemCache["Sub-Second In-Memory Telemetry Cache\n(LTP, Change %, OHLC, VWAP, Breadth)"]
+    Ingest --> MemCache["10-Second In-Memory Quote Cache\n(LTP, Change %, OHLC)"]
     
     MemCache --> REST["FastAPI Telemetry Endpoints\n(/api/v1/market/quotes, /search)"]
     
@@ -219,8 +219,9 @@ sequenceDiagram
   - Securities Transaction Tax (STT - 0.025% on intraday sell / 0.1% on delivery)
   - Exchange Transaction Charges (NSE 0.00297%)
   - SEBI Regulatory Turnover Fee (₹10 per crore)
-  - Stamp Duty (0.003% on buy)
+  - Stamp Duty (0.003% intraday, 0.015% delivery; buy side only)
   - Goods and Services Tax (GST - 18% applied on brokerage and transaction fees)
+  - All rates live in one file, `backend/data/fee_schedule.json` (mirrored for the web app, and a test fails if the two drift). Its `status` field says they mirror published broker schedules and are **unverified** against current NSE/SEBI circulars.
 
 ### 6. Hybrid AI Strategy Lab & Grok Reasoning Sandbox
 - **Multi-Timeline Probabilistic Forecasting**: Generates four distinct forward-looking market paths:
@@ -256,9 +257,9 @@ sequenceDiagram
 | **Build & Bundler** | Vite 8.3.4 | Ultra-fast HMR and optimized production bundles |
 | **Styling & Design** | Pure CSS3 (Apple HIG Tokens) | Liquid glassmorphism, responsive clamp typography |
 | **Unit & E2E Testing** | Vitest 5.0.5, Playwright | High-speed test runner & browser automation audit |
-| **Backend Framework** | FastAPI 0.156, Python 3.14+ | Asynchronous REST endpoints, high concurrency |
+| **Backend Framework** | FastAPI 0.156, Python 3.12+ | Asynchronous REST endpoints, high concurrency |
 | **ASGI Server** | Uvicorn 0.54 | Asynchronous production server |
-| **HTTP & Telemetry** | HTTPX 0.28, AsyncIO | Sub-second non-blocking market quote scraping |
+| **HTTP & Market Feeds** | HTTPX 0.28, AsyncIO | Non-blocking quote fetching with a 10-second cache |
 | **AI Inference** | Groq API, Gemini API, xAI API | LLM quantitative reasoning and scenario synthesis |
 | **Edge Hosting** | Vercel Serverless Edge | Global CDN distribution, automated CI/CD |
 
@@ -278,7 +279,7 @@ MarketLens/
 │   │       ├── api/
 │   │       │   └── app.py         # FastAPI application factory & endpoints
 │   │       ├── market/
-│   │       │   └── live_feed.py   # NSE scraping & SmartAPI telemetry feeds
+│   │       │   └── live_feed.py   # Yahoo Finance, NSE IPO, mfapi.in & news feeds
 │   │       ├── research/          # SMA backtest & statutory fee calculations
 │   │       ├── bundle/            # Immutable run bundle validation & publisher
 │   │       └── synthetic.py       # Deterministic academic fixture generator
@@ -316,7 +317,7 @@ MarketLens/
 ### Prerequisites
 - **Node.js**: `v22.12.0` or higher (Node 24 recommended)
 - **Package Manager**: `pnpm` (`npm install -g pnpm`)
-- **Python**: `3.14+` or `3.12+` managed via `uv` or standard virtualenv
+- **Python**: `3.12` or newer (CI tests 3.12, the Render runtime, and 3.14), managed via `uv` or a standard virtualenv
 
 ---
 
@@ -334,11 +335,11 @@ cd web
 pnpm install
 pnpm dev
 ```
-Open **`http://localhost:5173`** in your browser. The application will immediately launch in **Standalone Standby Mode** using direct NSE market telemetry.
+Open **`http://localhost:5173`** in your browser. Prices need the backend (Step 3): without it every price shows "—" and the page says the market feed is unavailable. It never shows a made-up price.
 
 ---
 
-### Step 3: Backend Setup (Optional for Local Telemetry Feed)
+### Step 3: Backend Setup (needed for prices)
 In a separate terminal:
 ```bash
 cd backend
@@ -353,27 +354,21 @@ Health check endpoint: `curl http://127.0.0.1:8000/healthz`
 
 ## Environment & API Keys
 
-MarketLens operates seamlessly with **zero API keys required**. However, you can configure external AI or institutional broker providers via environment variables.
+MarketLens needs **no API keys**. The only frontend variable is the backend URL. AI provider keys are typed into the app, and are deliberately never read from build-time variables.
 
 ### Environment Variable Matrix
 
-| Variable | Scope | Provider | Description |
-| :--- | :--- | :--- | :--- |
-| `VITE_GROQ_API_KEY` | Frontend | [Groq Cloud](https://console.groq.com/keys) | **Free**. Powers Llama 3.3 70B AI strategy simulations (~800 tokens/sec). |
-| `VITE_GEMINI_API_KEY` | Frontend | [Google AI Studio](https://aistudio.google.com/app/apikey) | **Free**. Powers Gemini 1.5 Flash reasoning models. |
-| `VITE_GROK_API_KEY` | Frontend | [xAI Console](https://x.ai/api) | Powers Grok-2 reasoning models. |
-| `VITE_API_URL` | Frontend | Backend Service | Custom backend URL (leave empty for local dev proxy). |
-| `SMARTAPI_API_KEY` | Backend | [Angel One SmartAPI](https://smartapi.angelbroking.com) | Optional institutional broker quote feed. |
-| `DHAN_CLIENT_ID` | Backend | [Dhan HQ](https://dhanhq.co) | Optional broker execution feed. |
+| Variable | Scope | Description |
+| :--- | :--- | :--- |
+| `VITE_API_URL` | Frontend | Backend base URL. Leave empty for the local dev proxy. |
+| `GIT_SHA` / `RENDER_GIT_COMMIT` | Backend | Optional. Stamped on run receipts as the code revision. |
 
-### How to Configure API Keys
+### Using an AI provider key
 
-1. **Option A (In-Browser)**: Open the **AI Strategy Lab** tab, select **Groq** or **Gemini**, and paste your key directly into the API Key input. It is stored securely in your browser's `localStorage`.
-2. **Option B (Local `.env`)**: Copy `web/.env.example` to `web/.env` and paste your key:
-   ```env
-   VITE_GROQ_API_KEY=gsk_your_groq_key_here
-   ```
-3. **Option C (Vercel Production)**: In your Vercel Dashboard under **Settings -> Environment Variables**, add `VITE_GROQ_API_KEY` and trigger a deployment.
+Open the **AI Strategy Lab**, pick **Groq**, **Gemini** or **Grok**, and paste your key into the API Key box. It is kept in that browser's `localStorage` **as plain text** (do not use a shared computer) and is sent only to the provider you chose. With no key, the built-in rule-based engine runs.
+
+> [!WARNING]
+> Never put an AI key in a `VITE_*` variable or a Vercel environment variable. Vite compiles every `VITE_*` value into the public JavaScript bundle, so every visitor could read it. A test (`web/src/noBuildTimeSecrets.test.ts`) fails if any source reads one.
 
 ---
 
@@ -381,7 +376,7 @@ MarketLens operates seamlessly with **zero API keys required**. However, you can
 
 MarketLens enforces rigorous quality gates before any code is merged or deployed.
 
-### 1. Frontend Unit & Integration Tests (81/81 Passing)
+### 1. Frontend Unit & Integration Tests
 ```bash
 cd web
 pnpm test
@@ -394,7 +389,7 @@ Runs the full Vitest suite covering:
 - Apple Glassmorphism CSS Token Compliance (`glassmorphism.test.ts`)
 - Full Application Viewport Rendering (`App.test.tsx`)
 
-### 2. Cross-Viewport Real User Audit (0 Problems Found)
+### 2. Cross-Viewport Real User Audit
 ```bash
 node web/real_user_audit.mjs
 ```
@@ -404,7 +399,20 @@ Automated Playwright simulation testing real user journeys (order execution, sea
 - **Tablet**: 768 × 1024
 - **Mobile**: 375 × 812
 
-### 3. Production Build Validation
+### 3. Backend Tests (hermetic: no test touches the real internet)
+```bash
+cd backend
+PYTHONPATH=src uv run --group dev python -m unittest discover tests
+PYTHONPATH=src uv run --group dev mypy src tests && uv run --group dev ruff check . && uv run --group dev ruff format --check .
+```
+
+### 4. End-to-End Browser Tests
+```bash
+npx playwright test   # starts the API against e2e/fake_upstream.py and the Vite dev server
+```
+The API runs against a deterministic fake of every upstream (Yahoo, NSE, mfapi, news) and the browser clock is pinned where market hours matter, so the suite needs no network and passes at any time of day.
+
+### 5. Production Build Validation
 ```bash
 cd web
 pnpm build

@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import {
   calculateIndianCharges,
+  FEE_RATES,
+  ratePct,
   type OrderSide,
   type OrderType,
   type PaperPosition,
@@ -14,6 +16,8 @@ import {
   validateOrderMarketHours,
   type MarketStatus,
 } from "../utils/marketHours";
+
+import { CONNECTING_LABEL, feedLabel, isOffline, OFFLINE_LABEL } from "../utils/dataStatus";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -57,16 +61,6 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
           trend15m: "NEUTRAL",
           trend1h: "NEUTRAL",
           trend1d: "NEUTRAL",
-          predictedProbabilityUp: 0.5,
-          expectedMovePercent: 1.0,
-          brierCalibration: 0.18,
-          signalStrength: "NEUTRAL",
-          causalFeatures: {
-            momentum: 25,
-            volumeSurge: 25,
-            vwapDeviation: 25,
-            sectorBreadth: 25,
-          },
           priceHistory: [500],
         },
         ...INITIAL_INDIAN_STOCKS,
@@ -81,7 +75,9 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
   const [quantity, setQuantity] = useState<number>(10);
   const [limitPrice, setLimitPrice] = useState<number>(() => (initialStock ? initialStock.ltp : 500));
   const [isQuoteLoading, setIsQuoteLoading] = useState<boolean>(() => !isCurated && !!initialSymbol);
-  const [liveProvider, setLiveProvider] = useState<string>("NSE Live Telemetry");
+  const [liveProvider, setLiveProvider] = useState<string>(CONNECTING_LABEL);
+  // Symbols whose price came from the live feed this session. Sample prices are never tradable.
+  const [pricedLive, setPricedLive] = useState<Set<string>>(() => new Set());
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [isLiveLoading, setIsLiveLoading] = useState(false);
 
@@ -122,16 +118,6 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
               trend15m: "NEUTRAL",
               trend1h: "NEUTRAL",
               trend1d: "NEUTRAL",
-              predictedProbabilityUp: 0.5,
-              expectedMovePercent: 1.0,
-              brierCalibration: 0.18,
-              signalStrength: "NEUTRAL",
-              causalFeatures: {
-                momentum: 25,
-                volumeSurge: 25,
-                vwapDeviation: 25,
-                sectorBreadth: 25,
-              },
               priceHistory: [500],
             },
             ...prev,
@@ -144,6 +130,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
         .then((r) => (r.ok ? r.json() : null))
         .then((q) => {
           if (q?.ltp) {
+            setPricedLive((p) => new Set(p).add(initialSymbol));
             setLimitPrice(q.ltp);
             setStocks((prev) =>
               prev.map((s) =>
@@ -172,6 +159,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
     setIsLiveLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/v1/market/quotes`);
+      if (!res.ok) setLiveProvider(OFFLINE_LABEL);
       if (res.ok) {
         const data = await res.json();
         const quotes: Array<{
@@ -183,8 +171,9 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
           provider?: string;
         }> = data.quotes || [];
 
+        setLiveProvider(feedLabel(quotes));
+        setPricedLive((prev) => new Set([...prev, ...quotes.filter((q) => q.ltp > 0).map((q) => q.symbol)]));
         if (quotes.length > 0) {
-          setLiveProvider(quotes[0].provider || "NSE Live Telemetry");
           setLastSyncTime(new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", second: "2-digit" }));
 
           setStocks((prev) =>
@@ -205,7 +194,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
         }
       }
     } catch {
-      // Fallback
+      setLiveProvider(OFFLINE_LABEL);
     } finally {
       setIsLiveLoading(false);
     }
@@ -431,6 +420,10 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
       setNotice("Order blocked: Still syncing live price from exchange feed.");
       return;
     }
+    if (!pricedLive.has(symbol)) {
+      setNotice(`Order blocked: no live price for ${symbol}. The price shown is sample data, so it is not tradable.`);
+      return;
+    }
     if (quantity <= 0) {
       setNotice("Order rejected: Quantity must be at least 1.");
       return;
@@ -561,7 +554,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
             </p>
           </div>
           <div className="live-telemetry-status-card" role="status">
-            <span className="live-telemetry-dot" aria-hidden="true" />
+            <span className={`live-telemetry-dot${isOffline(liveProvider) ? " offline" : ""}`} aria-hidden="true" />
             <div className="live-telemetry-info">
               <span className="live-telemetry-provider">{liveProvider}</span>
               {lastSyncTime && <span className="live-telemetry-time">Synced at {lastSyncTime}</span>}
@@ -804,15 +797,15 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                 <span className="font-mono">₹{charges.brokerage.toFixed(2)}</span>
               </div>
               <div className="slip-row">
-                <span>STT / CTT ({product === "CNC" ? "0.1%" : "0.025%"})</span>
+                <span>STT / CTT ({ratePct(FEE_RATES.stt[product][side === "BUY" ? "buy" : "sell"])})</span>
                 <span className="font-mono">₹{charges.stt.toFixed(2)}</span>
               </div>
               <div className="slip-row">
-                <span>Exchange Txn Charges (0.00345%)</span>
+                <span>Exchange Txn Charges ({ratePct(FEE_RATES.exchange_txn)})</span>
                 <span className="font-mono">₹{charges.exchangeCharges.toFixed(2)}</span>
               </div>
               <div className="slip-row">
-                <span>Stamp Duty (0.015% Buy)</span>
+                <span>Stamp Duty ({ratePct(FEE_RATES.stamp_duty_buy[product])} Buy)</span>
                 <span className="font-mono">₹{charges.stampDuty.toFixed(2)}</span>
               </div>
               <div className="slip-row">
@@ -824,7 +817,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                 <span className="font-mono">₹{charges.gst.toFixed(2)}</span>
               </div>
               <div className="slip-row">
-                <span>Simulated Slippage (0.05%)</span>
+                <span>Simulated Slippage ({ratePct(FEE_RATES.slippage_bps / 10000)})</span>
                 <span className="font-mono">₹{charges.slippage.toFixed(2)}</span>
               </div>
               <div className="slip-row total-tax-row">
@@ -845,6 +838,8 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
               let label = `Execute ${side} Order (${quantity} ${symbol})`;
               if (isQuoteLoading) {
                 label = "Syncing Live Price...";
+              } else if (!pricedLive.has(symbol)) {
+                label = "No live price: sample data is not tradable";
               } else if (!bypassMarketHours && !marketStatus.isOpen) {
                 label = "Market Closed (Opens 9:15 AM IST Mon-Fri)";
               } else if (
@@ -859,7 +854,7 @@ export function PaperTradingPage({ initialSymbol = "RELIANCE" }: PaperTradingPag
                 <button
                   type="submit"
                   className={`btn-submit-order ${side === "BUY" ? "btn-submit-buy" : "btn-submit-sell"}`}
-                  disabled={isQuoteLoading || isBlocked}
+                  disabled={isQuoteLoading || isBlocked || !pricedLive.has(symbol)}
                 >
                   {label}
                 </button>

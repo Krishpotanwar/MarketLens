@@ -119,8 +119,12 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("NIFTY 50");
     expect(markup).toContain("RELIANCE");
     expect(markup).toContain("TCS");
-    expect(markup).toContain("Multi-Timeframe Trend Structure");
-    expect(markup).toContain("Calibrated Directional Prediction");
+    expect(markup).toContain("Trend on this chart");
+    // No invented forecast: no signal badge, probability or Brier score on a per-stock page.
+    for (const invented of ["Calibrated Directional Prediction", "Upward Probability", "Brier Calibration", "STRONG BUY"]) {
+      expect(markup).not.toContain(invented);
+    }
+    expect(markup).toContain("publishes no per-stock forecast");
     expect(markup).toContain("Test Signal in Paper Trading Terminal");
   });
 
@@ -155,7 +159,7 @@ describe("research dashboard shell and pages", () => {
     expect(delBuy.turnover).toBe(29500);
     expect(delBuy.brokerage).toBe(0); // Zero for delivery
     expect(delBuy.stt).toBeCloseTo(29.5, 2); // 0.1% on delivery buy
-    expect(delBuy.stampDuty).toBeCloseTo(4.425, 2); // 0.015% on buy
+    expect(delBuy.stampDuty).toBe(4.43); // 0.015% on delivery buy, rounded to the paisa like the backend
     expect(delBuy.totalCharges).toBeGreaterThan(0);
     expect(delBuy.netEffectiveAmount).toBeGreaterThan(delBuy.turnover); // Capital required = turnover + charges
 
@@ -241,6 +245,16 @@ describe("research dashboard shell and pages", () => {
     expect(markup).toContain("Earnings Concall &amp; Filings Sandbox");
     expect(markup).toContain("Strategy Rules &amp; Prompt Sandbox");
     expect(markup).toContain("Run AI Analysis on");
+  });
+
+  it("computes indicators from real bars, so before any bar arrives it shows dashes, not invented values", () => {
+    const markup = renderToStaticMarkup(
+      <TrendAnalysisPage onSelectForTrade={() => {}} initialSymbol="RELIANCE" />
+    );
+    expect(markup).not.toMatch(/multi-timeframe/i); // one series cannot support four timeframe verdicts
+    expect(markup).not.toContain("NSE Telemetry"); // a source claim nobody verified
+    expect(markup).toContain("Trend on this chart");
+    expect(markup).toMatch(/RSI \(14\)<\/span><span class="stat-val[^"]*">—</);
   });
 
   it("filters screener watchlist directly when searching in Trends page", () => {

@@ -1,11 +1,21 @@
-"""Date-effective Indian cash-equity fee schedules and transaction cost modeling."""
+"""Indian cash-equity transaction cost modeling; the rates live in backend/data/fee_schedule.json."""
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
+from pathlib import Path
 
 PAISE = Decimal("0.01")
+
+# One rate file for the whole project. web/src/data/feeSchedule.json mirrors it for the browser
+# bundle, and a unit test fails if the two ever differ.
+_RATES = json.loads(
+    (Path(__file__).resolve().parents[3] / "data" / "fee_schedule.json").read_text(),
+    parse_float=Decimal,
+)
+_MIS = "MIS"
 
 
 def _round_inr(amount: Decimal) -> Decimal:
@@ -15,18 +25,18 @@ def _round_inr(amount: Decimal) -> Decimal:
 
 @dataclass(frozen=True, slots=True)
 class FeeSchedule:
-    """Fixed-rate prototype assumptions; not date-effective or source-verified."""
+    """Intraday (MIS) rates read from fee_schedule.json; its status field says they are unverified."""
 
-    # shortcut: rates are illustrative and undated; replace with a sourced schedule before any scored run.
+    # shortcut: rates are unverified and undated; replace with a sourced schedule before any scored run.
 
-    schedule_id: str = "FY2026-NSE-EQUITY-INTRADAY"
-    brokerage_percent: Decimal = Decimal("0.0003")  # 0.03%
-    brokerage_flat_cap: Decimal = Decimal("20.00")  # max ₹20 per order
-    exchange_turnover_percent: Decimal = Decimal("0.0000297")  # NSE 0.00297%
-    sebi_turnover_percent: Decimal = Decimal("0.000001")  # ₹10 per crore (0.0001%)
-    stt_sell_percent: Decimal = Decimal("0.00025")  # 0.025% on intraday sell turnover
-    stamp_duty_buy_percent: Decimal = Decimal("0.00003")  # 0.003% on buy turnover
-    gst_percent: Decimal = Decimal("0.18")  # 18% on (brokerage + exchange + sebi)
+    schedule_id: str = f"{_RATES['schedule_id']}-{_MIS}"
+    brokerage_percent: Decimal = Decimal(_RATES["brokerage"][_MIS]["percent"])
+    brokerage_flat_cap: Decimal = Decimal(_RATES["brokerage"][_MIS]["cap"])
+    exchange_turnover_percent: Decimal = Decimal(_RATES["exchange_txn"])
+    sebi_turnover_percent: Decimal = Decimal(_RATES["sebi_turnover"])
+    stt_sell_percent: Decimal = Decimal(_RATES["stt"][_MIS]["sell"])
+    stamp_duty_buy_percent: Decimal = Decimal(_RATES["stamp_duty_buy"][_MIS])
+    gst_percent: Decimal = Decimal(_RATES["gst"])
 
 
 @dataclass(frozen=True, slots=True)

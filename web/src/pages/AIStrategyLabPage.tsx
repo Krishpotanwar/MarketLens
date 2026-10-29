@@ -15,6 +15,7 @@ import {
   generateAIStrategyAnalysis,
   type StockTechnicalData,
 } from "../services/aiGateway";
+import { annualVolatility, rsi14, sma, vwap } from "../utils/indicators";
 import { MonteCarloFanChart } from "../components/MonteCarloFanChart";
 import { TimelineBranchingTree } from "../components/TimelineBranchingTree";
 import { CorporateStrategyCard } from "../components/CorporateStrategyCard";
@@ -61,7 +62,7 @@ const AI_PROVIDERS: { id: AIEngineProvider; label: string; desc: string }[] = [
   {
     id: "OFFLINE_HEURISTIC",
     label: "Offline Heuristic Engine",
-    desc: "SEBI-calibrated deterministic formula (No API key needed)",
+    desc: "Rule-based heuristic, not statistically calibrated (no API key needed)",
   },
 ];
 
@@ -75,22 +76,22 @@ function getInitialConcallText(symbol: string): string {
   return `Management concall notes and regulatory filings for ${symbol}.`;
 }
 
+interface BarTech {
+  sma20: number | null;
+  sma50: number | null;
+  rsi14: number | null;
+  vwap: number | null;
+  volatility: number | null;
+}
+
 export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrategyLabPageProps) {
   const [stocks, setStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
-  const envGroqKey = (import.meta.env?.VITE_GROQ_API_KEY as string) || "";
-  const envGeminiKey = (import.meta.env?.VITE_GEMINI_API_KEY as string) || "";
-  const envGrokKey = (import.meta.env?.VITE_GROK_API_KEY as string) || "";
-  const envGeneralKey = (import.meta.env?.VITE_AI_API_KEY as string) || "";
-
   const [selectedSymbol, setSelectedSymbol] = useState<string>(initialSymbol || "RELIANCE");
   const [selectedProvider, setSelectedProvider] = useState<AIEngineProvider>(() => {
     if (typeof window !== "undefined" && typeof localStorage !== "undefined") {
       const stored = localStorage.getItem("marketlens_ai_provider") as AIEngineProvider | null;
       if (stored) return stored;
     }
-    if (envGroqKey) return "GROQ";
-    if (envGeminiKey) return "GEMINI";
-    if (envGrokKey) return "GROK";
     return "OFFLINE_HEURISTIC";
   });
   const [selectedStrategy, setSelectedStrategy] = useState<StrategyPresetId>("TREND_CROSSOVER");
@@ -102,7 +103,7 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
       const stored = localStorage.getItem("marketlens_ai_api_key");
       if (stored) return stored;
     }
-    return envGroqKey || envGeminiKey || envGrokKey || envGeneralKey || "";
+    return ""; // never from a VITE_* variable: Vite would compile it into the public bundle
   });
 
   const [selectedNewsId, setSelectedNewsId] = useState<string>(() => {
@@ -147,16 +148,6 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
               trend15m: "NEUTRAL",
               trend1h: "NEUTRAL",
               trend1d: "NEUTRAL",
-              predictedProbabilityUp: 0.5,
-              expectedMovePercent: 1.0,
-              brierCalibration: 0.18,
-              signalStrength: "NEUTRAL",
-              causalFeatures: {
-                momentum: 25,
-                volumeSurge: 25,
-                vwapDeviation: 25,
-                sectorBreadth: 25,
-              },
               priceHistory: [500],
             },
             ...prev,
@@ -175,6 +166,9 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
   const [tradeExecuted, setTradeExecuted] = useState<boolean>(false);
   const [analysisTimestamp, setAnalysisTimestamp] = useState<string>("");
   const [liveStockQuotes, setLiveStockQuotes] = useState<Record<string, number>>({});
+  // Indicators computed from the symbol's real daily bars (null: none arrived). Bundled ones are samples.
+  const [barTech, setBarTech] = useState<Record<string, BarTech | null>>({});
+  const [mcNote, setMcNote] = useState<string>("");
   const [liveNewsMap, setLiveNewsMap] = useState<Record<string, IndianNewsItem[]>>({});
   const [isFetchingLiveNews, setIsFetchingLiveNews] = useState<boolean>(false);
 
@@ -215,6 +209,22 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
       })
       .catch(() => {});
 
+    fetch(`${API_BASE}/api/v1/market/chart/${encodeURIComponent(selectedSymbol)}?interval=1d&range=1y`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!isMounted) return;
+        const bars: Array<{ high: number; low: number; close: number; volume: number }> = Array.isArray(data?.bars) ? data.bars : [];
+        const closes = bars.map((b) => b.close);
+        setBarTech((prev) => ({
+          ...prev,
+          [selectedSymbol]:
+            bars.length >= 50
+              ? { sma20: sma(closes, 20), sma50: sma(closes, 50), rsi14: rsi14(closes), vwap: vwap(bars, 20), volatility: annualVolatility(closes) }
+              : null,
+        }));
+      })
+      .catch(() => {});
+
     return () => {
       isMounted = false;
     };
@@ -224,10 +234,20 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
     const base = stocks.find((s) => s.symbol === selectedSymbol) ?? stocks[0];
     const livePrice = liveStockQuotes[selectedSymbol];
     if (livePrice && livePrice > 0) {
-      return { ...base, ltp: livePrice };
+      // A live price beside bundled sample indicators contradicts itself (RELIANCE at 1,158 with a VWAP of 2,938),
+      // so the indicators come from the real daily bars, or sit neutral at the live price until they arrive.
+      const tech = barTech[selectedSymbol];
+      return {
+        ...base,
+        ltp: livePrice,
+        sma20: tech?.sma20 ?? livePrice,
+        sma50: tech?.sma50 ?? livePrice,
+        vwap: tech?.vwap ?? livePrice,
+        rsi14: tech?.rsi14 ?? 50,
+      };
     }
     return base;
-  }, [stocks, selectedSymbol, liveStockQuotes]);
+  }, [stocks, selectedSymbol, liveStockQuotes, barTech]);
 
   const stockNewsList = useMemo(() => {
     const live = liveNewsMap[selectedSymbol];
@@ -376,10 +396,16 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
       const initialTimeline = highestScenario?.id ?? "BULL";
       setActiveTimelineId(initialTimeline);
 
-      // Calibrate Monte Carlo drift & volatility
+      // Drift is an assumption set by the winning scenario. Volatility is measured from 1Y daily closes when we have them.
       const isBull = initialTimeline === "BULL" || initialTimeline === "BASE";
       const drift = isBull ? 0.14 : -0.09;
-      const volatility = 0.22;
+      const measuredVolatility = barTech[activeStock.symbol]?.volatility ?? null;
+      const volatility = measuredVolatility ?? 0.22;
+      setMcNote(
+        `drift ${drift > 0 ? "+" : ""}${Math.round(drift * 100)}%/yr assumed · volatility ${Math.round(volatility * 100)}% ${
+          measuredVolatility === null ? "assumed" : "measured from 1Y daily closes"
+        }`
+      );
 
       const simulation = runMonteCarloSimulation({
         symbol: activeStock.symbol,
@@ -410,19 +436,11 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
     if (selectedProvider === "OFFLINE_HEURISTIC") {
       return "Using MarketLens built-in deterministic reasoning engine (no API key required).";
     }
-    const envKeyForProvider =
-      selectedProvider === "GROQ" ? envGroqKey :
-      selectedProvider === "GEMINI" ? envGeminiKey :
-      selectedProvider === "GROK" ? envGrokKey : envGeneralKey;
-
     if (apiKey) {
-      if (apiKey === envKeyForProvider) {
-        return `Using active environment key (VITE_${selectedProvider}_API_KEY).`;
-      }
-      return `Using custom ${selectedProvider} key (saved locally in browser).`;
+      return `Using your ${selectedProvider} key. It is kept in this browser's localStorage as plain text, so do not use a shared computer.`;
     }
-    return `Enter your ${selectedProvider} API key (saved locally in browser or via VITE_${selectedProvider}_API_KEY in .env). Falls back to offline heuristic if omitted.`;
-  }, [selectedProvider, apiKey, envGroqKey, envGeminiKey, envGrokKey, envGeneralKey]);
+    return `Enter your ${selectedProvider} API key (kept in this browser's localStorage as plain text). Falls back to the offline engine if omitted.`;
+  }, [selectedProvider, apiKey]);
 
   return (
     <div className="page-content" tabIndex={-1}>
@@ -549,7 +567,11 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
                   <span className="live-telemetry-badge" style={{ opacity: 0.7 }}>
                     Fetching Live...
                   </span>
-                ) : null}
+                ) : (
+                  <span className="live-telemetry-badge" style={{ color: "var(--accent-amber, #f59e0b)" }}>
+                    Sample headlines · live news unavailable
+                  </span>
+                )}
               </div>
               <span className="ticker-count-tag">{stockNewsList.length} Headlines</span>
             </div>
@@ -630,6 +652,16 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
               ? "Running Multi-Timeline AI Simulation..."
               : `Run AI Analysis on ${activeStock.symbol}`}
           </button>
+          {liveStockQuotes[selectedSymbol] && !barTech[selectedSymbol] && (
+            <p className="input-hint" role="status">
+              Indicators unavailable: the feed returned no price history for {activeStock.symbol}, so scenarios use the price only.
+            </p>
+          )}
+          {!liveStockQuotes[selectedSymbol] && (
+            <p className="input-hint" role="status">
+              Sample price: no live quote for {activeStock.symbol}, so targets and stops use bundled data.
+            </p>
+          )}
 
           {isAnalyzing && (
             <div className="ai-progress-status" role="status" aria-live="polite">
@@ -650,7 +682,7 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
               <p>
                 Select an Indian stock, AI provider, and preset on the left, then click{" "}
                 <strong>Run AI Analysis on {activeStock.symbol}</strong> to generate multi-timeline scenarios,
-                Monte Carlo jump-diffusion paths, and SEBI-calibrated paper trade setups.
+                Monte Carlo jump-diffusion paths, and paper trade setups with itemised statutory costs.
               </p>
             </div>
           ) : (
@@ -679,7 +711,7 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
               {/* 1. Multi-Timeline Branching Tree */}
               <div className="lab-section">
                 <div className="section-header-row">
-                  <h3 className="section-title">Multi-Timeline Scenario Branching (NSE Calibrated)</h3>
+                  <h3 className="section-title">Multi-Timeline Scenario Branching (rule-based, not calibrated)</h3>
                   <span className="section-subtitle">
                     Select a scenario below to dynamically update quantitative targets, stop loss, and simulation fan
                   </span>
@@ -707,6 +739,7 @@ export function AIStrategyLabPage({ onExecuteAITrade, initialSymbol }: AIStrateg
                     result={mcResult}
                     selectedTarget={activeTimeline?.targetPrice}
                     selectedStopLoss={activeTimeline?.stopLossPrice}
+                    assumptions={mcNote || undefined}
                   />
                 </div>
               )}

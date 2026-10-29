@@ -5,12 +5,15 @@ export interface MonteCarloFanChartProps {
   result: MonteCarloSimulationResult;
   selectedTarget?: number;
   selectedStopLoss?: number;
+  /** What the drift and volatility are, in words (the page knows whether they were measured). */
+  assumptions?: string;
 }
 
 export function MonteCarloFanChart({
   result,
   selectedTarget,
   selectedStopLoss,
+  assumptions,
 }: MonteCarloFanChartProps) {
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const gradientId = useId();
@@ -160,10 +163,9 @@ export function MonteCarloFanChart({
   // Metrics calculations
   const terminalDiff = result.medianTerminalPrice - result.currentPrice;
   const terminalDiffPercent = (terminalDiff / (result.currentPrice || 1)) * 100;
-  const var95LossPercent =
-    ((result.valueAtRisk95Percent - result.currentPrice) / (result.currentPrice || 1)) * 100;
-  const var99LossPercent =
-    ((result.valueAtRisk99Percent - result.currentPrice) / (result.currentPrice || 1)) * 100;
+  // valueAtRisk*Percent are percentage losses (10 means -10%), not prices: show the price floor beside them.
+  const var95Floor = result.currentPrice * (1 - result.valueAtRisk95Percent / 100);
+  const var99Floor = result.currentPrice * (1 - result.valueAtRisk99Percent / 100);
   const profitPct = (result.probabilityProfit * 100);
 
   const activeHoverRibbon = hoverIndex !== null ? ribbons[hoverIndex] : null;
@@ -258,7 +260,7 @@ export function MonteCarloFanChart({
               margin: "4px 0 0 0",
             }}
           >
-            {result.totalPaths.toLocaleString()} Merton jump-diffusion paths · {result.simulatedDays}-day horizon · Calibrated drift & volatility
+            {result.totalPaths.toLocaleString()} Merton jump-diffusion paths · {result.simulatedDays}-day horizon · {assumptions ?? "drift and volatility are assumptions"}
           </p>
         </div>
 
@@ -435,10 +437,10 @@ export function MonteCarloFanChart({
               marginTop: "3px",
             }}
           >
-            ₹{result.valueAtRisk95Percent.toFixed(2)}
+            ₹{var95Floor.toFixed(2)}
           </div>
           <div style={{ fontSize: "11px", color: "#d29922", fontWeight: 600, fontFamily: "var(--font-figures)", fontVariantNumeric: "tabular-nums", marginTop: "2px" }}>
-            {var95LossPercent.toFixed(2)}% tail loss floor
+            -{result.valueAtRisk95Percent.toFixed(2)}% tail loss floor
           </div>
         </div>
 
@@ -464,10 +466,10 @@ export function MonteCarloFanChart({
               marginTop: "3px",
             }}
           >
-            ₹{result.valueAtRisk99Percent.toFixed(2)}
+            ₹{var99Floor.toFixed(2)}
           </div>
           <div style={{ fontSize: "11px", color: "var(--trade-loss, #f85149)", fontWeight: 600, fontFamily: "var(--font-figures)", fontVariantNumeric: "tabular-nums", marginTop: "2px" }}>
-            {var99LossPercent.toFixed(2)}% extreme shock
+            -{result.valueAtRisk99Percent.toFixed(2)}% extreme shock
           </div>
         </div>
       </div>
@@ -768,8 +770,8 @@ export function MonteCarloFanChart({
         Monte Carlo simulation results for {result.symbol}: {result.totalPaths} paths over {result.simulatedDays} days.
         Current price ₹{result.currentPrice.toFixed(2)}, Median terminal ₹{result.medianTerminalPrice.toFixed(2)},
         Probability of profit {(result.probabilityProfit * 100).toFixed(1)}%,
-        95% VaR loss limit ₹{result.valueAtRisk95Percent.toFixed(2)},
-        99% VaR tail limit ₹{result.valueAtRisk99Percent.toFixed(2)}.
+        95% VaR loss limit {result.valueAtRisk95Percent.toFixed(2)}% (price floor ₹{var95Floor.toFixed(2)}),
+        99% VaR tail limit {result.valueAtRisk99Percent.toFixed(2)}% (price floor ₹{var99Floor.toFixed(2)}).
       </div>
     </section>
   );

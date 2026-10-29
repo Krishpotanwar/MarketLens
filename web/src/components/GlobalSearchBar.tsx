@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
+import { priceText } from "../utils/dataStatus";
+
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export interface SearchResultItem {
@@ -7,9 +9,10 @@ export interface SearchResultItem {
   name: string;
   sector: string;
   marketCapCategory: string;
-  ltp: number;
-  change: number;
-  change_percent: number;
+  ltp: number | null;
+  change: number | null;
+  change_percent: number | null;
+  status?: string; // "live" | "stale" | "unavailable"; absent on bundled sample rows
   provider?: string;
   aliases?: string;
 }
@@ -542,14 +545,6 @@ export function GlobalSearchBar({
           setIsOpen(true);
           inputRef.current?.focus();
         }}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            setIsOpen(true);
-          }
-        }}
-        aria-label="Universal stock search (like Groww / Angel One)"
       >
         <span className="global-search-icon" aria-hidden="true">
           🔍
@@ -565,7 +560,8 @@ export function GlobalSearchBar({
             if (!isOpen) setIsOpen(true);
           }}
           onFocus={() => setIsOpen(true)}
-          aria-label="Universal stock search input"
+          aria-label="Universal stock search (like Groww / Angel One)"
+          aria-haspopup="dialog"
         />
         <kbd className="global-search-shortcut" title="Press Ctrl+K or Cmd+K to search">
           ⌘K
@@ -669,7 +665,8 @@ export function GlobalSearchBar({
                 </div>
               ) : (
                 filteredResults.map((item) => {
-                  const isPositive = item.change >= 0;
+                  const isPositive = (item.change ?? 0) >= 0;
+                  const hasPrice = item.status === "live" || item.status === "stale";
                   return (
                     <div
                       key={item.symbol}
@@ -688,11 +685,12 @@ export function GlobalSearchBar({
                       <div className="global-search-item-right">
                         <div className="global-search-item-price-col">
                           <span className="global-search-item-price">
-                            ₹{item.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {hasPrice ? priceText(item.ltp) : "—"}
                           </span>
                           <span className={`global-search-item-change ${isPositive ? "gain" : "loss"}`}>
-                            {isPositive ? "+" : ""}
-                            {item.change_percent.toFixed(2)}%
+                            {hasPrice && item.change_percent != null
+                              ? `${isPositive ? "+" : ""}${item.change_percent.toFixed(2)}%`
+                              : ""}
                           </span>
                         </div>
 
@@ -745,7 +743,7 @@ export function GlobalSearchBar({
                 <span><kbd>⚡ Trade</kbd> Paper Trading</span>
                 <span><kbd>🤖 AI</kbd> Timeline Simulation</span>
               </div>
-              <span className="footer-telemetry-tag">● Live AMFI / NSE Telemetry</span>
+              <span className="footer-telemetry-tag">Prices: Yahoo Finance (unofficial), may be delayed</span>
             </div>
           </div>
         </div>

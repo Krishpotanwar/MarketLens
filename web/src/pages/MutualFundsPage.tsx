@@ -4,12 +4,15 @@ import { calculateSIP, type MutualFundInfo } from "../types/funds";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
+// Shown whenever the NAV feed did not answer with usable data (not a response, an error, or an empty list).
+const NAV_UNAVAILABLE = "Sample NAVs · live feed unavailable";
+
 export function MutualFundsPage() {
   const [funds, setFunds] = useState<MutualFundInfo[]>(TOP_INDIAN_MUTUAL_FUNDS);
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLiveLoading, setIsLiveLoading] = useState(false);
-  const [liveProvider, setLiveProvider] = useState<string>("AMFI India Live Feed");
+  const [liveProvider, setLiveProvider] = useState<string>("Connecting to mutual fund NAV feed…");
   const [lastSyncDate, setLastSyncDate] = useState<string>("");
 
   // Fetch live mutual funds from AMFI / MFAPI live telemetry
@@ -21,7 +24,8 @@ export function MutualFundsPage() {
         const data = await res.json();
         const liveList = data.funds || [];
         if (liveList.length > 0) {
-          setLiveProvider(data.provider || "AMFI India Live Feed");
+          const anyLive = liveList.some((l: { nav?: number | null }) => (l.nav ?? 0) > 0);
+          setLiveProvider(anyLive ? data.provider : NAV_UNAVAILABLE);
           if (liveList[0].navDate) {
             setLastSyncDate(liveList[0].navDate);
           }
@@ -45,10 +49,14 @@ export function MutualFundsPage() {
             });
             return mapped;
           });
+        } else {
+          setLiveProvider(NAV_UNAVAILABLE);
         }
+      } else {
+        setLiveProvider(NAV_UNAVAILABLE);
       }
     } catch {
-      setLiveProvider("AMFI Verified Local Baseline");
+      setLiveProvider(NAV_UNAVAILABLE);
     } finally {
       setIsLiveLoading(false);
     }
@@ -106,7 +114,7 @@ export function MutualFundsPage() {
             </p>
           </div>
           <div className="live-telemetry-status-card" role="status">
-            <span className="live-telemetry-dot" aria-hidden="true" />
+            <span className={`live-telemetry-dot${/^(Sample|Connecting)/.test(liveProvider) ? " offline" : ""}`} aria-hidden="true" />
             <div className="live-telemetry-info">
               <span className="live-telemetry-provider">{liveProvider}</span>
               {lastSyncDate && <span className="live-telemetry-time">Latest NAV: {lastSyncDate}</span>}
@@ -245,7 +253,7 @@ export function MutualFundsPage() {
             </div>
 
             {/* Wealth Breakdown Bar */}
-            <div className="wealth-ratio-bar-wrap" aria-label="Invested vs Returns proportion">
+            <div className="wealth-ratio-bar-wrap" role="img" aria-label="Invested vs Returns proportion">
               <div className="wealth-bar-fill-invested" style={{ width: `${investedPct}%` }} />
               <div className="wealth-bar-fill-returns" style={{ width: `${returnsPct}%` }} />
             </div>

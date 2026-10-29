@@ -1,6 +1,6 @@
 # Bazaar Drishti prototype runbook
 
-This covers local scaffold checks only. No research run is approved, and the project is not deployed.
+This covers local scaffold checks only. No real-data research run is approved. The web app (Vercel) and API (Render) are deployed publicly and serve a synthetic fixture run, labelled as such.
 
 ## Local checks
 

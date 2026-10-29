@@ -14,6 +14,7 @@ import type {
   CorporateStrategyDeconstruction,
 } from "../types/aiSimulation";
 import { getConcallPreset } from "../data/indianNewsFeeds";
+import { calculateIndianCharges } from "../types/paper";
 
 export interface GenerateTimelineScenariosParams {
   symbol: string;
@@ -39,34 +40,24 @@ export interface StatutoryFrictionEstimate {
 }
 
 /**
- * Calculates Indian equity statutory levies per SEBI & NSE schedules.
- * - Brokerage: Flat ₹20 per executed order
- * - STT: 0.1% on delivery turnover
- * - Stamp Duty: 0.015% on buy turnover
- * - Exchange Turnover Fee: 0.00345%
- * - SEBI Turnover Charge: 0.0001% (₹10 / crore)
- * - GST: 18% on (Brokerage + Exchange & SEBI charges)
+ * Statutory levies for one delivery (CNC) buy leg, priced by calculateIndianCharges so the AI lab
+ * quotes exactly what the paper terminal will charge. Slippage is not statutory and is excluded.
  */
 export function calculateStatutoryFriction(
   turnoverINR: number = 50000
 ): StatutoryFrictionEstimate {
   const turnover = Math.max(1, turnoverINR);
-  const brokerage = 20;
-  const stt = turnover * 0.001;
-  const stampDuty = turnover * 0.00015;
-  const exchangeAndSebi = turnover * (0.0000345 + 0.000001);
-  const gst = (brokerage + exchangeAndSebi) * 0.18;
-  const totalCharges = brokerage + stt + stampDuty + exchangeAndSebi + gst;
-  const frictionPercent = (totalCharges / turnover) * 100;
+  const leg = calculateIndianCharges("BUY", "CNC", turnover, 1);
+  const totalCharges = Math.round((leg.totalCharges - leg.slippage) * 100) / 100;
 
   return {
-    brokerage,
-    stt: Math.round(stt * 100) / 100,
-    stampDuty: Math.round(stampDuty * 100) / 100,
-    exchangeAndSebi: Math.round(exchangeAndSebi * 100) / 100,
-    gst: Math.round(gst * 100) / 100,
-    totalCharges: Math.round(totalCharges * 100) / 100,
-    frictionPercent: Math.round(frictionPercent * 1000) / 1000,
+    brokerage: leg.brokerage,
+    stt: leg.stt,
+    stampDuty: leg.stampDuty,
+    exchangeAndSebi: Math.round((leg.exchangeCharges + leg.sebiCharges) * 100) / 100,
+    gst: leg.gst,
+    totalCharges,
+    frictionPercent: Math.round((totalCharges / turnover) * 100 * 1000) / 1000,
   };
 }
 

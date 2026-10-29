@@ -1,8 +1,24 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
-import type { StockTrendInfo } from "../types/paper";
+import { CONNECTING_LABEL, feedLabel, isOffline, isUsableQuote, OFFLINE_LABEL, priceText } from "../utils/dataStatus";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
+
+/** The 52-week range bar: a real range, or a dash. Never a range worked out from the price. */
+export function WeekRangeBar({ ltp, low, high }: { ltp?: number | null; low?: number; high?: number }) {
+  if (ltp == null || low == null || high == null) return <>—</>;
+  const pct = Math.min(100, Math.max(0, ((ltp - low) / (high - low || 1)) * 100));
+  return (
+    <div className="range-bar-cell">
+      <span className="range-label">₹{low.toFixed(0)}</span>
+      <div className="range-track">
+        <div className="range-fill" style={{ width: `${pct}%` }} />
+        <div className="range-indicator" style={{ left: `${pct}%` }} />
+      </div>
+      <span className="range-label">₹{high.toFixed(0)}</span>
+    </div>
+  );
+}
 
 interface StocksExplorerPageProps {
   onSelectForTrend: (symbol: string) => void;
@@ -18,6 +34,26 @@ interface IndexTapeItem {
   positive: boolean;
 }
 
+/** A shelf row: only ever built from a live quote. */
+interface ShelfStock {
+  symbol: string;
+  name: string;
+  ltp: number;
+  change: number;
+  changePercent: number;
+  volume: number;
+}
+const SHELF_EMPTY = "Live movers appear when the market feed is available.";
+
+// Index strip: real quotes only. "—" until the feed answers, and again whenever it does not.
+const NO_INDEX_DATA: IndexTapeItem[] = ["NIFTY 50", "SENSEX", "BANK NIFTY", "NIFTY IT", "NIFTY AUTO"].map(
+  (name) => ({ name, val: "—", chg: "", positive: true })
+);
+const sameIndex = (a: string, b: string) => a.replace(/\s+/g, "").toUpperCase() === b.replace(/\s+/g, "").toUpperCase();
+
+// The backend prices the first 20 rows of a browse page, so a page is 20 rows: none shows "—" while the feed is up.
+const PAGE_SIZE = 20;
+
 interface ListedStockItem {
   symbol: string;
   name: string;
@@ -27,10 +63,10 @@ interface ListedStockItem {
   series?: string;
   listingDate?: string;
   isin?: string;
-  ltp: number;
-  change: number;
-  changePercent: number;
-  volume: number;
+  ltp: number | null;
+  change: number | null;
+  changePercent: number | null;
+  volume: number | null;
   week52High?: number;
   week52Low?: number;
 }
@@ -42,7 +78,8 @@ export function StocksExplorerPage({
   initialSearchQuery = "",
 }: StocksExplorerPageProps) {
   // Shelves state (top gainers/losers/active)
-  const [shelvesStocks, setShelvesStocks] = useState<StockTrendInfo[]>(INITIAL_INDIAN_STOCKS);
+  // Built from live quotes only; empty (with a note) while connecting or offline.
+  const [shelvesStocks, setShelvesStocks] = useState<ShelfStock[]>([]);
 
   // Paginated master catalog state (13,109+ Indian equities)
   const [stocks, setStocks] = useState<ListedStockItem[]>(
@@ -53,12 +90,10 @@ export function StocksExplorerPage({
       sector: s.sector,
       marketCapCategory: s.marketCapCategory || "Mid Cap",
       series: "EQ",
-      ltp: s.ltp,
-      change: s.change,
-      changePercent: s.changePercent,
-      volume: s.volume,
-      week52High: s.week52High,
-      week52Low: s.week52Low,
+      ltp: null, // the bundled list is a symbol directory: a price shows only once a live quote lands
+      change: null,
+      changePercent: null,
+      volume: null,
     }))
   );
 
@@ -73,18 +108,12 @@ export function StocksExplorerPage({
   const [isLoadingCatalog, setIsLoadingCatalog] = useState<boolean>(false);
 
   const [isLiveLoading, setIsLiveLoading] = useState(false);
-  const [liveProvider, setLiveProvider] = useState<string>("NSE/BSE Master Telemetry");
+  const [liveProvider, setLiveProvider] = useState<string>(CONNECTING_LABEL);
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const isInitialMount = useRef(true);
   const activeRequestIdRef = useRef(0);
 
-  const [indices, setIndices] = useState<IndexTapeItem[]>([
-    { name: "NIFTY 50", val: "24,854.20", chg: "+0.58%", positive: true },
-    { name: "SENSEX", val: "81,420.50", chg: "+0.62%", positive: true },
-    { name: "BANK NIFTY", val: "51,340.80", chg: "+0.76%", positive: true },
-    { name: "NIFTY IT", val: "42,180.20", chg: "+1.15%", positive: true },
-    { name: "NIFTY AUTO", val: "25,640.10", chg: "+2.10%", positive: true },
-  ]);
+  const [indices, setIndices] = useState<IndexTapeItem[]>(NO_INDEX_DATA);
 
   useEffect(() => {
     if (initialSearchQuery) {
@@ -99,6 +128,11 @@ export function StocksExplorerPage({
     setIsLiveLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/v1/market/quotes`);
+      if (!res.ok) {
+        setLiveProvider(OFFLINE_LABEL);
+        setIndices(NO_INDEX_DATA);
+        setShelvesStocks([]);
+      }
       if (res.ok) {
         const data = await res.json();
         const quotes: Array<{
@@ -107,12 +141,15 @@ export function StocksExplorerPage({
           change: number;
           change_percent: number;
           volume: number;
+          name?: string;
+          yahoo_symbol?: string;
+          status?: string;
           provider?: string;
         }> = data.quotes || [];
 
+        setLiveProvider(feedLabel(quotes));
+        if (quotes.length === 0) setIndices(NO_INDEX_DATA);
         if (quotes.length > 0) {
-          const providerName = quotes[0].provider || "NSE Telemetry (Live)";
-          setLiveProvider(providerName);
           setLastSyncTime(
             new Date().toLocaleTimeString("en-IN", {
               hour: "2-digit",
@@ -124,8 +161,8 @@ export function StocksExplorerPage({
           // Update indices
           setIndices((prev) =>
             prev.map((idx) => {
-              const match = quotes.find((q) => q.symbol === idx.name);
-              if (match) {
+              const match = quotes.find((q) => sameIndex(q.symbol, idx.name));
+              if (match && match.ltp > 0) {
                 return {
                   name: idx.name,
                   val: match.ltp.toLocaleString("en-IN", {
@@ -136,30 +173,29 @@ export function StocksExplorerPage({
                   positive: match.change_percent >= 0,
                 };
               }
-              return idx;
+              return { ...idx, val: "—", chg: "" };
             })
           );
 
-          // Update shelves with live quotes
-          setShelvesStocks((prev) =>
-            prev.map((s) => {
-              const match = quotes.find((q) => q.symbol === s.symbol);
-              if (match && match.ltp > 0) {
-                return {
-                  ...s,
-                  ltp: match.ltp,
-                  change: match.change,
-                  changePercent: match.change_percent,
-                  volume: match.volume > 0 ? match.volume : s.volume,
-                };
-              }
-              return s;
-            })
+          // Shelves: live stock quotes only (indices have their own strip)
+          setShelvesStocks(
+            quotes
+              .filter((q) => isUsableQuote(q) && !q.yahoo_symbol?.startsWith("^"))
+              .map((q) => ({
+                symbol: q.symbol,
+                name: q.name || q.symbol,
+                ltp: q.ltp,
+                change: q.change,
+                changePercent: q.change_percent,
+                volume: q.volume ?? 0,
+              }))
           );
         }
       }
     } catch {
-      setLiveProvider("Offline Heuristic Baseline");
+      setLiveProvider(OFFLINE_LABEL);
+      setIndices(NO_INDEX_DATA);
+      setShelvesStocks([]);
     } finally {
       setIsLiveLoading(false);
     }
@@ -178,7 +214,7 @@ export function StocksExplorerPage({
       try {
         const params = new URLSearchParams({
           page: String(targetPage),
-          limit: "50",
+          limit: String(PAGE_SIZE),
           exchange: targetExchange,
           cap: targetCap,
           q: queryStr.trim(),
@@ -197,21 +233,21 @@ export function StocksExplorerPage({
                 symbol: item.symbol,
                 name: item.name,
                 exchange: item.exchange || (item.symbol.endsWith(".BO") ? "BSE" : "NSE"),
-                sector: item.sector || "Indian Equities",
-                marketCapCategory: item.marketCapCategory || "Mid Cap",
+                sector: item.sector || "Unclassified",
+                marketCapCategory: item.marketCapCategory || "Unclassified",
                 series: item.series || "EQ",
                 listingDate: item.listingDate || "",
                 isin: item.isin || "",
-                ltp: item.ltp || 100.0,
-                change: item.change || 0.0,
-                changePercent: item.changePercent || 0.0,
-                volume: item.volume || 0,
-                week52High: (item.ltp || 100) * 1.3,
-                week52Low: (item.ltp || 100) * 0.75,
+                ltp: item.ltp ?? null,
+                change: item.change ?? null,
+                changePercent: item.changePercent ?? null,
+                volume: item.volume ?? null,
+                week52High: item.week52High ?? undefined,
+                week52Low: item.week52Low ?? undefined,
               }))
             );
             setTotalCount(data.total || 0);
-            setTotalPages(data.totalPages || Math.ceil((data.total || 1) / 50));
+            setTotalPages(data.totalPages || Math.ceil((data.total || 1) / PAGE_SIZE));
             setPage(data.page || targetPage);
           } else if (queryStr.trim()) {
             // No results for this query
@@ -275,21 +311,20 @@ export function StocksExplorerPage({
   // Discovery shelves
   const topGainers = useMemo(() => {
     return [...shelvesStocks]
-      .filter((s) => s.marketCapCategory !== "Index" && s.changePercent > 0)
+      .filter((s) => s.changePercent > 0)
       .sort((a, b) => b.changePercent - a.changePercent)
       .slice(0, 4);
   }, [shelvesStocks]);
 
   const topLosers = useMemo(() => {
     return [...shelvesStocks]
-      .filter((s) => s.marketCapCategory !== "Index" && s.changePercent < 0)
+      .filter((s) => s.changePercent < 0)
       .sort((a, b) => a.changePercent - b.changePercent)
       .slice(0, 3);
   }, [shelvesStocks]);
 
   const mostActive = useMemo(() => {
     return [...shelvesStocks]
-      .filter((s) => s.marketCapCategory !== "Index")
       .sort((a, b) => b.volume - a.volume)
       .slice(0, 4);
   }, [shelvesStocks]);
@@ -326,7 +361,7 @@ export function StocksExplorerPage({
             </p>
           </div>
           <div className="live-telemetry-status-card" role="status">
-            <span className="live-telemetry-dot" aria-hidden="true" />
+            <span className={`live-telemetry-dot${isOffline(liveProvider) ? " offline" : ""}`} aria-hidden="true" />
             <div className="live-telemetry-info">
               <span className="live-telemetry-provider">{liveProvider}</span>
               {lastSyncTime && (
@@ -374,6 +409,7 @@ export function StocksExplorerPage({
               <span className="shelf-sub">Today's leaders</span>
             </div>
             <div className="shelf-items">
+              {topGainers.length === 0 && <p className="shelf-empty">{SHELF_EMPTY}</p>}
               {topGainers.map((stock) => (
                 <div
                   key={stock.symbol}
@@ -404,6 +440,7 @@ export function StocksExplorerPage({
               <span className="shelf-sub">Pullback setups</span>
             </div>
             <div className="shelf-items">
+              {topLosers.length === 0 && <p className="shelf-empty">{SHELF_EMPTY}</p>}
               {topLosers.map((stock) => (
                 <div
                   key={stock.symbol}
@@ -434,6 +471,7 @@ export function StocksExplorerPage({
               <span className="shelf-sub">Highest daily turnover</span>
             </div>
             <div className="shelf-items">
+              {mostActive.length === 0 && <p className="shelf-empty">{SHELF_EMPTY}</p>}
               {mostActive.map((stock) => (
                 <div
                   key={stock.symbol}
@@ -582,13 +620,7 @@ export function StocksExplorerPage({
                 </tr>
               ) : (
                 visibleStocks.map((stock) => {
-                  const isPositive = stock.change >= 0;
-                  const high52 = stock.week52High || stock.ltp * 1.25;
-                  const low52 = stock.week52Low || stock.ltp * 0.75;
-                  const rangePct = Math.min(
-                    100,
-                    Math.max(0, ((stock.ltp - low52) / (high52 - low52 || 1)) * 100)
-                  );
+                  const isPositive = (stock.change ?? 0) >= 0;
 
                   return (
                     <tr key={`${stock.exchange}-${stock.symbol}`}>
@@ -614,28 +646,15 @@ export function StocksExplorerPage({
                       </td>
                       <td>{stock.sector}</td>
                       <td className="table-num table-price">
-                        ₹{stock.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                        {priceText(stock.ltp)}
                       </td>
                       <td className={`table-num table-change ${isPositive ? "text-gain" : "text-loss"}`}>
-                        {isPositive ? "+" : ""}₹{stock.change.toFixed(2)} (
-                        {isPositive ? "+" : ""}
-                        {stock.changePercent.toFixed(2)}%)
+                        {stock.change == null || stock.changePercent == null
+                          ? "—"
+                          : `${isPositive ? "+" : ""}₹${stock.change.toFixed(2)} (${isPositive ? "+" : ""}${stock.changePercent.toFixed(2)}%)`}
                       </td>
                       <td>
-                        <div className="range-bar-cell">
-                          <span className="range-label">₹{low52.toFixed(0)}</span>
-                          <div className="range-track">
-                            <div
-                              className="range-fill"
-                              style={{ width: `${rangePct}%` }}
-                            />
-                            <div
-                              className="range-indicator"
-                              style={{ left: `${rangePct}%` }}
-                            />
-                          </div>
-                          <span className="range-label">₹{high52.toFixed(0)}</span>
-                        </div>
+                        <WeekRangeBar ltp={stock.ltp} low={stock.week52Low} high={stock.week52High} />
                       </td>
                       <td>
                         <div className="stock-action-group">
@@ -678,8 +697,8 @@ export function StocksExplorerPage({
             <div className="pagination-info">
               Page <strong>{page}</strong> of <strong>{totalPages.toLocaleString("en-IN")}</strong>{" "}
               <span className="text-muted">
-                ({((page - 1) * 50 + 1).toLocaleString("en-IN")} -{" "}
-                {Math.min(page * 50, totalCount).toLocaleString("en-IN")} of{" "}
+                ({((page - 1) * PAGE_SIZE + 1).toLocaleString("en-IN")} -{" "}
+                {Math.min(page * PAGE_SIZE, totalCount).toLocaleString("en-IN")} of{" "}
                 {totalCount.toLocaleString("en-IN")})
               </span>
             </div>

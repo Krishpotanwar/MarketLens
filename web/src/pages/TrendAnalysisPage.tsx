@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import type { StockTrendInfo } from "../types/paper";
+import { CONNECTING_LABEL, feedLabel, indexText, isOffline, OFFLINE_LABEL, priceText } from "../utils/dataStatus";
+import { chartTrend, rsi14 } from "../utils/indicators";
 
 const API_BASE = import.meta.env.VITE_API_URL || "";
 
@@ -43,7 +45,7 @@ export function TrendAnalysisPage({
     initialSymbol?.trim().toUpperCase() || "RELIANCE"
   );
   const [sectorFilter, setSectorFilter] = useState<string>("ALL");
-  const [liveProvider, setLiveProvider] = useState<string>("NSE/BSE Live Telemetry");
+  const [liveProvider, setLiveProvider] = useState<string>(CONNECTING_LABEL);
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [isLiveLoading, setIsLiveLoading] = useState(false);
 
@@ -58,7 +60,15 @@ export function TrendAnalysisPage({
   // Search input in screener sidebar for ANY Indian stock
   const [screenerSearch, setScreenerSearch] = useState(initialScreenerSearch);
   const [searchResults, setSearchResults] = useState<
-    Array<{ symbol: string; name: string; sector: string; ltp: number }>
+    Array<{
+      symbol: string;
+      name: string;
+      sector: string;
+      ltp: number | null;
+      change?: number | null;
+      change_percent?: number | null;
+      volume?: number | null;
+    }>
   >([]);
   const [isSearchingScreener, setIsSearchingScreener] = useState(false);
 
@@ -120,16 +130,6 @@ export function TrendAnalysisPage({
         trend15m: "BEARISH" as const,
         trend1h: "NEUTRAL" as const,
         trend1d: "BEARISH" as const,
-        predictedProbabilityUp: 0.44,
-        expectedMovePercent: 1.2,
-        brierCalibration: 0.175,
-        signalStrength: "NEUTRAL" as const,
-        causalFeatures: {
-          momentum: 22,
-          volumeSurge: 24,
-          vwapDeviation: 18,
-          sectorBreadth: 20,
-        },
         priceHistory: [129.5, 129.2, 128.8, 128.8],
       };
     }
@@ -158,16 +158,6 @@ export function TrendAnalysisPage({
       trend15m: "NEUTRAL" as const,
       trend1h: "NEUTRAL" as const,
       trend1d: "NEUTRAL" as const,
-      predictedProbabilityUp: 0.5,
-      expectedMovePercent: 1.0,
-      brierCalibration: 0.18,
-      signalStrength: "NEUTRAL" as const,
-      causalFeatures: {
-        momentum: 25,
-        volumeSurge: 25,
-        vwapDeviation: 25,
-        sectorBreadth: 25,
-      },
       priceHistory: [0],
     };
   }, [stocks, normalizedSymbol, selectedSymbol]);
@@ -177,6 +167,7 @@ export function TrendAnalysisPage({
     setIsLiveLoading(true);
     try {
       const res = await fetch(`${API_BASE}/api/v1/market/quotes`);
+      if (!res.ok) setLiveProvider(OFFLINE_LABEL);
       if (res.ok) {
         const data = await res.json();
         const quotes: Array<{
@@ -188,8 +179,8 @@ export function TrendAnalysisPage({
           provider?: string;
         }> = data.quotes || [];
 
+        setLiveProvider(feedLabel(quotes));
         if (quotes.length > 0) {
-          setLiveProvider(quotes[0].provider || "NSE Live Telemetry");
           setLastSyncTime(
             new Date().toLocaleTimeString("en-IN", {
               hour: "2-digit",
@@ -218,7 +209,7 @@ export function TrendAnalysisPage({
         }
       }
     } catch {
-      setLiveProvider("Offline Baseline");
+      setLiveProvider(OFFLINE_LABEL);
     } finally {
       setIsLiveLoading(false);
     }
@@ -281,35 +272,26 @@ export function TrendAnalysisPage({
                     name: liveQuoteData.name || `${liveQuoteData.symbol} Listed`,
                     sector: "Indian Equities",
                     marketCapCategory: "Mid Cap" as const,
-                    week52High: liveQuoteData.week52_high || liveQuoteData.ltp * 1.3,
-                    week52Low: liveQuoteData.week52_low || liveQuoteData.ltp * 0.75,
+                    week52High: liveQuoteData.week52_high ?? 0,
+                    week52Low: liveQuoteData.week52_low ?? 0,
                     ltp: liveQuoteData.ltp,
                     change: liveQuoteData.change,
                     changePercent: liveQuoteData.change_percent,
-                    open: liveQuoteData.open || liveQuoteData.ltp,
-                    high: liveQuoteData.high || liveQuoteData.ltp * 1.01,
-                    low: liveQuoteData.low || liveQuoteData.ltp * 0.99,
-                    vwap: liveQuoteData.ltp,
-                    volume: liveQuoteData.volume || 1000000,
-                    volumeRatio: 1.15,
-                    rsi14: 52.4,
-                    sma20: liveQuoteData.ltp * 0.99,
-                    sma50: liveQuoteData.ltp * 0.97,
-                    trend5m: liveQuoteData.change >= 0 ? "BULLISH" : "BEARISH",
-                    trend15m: liveQuoteData.change >= 0 ? "BULLISH" : "BEARISH",
-                    trend1h: liveQuoteData.change >= 0 ? "BULLISH" : "BEARISH",
-                    trend1d: liveQuoteData.change >= 0 ? "BULLISH" : "BEARISH",
-                    predictedProbabilityUp: liveQuoteData.change >= 0 ? 0.65 : 0.42,
-                    expectedMovePercent: Math.abs(liveQuoteData.change_percent) || 1.15,
-                    brierCalibration: 0.182,
-                    signalStrength: liveQuoteData.change >= 0 ? "BUY" : "NEUTRAL",
-                    causalFeatures: {
-                      momentum: 28,
-                      volumeSurge: 24,
-                      vwapDeviation: 18,
-                      sectorBreadth: 20,
-                    },
-                    priceHistory: [liveQuoteData.ltp],
+                    open: liveQuoteData.open ?? 0,
+                    high: liveQuoteData.high ?? 0,
+                    low: liveQuoteData.low ?? 0,
+                    volume: liveQuoteData.volume ?? 0,
+                    // Not shown: RSI, SMAs and trend are computed from the chart bars. The feed has no values for these.
+                    vwap: 0,
+                    volumeRatio: 0,
+                    rsi14: 0,
+                    sma20: 0,
+                    sma50: 0,
+                    trend5m: "NEUTRAL",
+                    trend15m: "NEUTRAL",
+                    trend1h: "NEUTRAL",
+                    trend1d: "NEUTRAL",
+                    priceHistory: [],
                   },
                   ...prev,
                 ];
@@ -326,31 +308,15 @@ export function TrendAnalysisPage({
             setChartBars(chartData.bars);
             setChartMeta(chartData.meta || null);
           } else {
-            // Synthesize realistic intraday line based on live quote
-            const baseLtp = liveQuoteData?.ltp || activeStock.ltp || 100;
-            const prevClose = liveQuoteData?.previous_close || baseLtp;
-            const simulatedBars: ChartBar[] = [];
-            const nowSec = Math.floor(Date.now() / 1000);
-            for (let i = 24; i >= 0; i--) {
-              const drift = Math.sin(i / 3) * (baseLtp * 0.004);
-              const p = Math.round((baseLtp - drift) * 100) / 100;
-              simulatedBars.push({
-                timestamp: nowSec - i * 300,
-                open: p,
-                high: p + 0.3,
-                low: p - 0.3,
-                close: p,
-                volume: 50000 + i * 4000,
-              });
-            }
-            setChartBars(simulatedBars);
-            setChartMeta({
-              currency: "INR",
-              regularMarketPrice: baseLtp,
-              chartPreviousClose: prevClose,
-              provider: "NSE Telemetry (Live)",
-            });
+            // No price history from the feed: say so. A line drawn up from the last price is not a chart.
+            setChartBars([]);
+            setChartMeta(null);
+            setChartError(true);
           }
+        } else {
+          setChartBars([]); // never leave the previous symbol's candles under this symbol's name
+          setChartMeta(null);
+          setChartError(true);
         }
       } catch {
         if (reqId === activeReqIdRef.current) {
@@ -485,28 +451,23 @@ export function TrendAnalysisPage({
           name: sr.name,
           sector: sr.sector || "Indian Equities",
           marketCapCategory: "Mid Cap",
-          ltp: sr.ltp || 100,
-          change: 0,
-          changePercent: 0,
-          open: sr.ltp || 100,
-          high: (sr.ltp || 100) * 1.01,
-          low: (sr.ltp || 100) * 0.99,
-          vwap: sr.ltp || 100,
-          volume: 500000,
-          volumeRatio: 1.0,
-          rsi14: 50,
-          sma20: sr.ltp || 100,
-          sma50: sr.ltp || 100,
+          ltp: sr.ltp ?? 0,
+          change: sr.change ?? 0,
+          changePercent: sr.change_percent ?? 0,
+          open: 0,
+          high: 0,
+          low: 0,
+          vwap: 0,
+          volume: sr.volume ?? 0,
+          volumeRatio: 0,
+          rsi14: 0,
+          sma20: 0,
+          sma50: 0,
           trend5m: "NEUTRAL",
           trend15m: "NEUTRAL",
           trend1h: "NEUTRAL",
           trend1d: "NEUTRAL",
-          predictedProbabilityUp: 0.5,
-          expectedMovePercent: 1.0,
-          brierCalibration: 0.18,
-          signalStrength: "NEUTRAL",
-          causalFeatures: { momentum: 25, volumeSurge: 25, vwapDeviation: 25, sectorBreadth: 25 },
-          priceHistory: [sr.ltp || 100],
+          priceHistory: [],
         });
       }
     }
@@ -517,6 +478,11 @@ export function TrendAnalysisPage({
   const declines = stocks.filter((s) => s.change < 0).length;
 
   // Chart computation metrics
+  // Indicators come from the bars on screen; null (shown as "—") until there are enough of them.
+  const barCloses = useMemo(() => chartBars.map((b) => b.close), [chartBars]);
+  const rsi = useMemo(() => rsi14(barCloses), [barCloses]);
+  const trend = useMemo(() => chartTrend(barCloses), [barCloses]);
+
   const chartDataSummary = useMemo(() => {
     if (chartBars.length === 0) {
       return {
@@ -603,11 +569,11 @@ export function TrendAnalysisPage({
           <div>
             <h1>Indian Stock Market Trends & Signals</h1>
             <p className="status-copy">
-              Live exchange candlestick feeds, multi-timeframe trend structures, and calibrated predictions across all NSE & BSE listed equities. Cross-verified with official National Stock Exchange telemetry.
+              Exchange candlestick charts (1D to 1Y) with SMA overlays and RSI readouts computed from the candles, for NSE & BSE listed equities. Prices come from an unofficial Yahoo Finance feed and may be delayed.
             </p>
           </div>
           <div className="live-telemetry-status-card" role="status">
-            <span className="live-telemetry-dot" aria-hidden="true" />
+            <span className={`live-telemetry-dot${isOffline(liveProvider) && !chartMeta?.provider ? " offline" : ""}`} aria-hidden="true" />
             <div className="live-telemetry-info">
               <span className="live-telemetry-provider">
                 {chartMeta?.provider || liveProvider}
@@ -640,11 +606,11 @@ export function TrendAnalysisPage({
         </div>
         <div className="breadth-item">
           <span className="breadth-label">Nifty 50</span>
-          <span className="breadth-val text-gain">24,854.20 (+0.58%)</span>
+          <span className="breadth-val">{indexText(stocks, "NIFTY 50", isOffline(liveProvider))}</span>
         </div>
         <div className="breadth-item">
           <span className="breadth-label">Bank Nifty</span>
-          <span className="breadth-val text-gain">51,340.80 (+0.76%)</span>
+          <span className="breadth-val">{indexText(stocks, "BANKNIFTY", isOffline(liveProvider))}</span>
         </div>
         <div className="breadth-item">
           <span className="breadth-label">Active Stock</span>
@@ -715,13 +681,13 @@ export function TrendAnalysisPage({
                     <strong>{sr.symbol}</strong>
                     <span className="search-res-name">{sr.name}</span>
                   </div>
-                  <span className="search-res-price">₹{sr.ltp.toFixed(2)}</span>
+                  <span className="search-res-price">{priceText(sr.ltp)}</span>
                 </button>
               ))}
             </div>
           )}
 
-          <div className="screener-list" role="listbox">
+          <div className="screener-list" role="listbox" aria-label="Stock screener">
             {combinedScreenerStocks.map((stock) => {
               const isSelected =
                 stock.symbol === activeStock.symbol ||
@@ -743,11 +709,10 @@ export function TrendAnalysisPage({
                   </div>
                   <div className="screener-right">
                     <span className="screener-ltp table-num">
-                      ₹{stock.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 })}
+                      {stock.ltp > 0 ? `₹${stock.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2 })}` : "—"}
                     </span>
                     <span className={`screener-chg table-num ${isPositive ? "text-gain" : "text-loss"}`}>
-                      {isPositive ? "+" : ""}
-                      {stock.changePercent.toFixed(2)}%
+                      {stock.ltp > 0 ? `${isPositive ? "+" : ""}${stock.changePercent.toFixed(2)}%` : ""}
                     </span>
                   </div>
                 </button>
@@ -762,7 +727,7 @@ export function TrendAnalysisPage({
             <div>
               <div className="symbol-row">
                 <h2>{activeStock.symbol}</h2>
-                <span className="exchange-badge-nse">NSE Telemetry</span>
+                <span className="exchange-badge-nse">{activeStock.symbol.endsWith(".BO") ? "BSE" : "NSE"}</span>
                 <span className="sector-tag">{activeStock.sector}</span>
               </div>
               <p className="stock-subtitle">{activeStock.name}</p>
@@ -892,7 +857,7 @@ export function TrendAnalysisPage({
             {/* Chart Error Banner */}
             {chartError && (
               <div className="chart-error-banner" role="alert">
-                <span>Failed to load live exchange candles for {activeStock.symbol}.</span>
+                <span>No live price history for {activeStock.symbol} from the market feed.</span>
                 <button
                   type="button"
                   className="chart-retry-btn"
@@ -1112,45 +1077,37 @@ export function TrendAnalysisPage({
             <div className="mini-stat">
               <span className="stat-label">Day Open</span>
               <span className="stat-val">
-                {activeStock.open && activeStock.open > 0 ? `₹${activeStock.open.toFixed(2)}` : (activeStock.ltp > 0 ? `₹${activeStock.ltp.toFixed(2)}` : "—")}
+                {priceText(activeStock.open > 0 ? activeStock.open : null)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">Day High</span>
               <span className="stat-val">
-                {activeStock.high && activeStock.high > 0 ? `₹${activeStock.high.toFixed(2)}` : (activeStock.ltp > 0 ? `₹${(activeStock.ltp * 1.01).toFixed(2)}` : "—")}
+                {priceText(activeStock.high > 0 ? activeStock.high : null)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">Day Low</span>
               <span className="stat-val">
-                {activeStock.low && activeStock.low > 0 ? `₹${activeStock.low.toFixed(2)}` : (activeStock.ltp > 0 ? `₹${(activeStock.ltp * 0.99).toFixed(2)}` : "—")}
+                {priceText(activeStock.low > 0 ? activeStock.low : null)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">52-Week High</span>
               <span className="stat-val">
-                ₹{(chartMeta?.fiftyTwoWeekHigh || activeStock.week52High || (activeStock.ltp > 0 ? activeStock.ltp * 1.3 : 100)).toFixed(2)}
+                {priceText(chartMeta?.fiftyTwoWeekHigh || activeStock.week52High || null)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">52-Week Low</span>
               <span className="stat-val">
-                ₹{(chartMeta?.fiftyTwoWeekLow || activeStock.week52Low || (activeStock.ltp > 0 ? activeStock.ltp * 0.75 : 50)).toFixed(2)}
+                {priceText(chartMeta?.fiftyTwoWeekLow || activeStock.week52Low || null)}
               </span>
             </div>
             <div className="mini-stat">
               <span className="stat-label">RSI (14)</span>
-              <span
-                className={`stat-val ${
-                  (activeStock.rsi14 || 50) > 70
-                    ? "text-loss"
-                    : (activeStock.rsi14 || 50) < 35
-                    ? "text-gain"
-                    : ""
-                }`}
-              >
-                {(activeStock.rsi14 ?? 50.0).toFixed(1)}
+              <span className={`stat-val ${rsi === null ? "" : rsi > 70 ? "text-loss" : rsi < 35 ? "text-gain" : ""}`}>
+                {rsi === null ? "—" : rsi.toFixed(1)}
               </span>
             </div>
             <div className="mini-stat">
@@ -1161,69 +1118,26 @@ export function TrendAnalysisPage({
             </div>
           </div>
 
-          {/* Multi-Timeframe Trend Structure */}
+          {/* Trend of the chart on screen: last close against its 20/50 SMAs. One series supports one verdict. */}
           <div className="timeframe-matrix-block">
-            <h3>Multi-Timeframe Trend Structure</h3>
+            <h3>Trend on this chart</h3>
             <div className="timeframe-grid">
               <div className="tf-card">
-                <span className="tf-label">5-Min (Scalp)</span>
-                <span className={`tf-pill status-${activeStock.trend5m.toLowerCase()}`}>
-                  {activeStock.trend5m}
-                </span>
-              </div>
-              <div className="tf-card">
-                <span className="tf-label">15-Min (Intraday)</span>
-                <span className={`tf-pill status-${activeStock.trend15m.toLowerCase()}`}>
-                  {activeStock.trend15m}
-                </span>
-              </div>
-              <div className="tf-card">
-                <span className="tf-label">1-Hour (Swing)</span>
-                <span className={`tf-pill status-${activeStock.trend1h.toLowerCase()}`}>
-                  {activeStock.trend1h}
-                </span>
-              </div>
-              <div className="tf-card">
-                <span className="tf-label">Daily (Macro)</span>
-                <span className={`tf-pill status-${activeStock.trend1d.toLowerCase()}`}>
-                  {activeStock.trend1d}
-                </span>
+                <span className="tf-label">Last close vs 20/50 SMA ({timeframe})</span>
+                <span className={`tf-pill status-${(trend ?? "neutral").toLowerCase()}`}>{trend ?? "—"}</span>
               </div>
             </div>
           </div>
 
-          {/* Calibrated Directional Prediction & Action CTAs */}
+          {/* Action CTAs. No per-stock forecast is shown: nothing here is evaluated. */}
           <div className="prediction-studio-block">
             <div className="prediction-head">
-              <h3>Calibrated Directional Prediction</h3>
-              <span className={`signal-badge badge-${activeStock.signalStrength.toLowerCase()}`}>
-                {activeStock.signalStrength.replace("_", " ")}
-              </span>
+              <h3>Signals</h3>
             </div>
-
-            <div className="prediction-stats-row">
-              <div className="pred-stat">
-                <span className="pred-label">Upward Probability</span>
-                <span className="pred-val text-accent">
-                  {(activeStock.predictedProbabilityUp * 100).toFixed(0)}%
-                </span>
-              </div>
-              <div className="pred-stat">
-                <span className="pred-label">Expected Next-Session Move</span>
-                <span
-                  className={`pred-val ${
-                    activeStock.expectedMovePercent >= 0 ? "text-gain" : "text-loss"
-                  }`}
-                >
-                  {activeStock.expectedMovePercent >= 0 ? "+" : ""}
-                  {activeStock.expectedMovePercent.toFixed(2)}%
-                </span>
-              </div>
-              <div className="pred-stat">
-                <span className="pred-label">Brier Calibration Score</span>
-                <span className="pred-val">{activeStock.brierCalibration.toFixed(3)}</span>
-              </div>
-            </div>
+            <p className="status-copy">
+              MarketLens publishes no per-stock forecast. The only evaluated forecast is the research run in
+              Forecast Lab, scored against a base-rate baseline. Use the AI Strategy Lab to explore scenarios.
+            </p>
 
             {/* Simulated Actions: Paper Trade & AI Strategy Lab */}
             <div className="trend-action-button-row">

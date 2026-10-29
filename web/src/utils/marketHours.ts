@@ -138,6 +138,9 @@ export function isExchangeClosedDay(ist: ReturnType<typeof getISTDate>): {
   return { isClosed: false };
 }
 
+/** Last day the bundled holiday table above covers. Later weekdays are assumed open, and say so. */
+const HOLIDAY_CALENDAR_THROUGH = "2026-12-31";
+
 /**
  * Evaluates current Indian market session status
  */
@@ -145,6 +148,14 @@ export function getMarketSessionStatus(
   referenceDate: Date = new Date(),
   bypassMarketHours: boolean = false
 ): MarketStatus {
+  const status = sessionStatus(referenceDate, bypassMarketHours);
+  if (!bypassMarketHours && getISTDate(referenceDate).dateStr > HOLIDAY_CALENDAR_THROUGH) {
+    return { ...status, message: `${status.message} (holiday calendar covers only through 2026; check NSE)` };
+  }
+  return status;
+}
+
+function sessionStatus(referenceDate: Date, bypassMarketHours: boolean): MarketStatus {
   const ist = getISTDate(referenceDate);
   const { isClosed: isHolidayOrWeekend, reason: holidayReason } = isExchangeClosedDay(ist);
 

@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from typing import Any
+from typing import Annotated, Any, Literal
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Path, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from bazaar_drishti.market.live_feed import (
+    PROVIDER,
     fetch_all_nse_quotes,
     fetch_intraday_chart,
     fetch_live_indian_ipos,
@@ -20,6 +21,14 @@ from bazaar_drishti.market.live_feed import (
     search_nse_stocks,
 )
 
+# Allow-lists for values that are spliced into upstream URLs: anything else is a 422.
+SYMBOL_PATTERN = r"^[A-Za-z0-9&^._ -]{1,32}$"
+Symbol = Annotated[str, Path(pattern=SYMBOL_PATTERN)]
+Interval = Literal[
+    "1m", "2m", "5m", "15m", "30m", "60m", "90m", "1h", "1d", "5d", "1wk", "1mo", "3mo"
+]
+Range = Literal["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "10y", "ytd", "max"]
+
 
 def create_app(conn: sqlite3.Connection) -> FastAPI:
     """Create a configured read-only FastAPI instance backed by the database connection."""
@@ -29,7 +38,7 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
         description="Public read-only research dashboard API for auditable Indian cash-equity paper study.",
     )
 
-    # Restrictive CORS
+    # Public read-only API: any origin may GET; the other methods are not allowed.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
@@ -53,14 +62,7 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
 
     @app.get("/api/v1/market/status", summary="Market Feed Provider Status")
     def get_market_status() -> dict[str, Any]:
-        import os
-
-        api_key = os.getenv("SMARTAPI_API_KEY")
-        return {
-            "status": "online",
-            "provider": "Angel One SmartAPI" if api_key else "NSE Direct Telemetry",
-            "smartapi_configured": bool(api_key),
-        }
+        return {"status": "online", "provider": PROVIDER}
 
     @app.get("/api/v1/market/quotes", summary="Get Live Indian Stock Quotes")
     async def get_market_quotes() -> dict[str, Any]:
@@ -109,14 +111,20 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
     )
     async def get_live_mutual_funds() -> dict[str, Any]:
         funds = await fetch_live_indian_mutual_funds()
-        return {"funds": funds, "count": len(funds), "provider": "AMFI India Live Feed"}
+        return {
+            "funds": funds,
+            "count": len(funds),
+            "provider": "mfapi.in (AMFI NAV data)",
+        }
 
     @app.get(
         "/api/v1/market/news", summary="Get Live Indian Financial News and Sentiment"
     )
     async def get_live_stock_news(
         symbol: str = Query(
-            "RELIANCE", description="Stock ticker symbol to search breaking news for"
+            "RELIANCE",
+            pattern=SYMBOL_PATTERN,
+            description="Stock ticker symbol to search breaking news for",
         ),
     ) -> dict[str, Any]:
         news_items = await fetch_live_stock_news(symbol)
@@ -127,16 +135,14 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
         }
 
     @app.get("/api/v1/market/quote/{symbol}", summary="Get Single Symbol Quote")
-    async def get_symbol_quote(symbol: str) -> dict[str, Any]:
+    async def get_symbol_quote(symbol: Symbol) -> dict[str, Any]:
         return await fetch_symbol_quote(symbol)
 
     @app.get("/api/v1/market/chart/{symbol}", summary="Get Intraday Bars Chart")
     async def get_market_chart(
-        symbol: str,
-        interval: str = Query("5m", description="Bar interval (e.g. 1m, 5m, 15m, 1d)"),
-        range_period: str = Query(
-            "1d", alias="range", description="Time range (e.g. 1d, 5d, 1mo)"
-        ),
+        symbol: Symbol,
+        interval: Interval = Query("5m", description="Bar interval"),
+        range_period: Range = Query("1d", alias="range", description="Time range"),
     ) -> dict[str, Any]:
         return await fetch_intraday_chart(symbol, interval, range_period)
 
@@ -409,119 +415,14 @@ def create_app(conn: sqlite3.Connection) -> FastAPI:
 
 
 def create_default_app() -> FastAPI:
-    """Create a default in-memory FastAPI app populated with a verified synthetic run."""
-    from datetime import date, datetime, timezone
-    from decimal import Decimal
-    from zoneinfo import ZoneInfo
-    from bazaar_drishti.bundle.builder import build_run_bundle
+    """Public app: an in-memory store holding the run the engine computes from the shipped fixture."""
     from bazaar_drishti.bundle.publisher import Publisher
-    from bazaar_drishti.research.backtest import EquityPoint
-    from bazaar_drishti.schemas import ForecastRow, RunManifest, RunMetrics, TradeRow
+    from bazaar_drishti.research.runner import run_synthetic_study
 
-    ist = ZoneInfo("Asia/Kolkata")
     conn = sqlite3.connect(":memory:", check_same_thread=False)
-    pub = Publisher(conn)
-    pub.initialize_schema()
-
-    run_id = "run-synthetic-001"
-    manifest = RunManifest(
-        run_id=run_id,
-        synthetic=True,
-        data_label="synthetic",
-        source_label="deterministic local fixture",
-        bars_sha256="9e232063a896d744fea0637387b87f64031a1a91464f05176038d41e804806fd",
-        config_sha256="b" * 64,
-        code_revision="git-main",
-        created_at_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
-        created_at_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
-        data_start_utc=datetime(2030, 1, 7, 3, 45, tzinfo=timezone.utc),
-        data_start_ist=datetime(2030, 1, 7, 9, 15, tzinfo=ist),
-        data_end_utc=datetime(2030, 1, 9, 10, 0, tzinfo=timezone.utc),
-        data_end_ist=datetime(2030, 1, 9, 15, 30, tzinfo=ist),
-    )
-    trade = TradeRow(
-        run_id=run_id,
-        trade_id="trade-0001",
-        session_date_ist=date(2030, 1, 7),
-        entry_time_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
-        entry_time_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
-        exit_time_utc=datetime(2030, 1, 7, 4, 30, tzinfo=timezone.utc),
-        exit_time_ist=datetime(2030, 1, 7, 10, 0, tzinfo=ist),
-        entry_price_inr=Decimal("100.00"),
-        exit_price_inr=Decimal("105.00"),
-        quantity=10,
-        gross_pnl_inr=Decimal("50.00"),
-        brokerage_inr=Decimal("0.60"),
-        exchange_charges_inr=Decimal("0.06"),
-        sebi_charges_inr=Decimal("0.01"),
-        stt_inr=Decimal("0.26"),
-        stamp_duty_inr=Decimal("0.03"),
-        gst_inr=Decimal("0.12"),
-        slippage_inr=Decimal("1.02"),
-        net_pnl_inr=Decimal("47.90"),
-    )
-    metrics = RunMetrics(
-        run_id=run_id,
-        gross_pnl_inr=Decimal("50.00"),
-        brokerage_inr=Decimal("0.60"),
-        exchange_charges_inr=Decimal("0.06"),
-        sebi_charges_inr=Decimal("0.01"),
-        stt_inr=Decimal("0.26"),
-        stamp_duty_inr=Decimal("0.03"),
-        gst_inr=Decimal("0.12"),
-        slippage_inr=Decimal("1.02"),
-        net_pnl_inr=Decimal("47.90"),
-        return_percent=Decimal("4.79"),
-        cash_baseline_net_pnl_inr=Decimal("0.00"),
-        buy_hold_baseline_net_pnl_inr=Decimal("20.00"),
-        max_drawdown_percent=Decimal("0.50"),
-        trade_count=1,
-        session_count=3,
-        brier_score=Decimal("0.2215"),
-        log_loss=Decimal("0.6340"),
-        balanced_accuracy=Decimal("0.5830"),
-        forecast_count=1,
-    )
-    forecast = ForecastRow(
-        run_id=run_id,
-        forecast_id="forecast-0001",
-        session_date_ist=date(2030, 1, 7),
-        origin_time_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
-        origin_time_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
-        input_cutoff_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
-        input_cutoff_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
-        target_time_utc=datetime(2030, 1, 7, 4, 30, tzinfo=timezone.utc),
-        target_time_ist=datetime(2030, 1, 7, 10, 0, tzinfo=ist),
-        probability_up=Decimal("0.6200"),
-        baseline_probability_up=Decimal("0.5000"),
-        actual_up=True,
-        bars_sha256="9e232063a896d744fea0637387b87f64031a1a91464f05176038d41e804806fd",
-        config_sha256="b" * 64,
-        model_sha256="c" * 64,
-    )
-    equity = [
-        EquityPoint(
-            timestamp_utc=datetime(2030, 1, 7, 4, tzinfo=timezone.utc),
-            timestamp_ist=datetime(2030, 1, 7, 9, 30, tzinfo=ist),
-            equity_inr=Decimal("1000.00"),
-            drawdown_percent=Decimal("0.00"),
-        ),
-        EquityPoint(
-            timestamp_utc=datetime(2030, 1, 7, 4, 30, tzinfo=timezone.utc),
-            timestamp_ist=datetime(2030, 1, 7, 10, 0, tzinfo=ist),
-            equity_inr=Decimal("1047.90"),
-            drawdown_percent=Decimal("0.00"),
-        ),
-    ]
-    bundle = build_run_bundle(
-        manifest=manifest,
-        metrics=metrics,
-        trades=[trade],
-        forecasts=[forecast],
-        equity_curve=equity,
-        contributions=[],
-    )
-    pub.publish_run(bundle)
+    publisher = Publisher(conn)
+    publisher.initialize_schema()
+    publisher.publish_run(run_synthetic_study())
     return create_app(conn)
 
 

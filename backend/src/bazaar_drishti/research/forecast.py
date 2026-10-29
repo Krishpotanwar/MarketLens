@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date
 from decimal import Decimal, ROUND_HALF_UP
+import hashlib
+import json
 import math
 from zoneinfo import ZoneInfo
 
@@ -24,6 +26,12 @@ PAISE_4 = Decimal("0.0001")
 
 def _round_4(val: Decimal) -> Decimal:
     return val.quantize(PAISE_4, rounding=ROUND_HALF_UP)
+
+
+def fingerprint(obj: object) -> str:
+    """SHA-256 of canonical JSON: the one way bars, configs and fitted models are fingerprinted."""
+    blob = json.dumps(obj, sort_keys=True, separators=(",", ":"), default=str)
+    return hashlib.sha256(blob.encode()).hexdigest()
 
 
 @dataclass(frozen=True, slots=True)
@@ -167,9 +175,9 @@ def evaluate_chronological_forecast(
     config: FeatureConfig = FeatureConfig(),
     *,
     run_id: str = "run-001",
-    bars_sha256: str = "a" * 64,
-    config_sha256: str = "b" * 64,
-    model_sha256: str = "c" * 64,
+    bars_sha256: str | None = None,
+    config_sha256: str | None = None,
+    model_sha256: str | None = None,
 ) -> ForecastEvaluation:
     """Fit on training sessions and score the untouched chronological test sessions."""
     if config.horizon_bars <= 0:
@@ -274,6 +282,15 @@ def evaluate_chronological_forecast(
 
     # Fit model on training fold only
     bias, weights = _fit_logistic_regression(std_train_x, train_y)
+
+    # Fingerprints are derived from what was actually used unless the caller supplies them.
+    bars_sha256 = bars_sha256 or fingerprint(
+        [(b.bar_start_utc, b.open, b.high, b.low, b.close, b.volume) for b in bars]
+    )
+    config_sha256 = config_sha256 or fingerprint(asdict(config))
+    model_sha256 = model_sha256 or fingerprint(
+        {"bias": bias, "weights": weights, "means": means, "stds": stds}
+    )
 
     forecast_rows: list[ForecastRow] = []
     contributions: list[LogitContribution] = []

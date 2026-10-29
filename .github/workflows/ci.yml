@@ -10,6 +10,8 @@ jobs:
   backend:
     name: Backend Lint, Typecheck, and Tests
     runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: "3.14"
     steps:
       - uses: actions/checkout@v4
 
@@ -40,6 +42,15 @@ jobs:
         run: |
           cd backend
           PYTHONPATH=src uv run --locked --group dev ruff format --check .
+
+      # render.yaml deploys 3.12; the suite must pass on the runtime that serves users.
+      - name: Run Backend Tests on Python 3.12
+        env:
+          UV_PYTHON: "3.12"
+        run: |
+          cd backend
+          uv python install 3.12
+          PYTHONPATH=src uv run --locked --group dev python -m unittest discover tests
 
   web:
     name: Web Typecheck, Test, and Build

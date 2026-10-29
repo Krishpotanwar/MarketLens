@@ -2,15 +2,18 @@ from datetime import date, datetime, timezone
 from decimal import Decimal
 import sqlite3
 import unittest
+from unittest.mock import AsyncMock, patch
 from zoneinfo import ZoneInfo
 
 from fastapi.testclient import TestClient
 
-from bazaar_drishti.api.app import create_app
+from bazaar_drishti.api.app import create_app, create_default_app
 from bazaar_drishti.bundle.builder import build_run_bundle
 from bazaar_drishti.bundle.publisher import Publisher
+from bazaar_drishti.market.live_feed import PROVIDER
 from bazaar_drishti.research.backtest import EquityPoint
 from bazaar_drishti.schemas import ForecastRow, RunManifest, RunMetrics, TradeRow
+from support import upstream
 
 IST = ZoneInfo("Asia/Kolkata")
 
@@ -115,6 +118,9 @@ class ApiEndpointsTests(unittest.TestCase):
         )
         self.publisher.publish_run(bundle)
 
+        self.enterContext(
+            upstream(None)
+        )  # market routes must answer without the real internet
         app = create_app(self.conn)
         self.client = TestClient(app)
 
@@ -245,6 +251,59 @@ class ApiEndpointsTests(unittest.TestCase):
             with self.subTest(endpoint=endpoint):
                 response = self.client.get(endpoint, params={"limit": 0})
                 self.assertEqual(response.status_code, 422)
+
+
+class MarketRouteTests(unittest.TestCase):
+    def setUp(self) -> None:
+        conn = sqlite3.connect(":memory:", check_same_thread=False)
+        self.client = TestClient(create_app(conn))
+
+    def test_status_names_the_real_provider(self) -> None:
+        body = self.client.get("/api/v1/market/status").json()
+        self.assertEqual(body["provider"], PROVIDER)
+
+    def test_chart_rejects_parameters_outside_the_allow_list(self) -> None:
+        with patch(
+            "bazaar_drishti.api.app.fetch_intraday_chart", AsyncMock(return_value={})
+        ):
+            for params in (
+                {"interval": "5m&events=div"},
+                {"range": "1d#x"},
+                {"interval": "7m"},
+            ):
+                with self.subTest(params=params):
+                    resp = self.client.get(
+                        "/api/v1/market/chart/RELIANCE", params=params
+                    )
+                    self.assertEqual(resp.status_code, 422)
+            ok = self.client.get(
+                "/api/v1/market/chart/RELIANCE",
+                params={"interval": "5m", "range": "1d"},
+            )
+            self.assertEqual(ok.status_code, 200)
+
+    def test_symbols_with_url_metacharacters_are_rejected(self) -> None:
+        with patch(
+            "bazaar_drishti.api.app.fetch_symbol_quote", AsyncMock(return_value={})
+        ):
+            for bad in ("A%3Fx%3D1", "A%23b"):
+                with self.subTest(symbol=bad):
+                    self.assertEqual(
+                        self.client.get(f"/api/v1/market/quote/{bad}").status_code, 422
+                    )
+            self.assertEqual(
+                self.client.get("/api/v1/market/quote/M%26M").status_code, 200
+            )
+
+
+class DefaultAppTests(unittest.TestCase):
+    def test_public_demo_run_is_what_the_engine_computed(self) -> None:
+        client = TestClient(create_default_app())
+        run_id = client.get("/api/v1/runs/current").json()["run_id"]
+        body = client.get(f"/api/v1/runs/{run_id}").json()
+        self.assertEqual(body["metrics"]["trade_count"], 0)
+        self.assertNotEqual(body["config_sha256"], "b" * 64)
+        self.assertNotEqual(body["code_revision"], "git-main")
 
 
 if __name__ == "__main__":

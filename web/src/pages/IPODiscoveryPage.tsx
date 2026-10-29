@@ -12,8 +12,8 @@ export interface ActiveIPO {
   status: "OPEN" | "CLOSED" | "UPCOMING";
   subscriptionRatio: string;
   category: string;
-  lotSize: number;
-  minInvestment: number;
+  lotSize: number | null;
+  minInvestment: number | null;
 }
 
 export interface UpcomingIPO {
@@ -25,8 +25,8 @@ export interface UpcomingIPO {
   endDate: string;
   status: "UPCOMING";
   category: string;
-  lotSize: number;
-  minInvestment: number;
+  lotSize: number | null;
+  minInvestment: number | null;
   gmpEstimate: string;
 }
 
@@ -71,6 +71,7 @@ export function IPODiscoveryPage({
 }: IPODiscoveryPageProps) {
   const [activeTab, setActiveTab] = useState<"ALL" | "ACTIVE" | "UPCOMING" | "LISTED">("ALL");
   const [loading, setLoading] = useState(true);
+  const [isLive, setIsLive] = useState(false);
   const [ipoData, setIpoData] = useState<IPOApiResponse>({
     active: [
       {
@@ -180,7 +181,7 @@ export function IPODiscoveryPage({
         listingGainPercent: 7.69,
         currentGainPercent: -45.23,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
       {
         symbol: "WAAREEENER",
@@ -194,7 +195,7 @@ export function IPODiscoveryPage({
         listingGainPercent: 69.66,
         currentGainPercent: 58.28,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
       {
         symbol: "HYUNDAI",
@@ -208,7 +209,7 @@ export function IPODiscoveryPage({
         listingGainPercent: -1.48,
         currentGainPercent: -1.59,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
       {
         symbol: "AFCONS",
@@ -222,7 +223,7 @@ export function IPODiscoveryPage({
         listingGainPercent: -7.99,
         currentGainPercent: -49.58,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
       {
         symbol: "BAJAJHFL",
@@ -236,7 +237,7 @@ export function IPODiscoveryPage({
         listingGainPercent: 114.29,
         currentGainPercent: 14.73,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
       {
         symbol: "PREMIERENE",
@@ -250,7 +251,7 @@ export function IPODiscoveryPage({
         listingGainPercent: 120.22,
         currentGainPercent: 92.56,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
       {
         symbol: "OLAELEC",
@@ -264,7 +265,7 @@ export function IPODiscoveryPage({
         listingGainPercent: 0.0,
         currentGainPercent: -57.07,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
       {
         symbol: "SAGILITY",
@@ -278,11 +279,11 @@ export function IPODiscoveryPage({
         listingGainPercent: 3.53,
         currentGainPercent: 49.20,
         status: "LISTED",
-        provider: "NSE Telemetry (Live)",
+        provider: "Sample data",
       },
     ],
     counts: { active: 2, upcoming: 5, listed: 8, total: 15 },
-    source: "NSE India Primary Market Telemetry",
+    source: "Sample data (bundled)",
   });
 
   // Fetch live IPO telemetry from backend
@@ -293,6 +294,7 @@ export function IPODiscoveryPage({
       if (res.ok) {
         const data = await res.json();
         setIpoData(data);
+        setIsLive(!data.sample);
       }
     } catch {
       // Retain pre-loaded reliable fixtures on offline
@@ -312,13 +314,15 @@ export function IPODiscoveryPage({
           <div>
             <h1>Indian IPO Hub & New Listings Tracker</h1>
             <p className="status-copy">
-              Track all active initial public offerings, upcoming SEBI-approved issues, and recently listed companies across NSE and BSE with live subscription ratios and performance telemetry.
+              Active issues and subscription ratios come from the NSE website when it is reachable. The upcoming pipeline and recent listings are illustrative samples.
             </p>
           </div>
           <div className="live-telemetry-status-card" role="status">
-            <span className="live-telemetry-dot" aria-hidden="true" />
+            <span className={`live-telemetry-dot${isLive ? "" : " offline"}`} aria-hidden="true" />
             <div className="live-telemetry-info">
-              <span className="live-telemetry-provider">NSE Primary Market Feed</span>
+              <span className="live-telemetry-provider">
+                {loading ? "Connecting to NSE…" : isLive ? "NSE website · live issues" : "Sample data · NSE feed unreachable"}
+              </span>
               <span className="live-telemetry-time">
                 {ipoData.counts.total} IPOs Tracked ({ipoData.counts.active} Open)
               </span>
@@ -433,7 +437,11 @@ export function IPODiscoveryPage({
                   </div>
                   <div className="ipo-metric">
                     <span className="metric-label">Min Investment (1 Lot)</span>
-                    <span className="metric-val text-accent">₹{ipo.minInvestment.toLocaleString("en-IN")} ({ipo.lotSize} Shares)</span>
+                    <span className="metric-val text-accent">
+                      {ipo.minInvestment != null && ipo.lotSize != null
+                        ? `₹${ipo.minInvestment.toLocaleString("en-IN")} (${ipo.lotSize} Shares)`
+                        : "—"}
+                    </span>
                   </div>
                   <div className="ipo-metric">
                     <span className="metric-label">Timeline</span>

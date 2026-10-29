@@ -1,3 +1,5 @@
+import rates from "../data/feeSchedule.json";
+
 export type OrderSide = "BUY" | "SELL";
 export type OrderType = "MARKET" | "LIMIT";
 export type ProductType = "CNC" | "MIS"; // CNC: Cash Delivery, MIS: Intraday
@@ -70,19 +72,20 @@ export interface StockTrendInfo {
   trend15m: "BULLISH" | "BEARISH" | "NEUTRAL";
   trend1h: "BULLISH" | "BEARISH" | "NEUTRAL";
   trend1d: "BULLISH" | "BEARISH" | "NEUTRAL";
-  predictedProbabilityUp: number; // 0.0 - 1.0
-  expectedMovePercent: number;
-  brierCalibration: number;
-  signalStrength: "STRONG_BUY" | "BUY" | "NEUTRAL" | "SELL" | "STRONG_SELL";
-  causalFeatures: {
-    momentum: number; // % contribution
-    volumeSurge: number;
-    vwapDeviation: number;
-    sectorBreadth: number;
-  };
   priceHistory: number[]; // 24-30 points
 }
 
+/** "0.00297%"-style label, so UI copy can never disagree with the schedule it prices from. */
+export const ratePct = (rate: number) => `${Number((rate * 100).toFixed(5))}%`;
+export const FEE_RATES = rates;
+
+const paise = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Prices one order leg from the shared schedule (src/data/feeSchedule.json, mirrored from
+ * backend/data/fee_schedule.json). Each component rounds to the paisa, as the backend ledger does,
+ * so web and backend reconcile to the same rupee figure.
+ */
 export function calculateIndianCharges(
   side: OrderSide,
   product: ProductType,
@@ -90,34 +93,17 @@ export function calculateIndianCharges(
   quantity: number
 ): StatutoryCharges {
   const turnover = price * quantity;
-  // Brokerage: ₹0 for Delivery, flat ₹20 or 0.03% for Intraday (whichever lower)
-  const brokerage = product === "CNC" ? 0 : Math.min(20, turnover * 0.0003);
+  const isBuy = side === "BUY";
+  const brokerage = paise(Math.min(rates.brokerage[product].cap, turnover * rates.brokerage[product].percent));
+  const stt = paise(turnover * rates.stt[product][isBuy ? "buy" : "sell"]);
+  const exchangeCharges = paise(turnover * rates.exchange_txn);
+  const sebiCharges = paise(turnover * rates.sebi_turnover);
+  const stampDuty = isBuy ? paise(turnover * rates.stamp_duty_buy[product]) : 0;
+  const gst = paise((brokerage + exchangeCharges + sebiCharges) * rates.gst);
+  const slippage = paise((turnover * rates.slippage_bps) / 10000);
 
-  // STT: 0.1% on Delivery (both buy and sell), 0.025% on Intraday Sell only
-  let stt = 0;
-  if (product === "CNC") {
-    stt = turnover * 0.001;
-  } else if (side === "SELL") {
-    stt = turnover * 0.00025;
-  }
-
-  // NSE Exchange transaction charges: 0.00345%
-  const exchangeCharges = turnover * 0.0000345;
-
-  // SEBI turnover charges: ₹10 per crore = 0.0001%
-  const sebiCharges = turnover * 0.000001;
-
-  // Stamp duty: 0.015% on BUY orders only
-  const stampDuty = side === "BUY" ? turnover * 0.00015 : 0;
-
-  // GST: 18% on (Brokerage + Exchange Charges + SEBI charges)
-  const gst = (brokerage + exchangeCharges + sebiCharges) * 0.18;
-
-  // Slippage: 0.05% realistic cash-market fill friction
-  const slippage = turnover * 0.0005;
-
-  const totalCharges = brokerage + stt + exchangeCharges + sebiCharges + stampDuty + gst + slippage;
-  const netEffectiveAmount = side === "BUY" ? turnover + totalCharges : turnover - totalCharges;
+  const totalCharges = paise(brokerage + stt + exchangeCharges + sebiCharges + stampDuty + gst + slippage);
+  const netEffectiveAmount = isBuy ? turnover + totalCharges : turnover - totalCharges;
 
   return {
     turnover,

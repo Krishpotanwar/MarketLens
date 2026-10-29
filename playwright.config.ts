@@ -15,16 +15,17 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "cd backend && PYTHONPATH=src /opt/anaconda3/bin/uvicorn bazaar_drishti.api.app:app --port 8000",
+      // The real API against a fake of every upstream: no test depends on Yahoo, NSE or mfapi being reachable.
+      command: "cd backend && uv run python ../e2e/fake_upstream.py 8000",
       port: 8000,
       reuseExistingServer: !process.env.CI,
-      timeout: 10000,
+      timeout: 60000,
     },
     {
       command: "npm --prefix web run dev -- --port 5173",
       port: 5173,
       reuseExistingServer: !process.env.CI,
-      timeout: 10000,
+      timeout: 60000,
     },
   ],
   projects: [

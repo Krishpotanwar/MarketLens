@@ -316,14 +316,10 @@ export async function generateAIStrategyAnalysis(
 ): Promise<AIGatewayResponse> {
   const fallback = buildOfflineHeuristicResponse(req, stockData, onProgress);
 
-  // Resolve API key from request payload or environment variables
-  const envKey =
-    (req.provider === "GROQ" ? (import.meta.env?.VITE_GROQ_API_KEY as string) : "") ||
-    (req.provider === "GEMINI" ? (import.meta.env?.VITE_GEMINI_API_KEY as string) : "") ||
-    (req.provider === "GROK" ? (import.meta.env?.VITE_GROK_API_KEY as string) : "") ||
-    (import.meta.env?.VITE_AI_API_KEY as string) ||
-    "";
-  const apiKey = (req.apiKey?.trim() || envKey?.trim() || "").trim();
+  // The key comes from the request: the AI Strategy Lab keeps what the user typed in this browser's
+  // localStorage. Build-time VITE_* keys are deliberately not read: Vite would compile them into the
+  // public bundle for every visitor to extract.
+  const apiKey = (req.apiKey ?? "").trim();
   if (req.provider === "OFFLINE_HEURISTIC" || !apiKey) {
     return fallback;
   }

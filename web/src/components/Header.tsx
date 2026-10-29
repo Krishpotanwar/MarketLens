@@ -1,6 +1,9 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { GlobalSearchBar } from "./GlobalSearchBar";
+import { isUsableQuote } from "../utils/dataStatus";
 import { getMarketSessionStatus, type MarketStatus } from "../utils/marketHours";
+
+const API_BASE = import.meta.env.VITE_API_URL || "";
 
 export type PageTab =
   | "stocks"
@@ -40,6 +43,32 @@ export function Header({
     return () => clearInterval(interval);
   }, []);
 
+  // Index tape: real quotes only. Offline it shows "—", never a bundled sample level.
+  const [tape, setTape] = useState<Record<string, { ltp: number; pct: number }>>({});
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/v1/market/quotes`);
+        if (!res.ok) throw new Error(`quotes ${res.status}`);
+        const data = await res.json();
+        const next: Record<string, { ltp: number; pct: number }> = {};
+        for (const q of data.quotes ?? []) {
+          if (isUsableQuote(q)) next[q.symbol] = { ltp: q.ltp, pct: q.change_percent ?? 0 };
+        }
+        if (alive) setTape(next);
+      } catch {
+        if (alive) setTape({});
+      }
+    };
+    load();
+    const id = setInterval(load, 15000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+
   return (
     <header className="workstation-shell" role="banner">
       {/* 44px Top Command Bar */}
@@ -63,24 +92,33 @@ export function Header({
             title={`Exchange Session: ${marketStatus.message} (${marketStatus.istTimeFormatted})`}
           >
             <span className="live-dot" aria-hidden="true">●</span>
-            <span>{marketStatus.isOpen ? "Live Feed" : "Market Closed"}</span>
+            <span>{marketStatus.isOpen ? "Market Open" : "Market Closed"}</span>
             <span className="badge-exchange-tag">(NSE/BSE)</span>
           </span>
         </div>
 
         <div className="topbar-center command-bar-indices">
           <div className="indices-ribbon" role="region" aria-label="Market Indices Ribbon">
-            <div className="index-tape-item">
-              <span className="index-tape-name">NIFTY 50</span>
-              <span className="index-tape-price">24,854.20</span>
-              <span className="index-tape-change gain">+0.58%</span>
-            </div>
-            <span className="index-tape-divider" aria-hidden="true">|</span>
-            <div className="index-tape-item">
-              <span className="index-tape-name">SENSEX</span>
-              <span className="index-tape-price">81,420.50</span>
-              <span className="index-tape-change gain">+0.62%</span>
-            </div>
+            {["NIFTY 50", "SENSEX"].map((name, i) => {
+              const q = tape[name];
+              return (
+                <Fragment key={name}>
+                  {i > 0 && <span className="index-tape-divider" aria-hidden="true">|</span>}
+                  <div className="index-tape-item">
+                    <span className="index-tape-name">{name}</span>
+                    <span className="index-tape-price">
+                      {q ? q.ltp.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "—"}
+                    </span>
+                    {q && (
+                      <span className={`index-tape-change ${q.pct >= 0 ? "gain" : "loss"}`}>
+                        {q.pct >= 0 ? "+" : ""}
+                        {q.pct.toFixed(2)}%
+                      </span>
+                    )}
+                  </div>
+                </Fragment>
+              );
+            })}
           </div>
         </div>
 

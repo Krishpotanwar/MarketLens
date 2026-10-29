@@ -18,9 +18,20 @@ describe("GlobalSearchBar Component", () => {
     expect(markup).toContain("⌘K");
   });
 
-  it("contains accessible label for universal search", () => {
+  it("exposes one named control, not a button role wrapping an input", () => {
     const markup = renderToStaticMarkup(<GlobalSearchBar onSelectStock={() => {}} />);
     expect(markup).toContain('aria-label="Universal stock search (like Groww / Angel One)"');
+    // axe `nested-interactive`: an interactive wrapper may not contain the real input
+    expect(markup).not.toContain('role="button"');
+    expect(markup).not.toContain('tabindex="0"');
+  });
+
+  it("names the real price source in its footer, not an exchange feed it does not use", () => {
+    const markup = renderToStaticMarkup(
+      <GlobalSearchBar onSelectStock={() => {}} initialOpen={true} initialQuery="" />
+    );
+    expect(markup).toContain("Yahoo Finance (unofficial)");
+    expect(markup).not.toMatch(/AMFI|NSE Telemetry/);
   });
 
   it("contains keyboard accessibility and search trigger structure", () => {

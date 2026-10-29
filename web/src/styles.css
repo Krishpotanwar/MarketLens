@@ -1,6 +1,8 @@
 /* MarketLens Institutional Financial Terminal & Research System */
 
-:root {
+/* .ai-results-wrapper stays a dark panel in the light theme: its widgets colour text with dark-theme accents inline. */
+:root,
+.page-shell.light-desk .ai-results-wrapper {
   --bg-ground: #070a12;
   --bg-surface: #101622;
   --bg-subtle: #182030;
@@ -8,8 +10,9 @@
   --border-muted: #1e293b;
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
-  --text-tertiary: #6e7681;
+  --text-tertiary: #848d97; /* >= 4.8:1 on the lightest dark panel (--bg-subtle); the old #6e7681 was 4.3:1 on --bg-ground */
   --accent-blue: #388bfd;
+  --accent-blue-strong: #1f6feb; /* fill behind white text: 4.6:1 (--accent-blue is 3.3:1) */
   --accent-blue-subtle: rgba(56, 139, 253, 0.12);
   --accent-emerald: #10b981;
   --accent-emerald-subtle: rgba(16, 185, 129, 0.15);
@@ -101,8 +104,10 @@ body {
 /* Themes                                                        */
 /* ------------------------------------------------------------- */
 
-.page-shell.dark-terminal {
+.page-shell.dark-terminal,
+.page-shell.light-desk .ai-results-wrapper {
   --bg-app: transparent;
+  --text-on-invert: #070a12; /* text on a light fill; --bg-app is transparent here, so it cannot be used */
   --bg-card: var(--bg-glass-card);
   --bg-card-sub: var(--bg-glass-card-sub);
   --bg-hover: rgba(30, 41, 60, 0.7);
@@ -119,8 +124,26 @@ body {
   --accent-bg: var(--accent-blue-subtle);
 }
 
+.page-shell.light-desk .workstation-shell {
+  background: rgba(255, 255, 255, 0.84);
+  border-bottom-color: var(--border-glass);
+}
+
+.page-shell.light-desk .topbar {
+  border-bottom-color: var(--border-glass-subtle);
+}
+
+.page-shell.light-desk .ai-results-wrapper {
+  background: rgba(7, 10, 18, 0.94);
+  color: var(--text-primary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-card);
+  padding: 1rem;
+}
+
 .page-shell.light-desk {
   --bg-app: #f8fafc;
+  --text-on-invert: #f8fafc;
   --bg-card: #ffffff;
   --bg-card-sub: #f1f5f9;
   --bg-hover: #e2e8f0;
@@ -128,13 +151,40 @@ body {
   --border-focus: #0284c7;
   --text-main: #0f172a;
   --text-muted: #475569;
-  --text-faint: #94a3b8;
-  --gain: #059669;
+  --text-faint: #5b6b82;
+  --gain: #036b4a;
   --gain-bg: #ecfdf5;
-  --loss: #e11d48;
+  --loss: #be123c;
   --loss-bg: #fff1f2;
-  --accent: #0284c7;
+  --accent: #0369a1;
   --accent-bg: #f0f9ff;
+
+  /* Components read the root tokens, which are dark. Remap the same names so the whole page flips,
+     and veil the dark wallpaper (it lives on body) so dark text sits on a light surface. */
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.95) 0%, rgba(241, 245, 249, 0.97) 100%);
+  --bg-ground: #f8fafc;
+  --bg-surface: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --border-default: #cbd5e1;
+  --border-muted: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #5b6b82;
+  --accent-blue: #0369a1;
+  --accent-blue-strong: #0369a1;
+  --accent-blue-subtle: rgba(3, 105, 161, 0.1);
+  --trade-gain: #036b4a; /* text on light; --accent-emerald stays the bright fill used with dark text */
+  --trade-gain-subtle: rgba(4, 120, 87, 0.1);
+  --trade-loss: #be123c;
+  --trade-loss-subtle: rgba(190, 18, 60, 0.1);
+  --bg-glass-card: rgba(255, 255, 255, 0.78);
+  --bg-glass-card-sub: rgba(241, 245, 249, 0.8);
+  --bg-glass-table: rgba(255, 255, 255, 0.85);
+  --border-glass: rgba(15, 23, 42, 0.14);
+  --border-glass-subtle: rgba(15, 23, 42, 0.08);
+  --border-glass-specular: rgba(255, 255, 255, 0.9);
+  --shadow-glass: 0 12px 32px -8px rgba(15, 23, 42, 0.18), inset 0 1px 1px 0 rgba(255, 255, 255, 0.8);
+  --shadow-glass-hover: 0 18px 40px -8px rgba(15, 23, 42, 0.24), inset 0 1px 2px 0 rgba(255, 255, 255, 0.9);
 }
 
 .page-shell {
@@ -1103,6 +1153,12 @@ main {
   animation: pulse-live 2s infinite ease-in-out;
 }
 
+.live-telemetry-dot.offline {
+  background: var(--accent-amber, #f59e0b);
+  box-shadow: 0 0 8px var(--accent-amber, #f59e0b);
+  animation: none;
+}
+
 @keyframes pulse-live {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.4; transform: scale(0.85); }
@@ -1260,7 +1316,7 @@ h1 {
 
 .filter-btn.active {
   background: var(--text-main);
-  color: var(--bg-app);
+  color: var(--text-on-invert);
   border-color: var(--text-main);
   font-weight: 600;
 }
@@ -1528,13 +1584,13 @@ h1 {
   background: rgba(244, 63, 94, 0.12);
   border: 1px solid rgba(244, 63, 94, 0.35);
   border-radius: 6px;
-  color: #f43f5e;
+  color: var(--text-primary); /* red on its own red tint was 4.4:1 (dark) and 3.1:1 (light); the red border and tint carry the meaning */
   font-size: 0.82rem;
   margin-bottom: 0.75rem;
 }
 
 .chart-retry-btn {
-  background: #f43f5e;
+  background: #e11d48; /* white on #f43f5e was 3.7:1; this is 4.7:1 */
   color: #fff;
   border: none;
   padding: 0.3rem 0.75rem;
@@ -2014,7 +2070,7 @@ h1 {
 
 .btn-paper-trade {
   background: var(--text-main);
-  color: var(--bg-app);
+  color: var(--text-on-invert);
   border: none;
   padding: 0.65rem 1.25rem;
   font-family: inherit;
@@ -2166,7 +2222,7 @@ h1 {
 }
 
 .session-mode-switch .mode-btn.active {
-  background: var(--accent-blue, #388bfd);
+  background: var(--accent-blue-strong, #1f6feb);
   color: #fff;
   font-weight: 600;
 }
@@ -2450,7 +2506,7 @@ h1 {
 }
 
 .btn-submit-sell {
-  background: var(--trade-loss, #ef4444);
+  background: #dc2626; /* white on #ef4444 was 3.8:1; this is 4.8:1 */
   color: #ffffff;
 }
 
@@ -2667,7 +2723,7 @@ h1 {
 
 .action-button {
   background: var(--text-main);
-  color: var(--bg-app);
+  color: var(--text-on-invert);
   border: none;
   padding: 0.45rem 0.9rem;
   font-family: inherit;
@@ -2801,6 +2857,12 @@ h1 {
 .shelf-sub {
   font-size: 0.7rem;
   color: var(--text-faint);
+}
+
+.shelf-empty {
+  padding: 0.85rem 0.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary, #8b949e);
 }
 
 .shelf-items {
@@ -3057,7 +3119,7 @@ h1 {
 .btn-stock-trade {
   background: #10b981;
   border: 1px solid #10b981;
-  color: #ffffff;
+  color: #052e16; /* white on #10b981 is 2.5:1; this is 5.9:1 */
   padding: 0.25rem 0.65rem;
   border-radius: 4px;
   font-family: inherit;
@@ -3070,8 +3132,8 @@ h1 {
 }
 
 .btn-stock-trade:hover {
-  background: #059669;
-  border-color: #059669;
+  background: #34d399;
+  border-color: #34d399;
   box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
 }
 
@@ -3499,7 +3561,7 @@ h1 {
 
 .btn-apply-ipo {
   flex: 1;
-  background: var(--trade-gain, #3fb950);
+  background: var(--accent-emerald, #10b981);
   color: #0d1117;
   border: none;
   border-radius: 4px;
@@ -4060,7 +4122,7 @@ h1 {
 
 .btn-run-analysis {
   width: 100%;
-  background: var(--accent-blue, #388bfd);
+  background: var(--accent-blue-strong, #1f6feb);
   color: #ffffff;
   border: none;
   padding: 0.8rem 1.25rem;

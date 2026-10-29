@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import rates from "../data/feeSchedule.json";
 import {
   generateTimelineScenarios,
   calculateStatutoryFriction,
@@ -165,12 +166,12 @@ describe("timelineEngine", () => {
   });
 
   describe("calculateStatutoryFriction", () => {
-    it("accurately computes SEBI statutory levies (brokerage ₹20, STT 0.1%, GST 18%, Stamp duty 0.015%)", () => {
+    it("prices one delivery buy leg from the shared schedule (brokerage ₹0, STT 0.1%, GST 18%, Stamp duty 0.015%)", () => {
       const turnover = 50000;
       const charges = calculateStatutoryFriction(turnover);
 
-      // Brokerage: flat ₹20 or intraday/delivery standard
-      expect(charges.brokerage).toBe(20);
+      // Brokerage: ₹0 on delivery, the same as the paper terminal charges
+      expect(charges.brokerage).toBe(0);
 
       // STT: 0.1% of turnover = 50 INR
       expect(charges.stt).toBeCloseTo(50, 2);
@@ -178,12 +179,12 @@ describe("timelineEngine", () => {
       // Stamp duty: 0.015% = 7.5 INR
       expect(charges.stampDuty).toBeCloseTo(7.5, 2);
 
-      // Exchange (0.00345%) + SEBI turnover charge (0.0001%)
-      expect(charges.exchangeAndSebi).toBeCloseTo(turnover * (0.0000345 + 0.000001), 2);
+      // Exchange + SEBI turnover charge, from the shared schedule (each rounded to the paisa)
+      expect(charges.exchangeAndSebi).toBeCloseTo(turnover * (rates.exchange_txn + rates.sebi_turnover), 1);
 
       // GST: 18% of (Brokerage + Exchange & SEBI)
       const expectedGst = (charges.brokerage + charges.exchangeAndSebi) * 0.18;
-      expect(charges.gst).toBeCloseTo(expectedGst, 2);
+      expect(charges.gst).toBeCloseTo(expectedGst, 1);
 
       // Total charges must be sum of all components
       const expectedTotal =

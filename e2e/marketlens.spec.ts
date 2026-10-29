@@ -5,7 +5,7 @@ test.describe("MarketLens End-to-End Suite", () => {
     await page.goto("/");
   });
 
-  test("1. Shell, Navigation, and Dotted Dark Theme Canvas", async ({ page }) => {
+  test("1. Shell and Navigation", async ({ page }) => {
     // Wordmark & Title
     await expect(page.locator(".wordmark")).toContainText("MarketLens");
     await expect(page.locator(".page-shell")).toBeVisible();
@@ -28,7 +28,7 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(page.locator(".data-badge")).toBeVisible();
   });
 
-  test("1B. Topbar stays strictly 64px and does not intercept pointer events on tablet", async ({ page }) => {
+  test("1B. Topbar stays compact (<= 68px) and does not intercept pointer events on tablet", async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto("/");
     const topbar = page.locator(".topbar");
@@ -63,7 +63,7 @@ test.describe("MarketLens End-to-End Suite", () => {
     // Verify MAZDOCK is returned as the top result with live data, and Zomato is not in results
     const mazdockItem = dropdown.locator(".global-search-item").filter({ hasText: "MAZDOCK" }).first();
     await expect(mazdockItem).toBeVisible();
-    await expect(mazdockItem).toContainText("Mazagon Dock Shipbuilders Ltd");
+    await expect(mazdockItem).toContainText("Mazagon Dock Shipbuilders");
 
     // Click ⚡ Trade button directly from the search dropdown on MAZDOCK
     const tradeBtn = mazdockItem.locator(".search-trade-btn");
@@ -240,6 +240,13 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(page.locator(".monte-carlo-fan-container")).toBeVisible();
     await expect(page.locator(".corporate-strategy-grid")).toBeVisible();
 
+    // Real-user findings: a percentage VaR was printed as rupees (-99%), and bundled sample indicators sat beside a live price.
+    const results = page.locator(".ai-results-wrapper");
+    await expect(results).not.toContainText(/-9\d\.\d\d% tail loss floor/);
+    await expect(results).toContainText(/-\d+\.\d\d% tail loss floor/);
+    await expect(results).not.toContainText("2938.20"); // the bundled sample VWAP for RELIANCE
+    await expect(results).toContainText(/drift [+-]?\d+%\/yr assumed/);
+
     // 1-Click Paper Trade Execution Bridge
     const executeTradeBtn = page.locator(".btn-execute-ai-trade");
     await expect(executeTradeBtn).toBeVisible();
@@ -248,6 +255,7 @@ test.describe("MarketLens End-to-End Suite", () => {
   });
 
   test("6. Paper Trading Terminal & SEBI Statutory Fee Reconciliation", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-10-27T05:30:00Z")); // Tuesday 11:00 IST: the market is open
     await page.locator('.nav-link:has-text("Paper Trading")').click();
     await expect(page.locator(".page-header h1")).toContainText("Paper Trading Terminal");
 
@@ -287,5 +295,47 @@ test.describe("MarketLens End-to-End Suite", () => {
     await expect(page.locator("#symbol-select option:checked")).toContainText("MAZDOCK");
     const turnover = page.locator(".tax-slip-block");
     await expect(turnover).not.toContainText("248,542");
+  });
+
+  test("7. A closed market blocks orders; the 24/7 simulator unlocks them", async ({ page }) => {
+    await page.clock.setFixedTime(new Date("2026-10-24T05:30:00Z")); // Saturday 11:00 IST
+    await page.locator('.nav-link:has-text("Paper Trading")').click();
+    const submit = page.locator(".btn-submit-order");
+    await expect(submit).toBeDisabled();
+    await expect(submit).toContainText("Market Closed");
+    await page.locator('.mode-btn:has-text("Simulator")').click();
+    await expect(submit).toBeEnabled();
+  });
+
+  test("8. Explorer prices come from the feed: index strip, shelves and every row", async ({ page }) => {
+    await expect(page.locator(".live-telemetry-provider").first()).toContainText("Live", { timeout: 15000 });
+    const indices = page.locator(".index-pill .index-price");
+    await expect(indices).toHaveCount(5);
+    for (const level of await indices.allInnerTexts()) expect(level).toMatch(/^[\d,]+\.\d\d$/);
+    await expect(page.locator(".shelf-row").first()).toBeVisible();
+    const prices = await page.locator(".data-table tbody tr .table-price").allInnerTexts();
+    expect(prices.length).toBeGreaterThan(0);
+    for (const price of prices) expect(price).toMatch(/^₹[\d,]+\.\d\d$/); // a page is 20 rows and the API prices 20
+  });
+
+  test("9. With the feed unreachable nothing is invented, and orders are refused", async ({ page }) => {
+    await page.route("**/api/v1/market/**", (route) => route.abort());
+    await page.goto("/");
+    await expect(page.locator(".live-telemetry-provider").first()).toContainText("Offline");
+    await expect(page.locator(".index-tape-price").first()).toHaveText("—");
+    await expect(page.locator(".index-pill .index-price").first()).toHaveText("—");
+    await expect(page.locator(".data-table tbody tr .table-price").first()).toHaveText("—");
+    await expect(page.locator(".shelf-empty").first()).toBeVisible();
+    await page.locator('.nav-link:has-text("Paper Trading")').click();
+    await page.locator('.mode-btn:has-text("Simulator")').click();
+    await expect(page.locator(".btn-submit-order")).toBeDisabled();
+    await expect(page.locator(".btn-submit-order")).toContainText("No live price");
+  });
+
+  test("10. Trends computes RSI and a trend from the candles it drew", async ({ page }) => {
+    await page.locator('.nav-link:has-text("Trends")').click();
+    await expect(page.locator(".trend-svg")).toBeVisible();
+    await expect(page.locator(".mini-stat", { hasText: "RSI (14)" }).locator(".stat-val")).toHaveText(/^\d+\.\d$/, { timeout: 15000 });
+    await expect(page.locator(".timeframe-matrix-block")).toContainText("Trend on this chart");
   });
 });

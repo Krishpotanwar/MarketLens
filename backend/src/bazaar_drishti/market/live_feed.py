@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import re
 import time
@@ -17,7 +18,25 @@ import xml.etree.ElementTree as ET
 
 import httpx
 
-SMARTAPI_API_KEY: str | None = os.getenv("SMARTAPI_API_KEY")
+logger = logging.getLogger(__name__)
+
+# Every quote, chart and search price comes from Yahoo Finance's unofficial chart endpoint,
+# whichever broker keys are configured. Labels must say so.
+PROVIDER = "Yahoo Finance (unofficial)"
+
+
+def _log_upstream_failure(what: str, exc: Exception, *args: object) -> None:
+    """Network trouble is routine for an unofficial feed, so it gets one line; anything else keeps its traceback."""
+    if isinstance(exc, httpx.HTTPError):
+        logger.warning(what + ": %s: %s", *args, type(exc).__name__, exc)
+    else:
+        logger.warning(what, *args, exc_info=True)
+
+
+def _opt_price(value: Any) -> float | None:
+    """A price rounded to paise, or None when upstream did not send one (never a guess)."""
+    return round(float(value), 2) if value else None
+
 
 # Mapping of common Indian stock acronyms and abbreviations to official NSE symbols
 COMMON_INDIAN_ACRONYMS: dict[str, str] = {
@@ -127,6 +146,10 @@ NSE_SPECIAL_ALIASES: dict[str, str] = {
     "NIFTY AUTO": "^CNXAUTO",
     "NIFTY PHARMA": "^CNXPHARMA",
     "NIFTY FMCG": "^CNXFMCG",
+    # Tata Motors demerged in 2025 and Yahoo now 404s TATAMOTORS.NS. TMPV is the original listed entity.
+    "TATAMOTORS": "TMPV.NS",
+    "TMPV": "TMPV.NS",
+    "TMCV": "TMCV.NS",
 }
 
 # Extensive directory of active Indian equities across Large, Mid, and Small Cap
@@ -513,12 +536,14 @@ async def fetch_symbol_quote(friendly_symbol: str) -> dict[str, Any]:
             return cached_data
 
     yahoo_sym = resolve_yahoo_symbol(clean_sym)
-    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{yahoo_sym}?interval=1d&range=2d"
+    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{urllib.parse.quote(yahoo_sym, safe='^.-')}?interval=1d&range=2d"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MarketLens/1.0"}
 
     try:
         async with httpx.AsyncClient(headers=headers, timeout=6.0) as client:
             resp = await client.get(url)
+            if resp.status_code != 200:
+                logger.warning("upstream HTTP %s for %s", resp.status_code, clean_sym)
             if resp.status_code == 200:
                 data = resp.json()
                 chart_res = data.get("chart", {}).get("result")
@@ -562,59 +587,35 @@ async def fetch_symbol_quote(friendly_symbol: str) -> dict[str, Any]:
                             "low": round(
                                 float(meta.get("regularMarketDayLow", ltp) or ltp), 2
                             ),
-                            "week52_high": round(
-                                float(meta.get("fiftyTwoWeekHigh") or (ltp * 1.3)), 2
-                            ),
-                            "week52_low": round(
-                                float(meta.get("fiftyTwoWeekLow") or (ltp * 0.75)), 2
-                            ),
+                            "week52_high": _opt_price(meta.get("fiftyTwoWeekHigh")),
+                            "week52_low": _opt_price(meta.get("fiftyTwoWeekLow")),
                             "volume": int(meta.get("regularMarketVolume", 0) or 0),
                             "last_updated": meta.get("regularMarketTime", int(now)),
                             "status": "live",
-                            "provider": "Angel One SmartAPI"
-                            if SMARTAPI_API_KEY
-                            else "NSE Telemetry (Live)",
+                            "provider": PROVIDER,
                         }
                         _QUOTE_CACHE[clean_sym] = (now, quote_dict)
                         return quote_dict
-    except Exception:
-        pass
+    except Exception as exc:
+        _log_upstream_failure("quote fetch failed for %s", exc, clean_sym)
 
-    # Fallback to last known cache if available
+    # A price from an earlier success beats nothing, but it is labelled stale.
     if clean_sym in _QUOTE_CACHE:
-        return _QUOTE_CACHE[clean_sym][1]
+        return {**_QUOTE_CACHE[clean_sym][1], "status": "stale"}
 
-    # Deterministic fallback fixture with realistic Indian stock price
-    default_price = 1000.0
-    if "NIFTY 50" in clean_sym:
-        default_price = 24854.20
-    elif "SENSEX" in clean_sym:
-        default_price = 81420.50
-    elif "BANKNIFTY" in clean_sym:
-        default_price = 51340.80
-    elif clean_sym in ["IOC", "IOCL"]:
-        default_price = 128.80
-
+    # Never invent a price: callers must show "unavailable".
     return {
         "symbol": clean_sym,
-        "name": "Indian Oil Corporation Limited"
-        if clean_sym in ["IOC", "IOCL"]
-        else clean_sym,
+        "name": clean_sym,
         "yahoo_symbol": yahoo_sym,
         "currency": "INR",
-        "ltp": default_price,
-        "previous_close": default_price * 0.995,
-        "change": round(default_price * 0.005, 2),
-        "change_percent": 0.50,
-        "open": default_price * 0.998,
-        "high": default_price * 1.01,
-        "low": default_price * 0.99,
-        "week52_high": default_price * 1.3,
-        "week52_low": default_price * 0.75,
-        "volume": 5000000,
+        "ltp": None,
+        "change": None,
+        "change_percent": None,
+        "volume": None,
         "last_updated": int(now),
-        "status": "fixture",
-        "provider": "MarketLens Heuristic Baseline",
+        "status": "unavailable",
+        "provider": PROVIDER,
     }
 
 
@@ -624,6 +625,8 @@ async def fetch_all_nse_quotes() -> list[dict[str, Any]]:
         "NIFTY 50",
         "SENSEX",
         "BANKNIFTY",
+        "NIFTY IT",
+        "NIFTY AUTO",
         "RELIANCE",
         "TCS",
         "HDFCBANK",
@@ -644,7 +647,7 @@ async def fetch_all_nse_quotes() -> list[dict[str, Any]]:
     quotes = await asyncio.gather(*tasks, return_exceptions=True)
     results = []
     for q in quotes:
-        if isinstance(q, dict):
+        if isinstance(q, dict) and q.get("status") != "unavailable":
             results.append(q)
     return results
 
@@ -671,6 +674,9 @@ def get_master_indian_stocks() -> list[dict[str, Any]]:
                 loaded = json.load(f)
                 curated_map = {item["symbol"]: item for item in INDIAN_STOCKS_DIRECTORY}
                 for stock in loaded:
+                    # The master file only knows the exchange; its sector and cap values are
+                    # placeholders, so classify only what the curated directory vouches for.
+                    stock["sector"], stock["cap"] = "Unclassified", "Unclassified"
                     sym = stock.get("symbol", "")
                     if sym in curated_map:
                         curated = curated_map[sym]
@@ -690,7 +696,9 @@ def get_master_indian_stocks() -> list[dict[str, Any]]:
                 _ALL_INDIAN_STOCKS_CACHE = loaded
                 return _ALL_INDIAN_STOCKS_CACHE
         except Exception:
-            pass
+            logger.warning(
+                "master stock catalog unreadable; using curated list", exc_info=True
+            )
     return INDIAN_STOCKS_DIRECTORY
 
 
@@ -724,28 +732,54 @@ async def query_live_web_search(query: str) -> list[dict[str, str]]:
                         # Keep .BO suffix for BSE-listed stocks so quote resolver routes correctly
                         clean_sym = raw_symbol.replace(".NS", "")
                         sector = str(
-                            q.get("sector")
-                            or q.get("industry")
-                            or (
-                                "BSE Listed"
-                                if raw_symbol.endswith(".BO")
-                                else "Indian Equities"
-                            )
+                            q.get("sector") or q.get("industry") or "Unclassified"
                         )
                         results.append(
                             {
                                 "symbol": clean_sym,
                                 "name": name,
                                 "sector": sector,
-                                "cap": "Small Cap"
-                                if raw_symbol.endswith(".BO")
-                                else "Mid Cap",
+                                "cap": "Unclassified",
                                 "aliases": "",
                             }
                         )
-    except Exception:
-        pass
+    except Exception as exc:
+        _log_upstream_failure("live symbol search failed", exc)
     return results
+
+
+# Live symbol search only enriches the directory results, so a slow upstream gets a short budget.
+WEB_SEARCH_BUDGET_SECONDS = 2.0
+
+
+async def _bounded_web_search(query: str) -> list[dict[str, str]]:
+    try:
+        return await asyncio.wait_for(
+            query_live_web_search(query), timeout=WEB_SEARCH_BUDGET_SECONDS
+        )
+    except TimeoutError:
+        logger.warning(
+            "live symbol search exceeded %.1fs; using directory results only",
+            WEB_SEARCH_BUDGET_SECONDS,
+        )
+        return []
+
+
+# A list row waits this long for its price. The fetch itself is shielded, so a slow one still
+# lands in the cache for the next request instead of being thrown away.
+QUOTE_BUDGET_SECONDS = 1.8
+
+
+async def _quote_within_budget(sym: str) -> dict[str, Any] | None:
+    try:
+        return await asyncio.wait_for(
+            asyncio.shield(fetch_symbol_quote(sym)), timeout=QUOTE_BUDGET_SECONDS
+        )
+    except TimeoutError:
+        return None
+    except Exception:
+        logger.warning("quote lookup failed for %s", sym, exc_info=True)
+        return None
 
 
 async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
@@ -840,9 +874,9 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
     # 2. Concurrently query live web search for ANY Indian stock across NSE & BSE (including brand new IPOs)
     web_matches: list[dict[str, str]] = []
     try:
-        web_matches = await query_live_web_search(q_clean)
+        web_matches = await _bounded_web_search(q_clean)
     except Exception:
-        pass
+        logger.warning("live web search failed", exc_info=True)
 
     # 3. Merge candidates without duplicates
     seen_symbols: set[str] = set()
@@ -892,8 +926,9 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
     candidate_matches = candidate_matches[:8]
 
     # Concurrently fetch live quotes for candidate matches
-    tasks = [fetch_symbol_quote(m["symbol"]) for m in candidate_matches]
-    quotes = await asyncio.gather(*tasks, return_exceptions=True)
+    quotes = await asyncio.gather(
+        *(_quote_within_budget(m["symbol"]) for m in candidate_matches)
+    )
 
     results: list[dict[str, Any]] = []
     for idx, m in enumerate(candidate_matches):
@@ -903,14 +938,14 @@ async def search_nse_stocks(query: str) -> list[dict[str, Any]]:
             {
                 "symbol": m["symbol"],
                 "name": m["name"],
-                "sector": m.get("sector", "Indian Equities"),
-                "marketCapCategory": m.get("cap", "Mid Cap"),
-                "ltp": q.get("ltp", 100.0),
-                "change": q.get("change", 0.0),
-                "change_percent": q.get("change_percent", 0.0),
-                "volume": q.get("volume", 0),
-                "status": q.get("status", "live"),
-                "provider": q.get("provider", "NSE/BSE Telemetry (Live)"),
+                "sector": m.get("sector", "Unclassified"),
+                "marketCapCategory": m.get("cap", "Unclassified"),
+                "ltp": q.get("ltp"),
+                "change": q.get("change"),
+                "change_percent": q.get("change_percent"),
+                "volume": q.get("volume"),
+                "status": q.get("status", "unavailable"),
+                "provider": PROVIDER,
             }
         )
 
@@ -1005,7 +1040,7 @@ async def get_all_indian_stocks_paginated(
         # Dynamic exchange search fallback for uncatalogued / newly listed equities
         if q_clean and len(filtered) == 0:
             try:
-                web_hits = await query_live_web_search(q_clean)
+                web_hits = await _bounded_web_search(q_clean)
                 for hit in web_hits:
                     filtered.append(
                         {
@@ -1014,13 +1049,13 @@ async def get_all_indian_stocks_paginated(
                             "exchange": "BSE"
                             if hit["symbol"].endswith(".BO")
                             else "NSE",
-                            "sector": hit.get("sector", "Indian Equities"),
-                            "cap": hit.get("cap", "Mid Cap"),
+                            "sector": hit.get("sector", "Unclassified"),
+                            "cap": hit.get("cap", "Unclassified"),
                             "series": "EQ",
                         }
                     )
-            except Exception:
-                pass
+            except Exception as exc:
+                _log_upstream_failure("exchange search fallback failed", exc)
 
     total = len(filtered)
     total_pages = max(1, (total + limit - 1) // limit)
@@ -1033,34 +1068,26 @@ async def get_all_indian_stocks_paginated(
     # Fetch live quotes for visible page items (top 8 for fast search, 20 for full browse)
     quote_limit = 8 if q_clean else 20
 
-    async def _safe_fetch_quote(sym: str) -> dict[str, Any] | None:
-        try:
-            return await asyncio.wait_for(fetch_symbol_quote(sym), timeout=1.8)
-        except Exception:
-            return None
-
-    quote_tasks = [
-        _safe_fetch_quote(item["symbol"]) for item in page_items[:quote_limit]
-    ]
-    quotes = await asyncio.gather(*quote_tasks, return_exceptions=True)
+    quotes = await asyncio.gather(
+        *(_quote_within_budget(item["symbol"]) for item in page_items[:quote_limit])
+    )
 
     hydrated_items = []
     for idx, item in enumerate(page_items):
         raw_q = quotes[idx] if idx < len(quotes) else None
         q: dict[str, Any] = raw_q if isinstance(raw_q, dict) else {}
-        ltp = float(q.get("ltp") or 100.0)
-        chg = float(q.get("change") or 0.0)
-        chg_pct = float(q.get("change_percent") or 0.0)
-        vol = int(q.get("volume") or 0)
-        status = str(q.get("status") or "live")
+        # No quote fetched for this row (only the first rows are hydrated): say so, never invent one.
+        ltp, chg = q.get("ltp"), q.get("change")
+        chg_pct, vol = q.get("change_percent"), q.get("volume")
+        status = str(q.get("status") or "unavailable")
 
         hydrated_items.append(
             {
                 "symbol": item["symbol"],
                 "name": item["name"],
                 "exchange": item.get("exchange", "NSE"),
-                "sector": item.get("sector", "Indian Equities"),
-                "marketCapCategory": item.get("cap", "Mid Cap"),
+                "sector": item.get("sector", "Unclassified"),
+                "marketCapCategory": item.get("cap", "Unclassified"),
                 "series": item.get("series", "EQ"),
                 "listingDate": item.get("listingDate", ""),
                 "isin": item.get("isin", ""),
@@ -1068,8 +1095,10 @@ async def get_all_indian_stocks_paginated(
                 "change": chg,
                 "changePercent": chg_pct,
                 "volume": vol,
+                "week52High": q.get("week52_high"),
+                "week52Low": q.get("week52_low"),
                 "status": status,
-                "provider": q.get("provider", "NSE/BSE Telemetry (Live)"),
+                "provider": PROVIDER,
             }
         )
 
@@ -1113,14 +1142,15 @@ async def fetch_live_indian_ipos() -> dict[str, Any]:
                             "status": "OPEN",
                             "subscriptionRatio": f"{float(item.get('noOfTime') or 0):.2f}x",
                             "category": "Mainboard",
-                            "lotSize": 21,
-                            "minInvestment": 14500,
+                            "lotSize": None,  # not in NSE's current-issue payload
+                            "minInvestment": None,
                         }
                     )
-    except Exception:
-        pass
+    except Exception as exc:
+        _log_upstream_failure("NSE IPO feed failed", exc)
 
-    # Fallback/standard active issues if NSE endpoint throttled
+    # NSE throttles this endpoint often; fall back to clearly labelled sample issues.
+    sample = not active_ipos
     if not active_ipos:
         active_ipos = [
             {
@@ -1319,7 +1349,9 @@ async def fetch_live_indian_ipos() -> dict[str, Any]:
                 "listingGainPercent": listing_gain_pct,
                 "currentGainPercent": current_gain_pct,
                 "status": "LISTED",
-                "provider": str(q.get("provider", "NSE Telemetry (Live)")),
+                "provider": PROVIDER
+                if raw_ltp is not None
+                else "Listing price (live quote unavailable)",
             }
         )
 
@@ -1333,7 +1365,9 @@ async def fetch_live_indian_ipos() -> dict[str, Any]:
             "listed": len(listed_ipos),
             "total": len(active_ipos) + len(upcoming_ipos) + len(listed_ipos),
         },
-        "source": "NSE India Primary Market Telemetry",
+        "sample": sample,
+        "upcomingIsSample": True,  # no live source is wired for the upcoming list
+        "source": "NSE website" if not sample else "Sample data (NSE feed unreachable)",
     }
 
 
@@ -1342,7 +1376,8 @@ async def fetch_intraday_chart(
 ) -> dict[str, Any]:
     """Fetch intraday candle chart bars for technical/causal trend analysis."""
     yahoo_sym = resolve_yahoo_symbol(friendly_symbol)
-    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{yahoo_sym}?interval={interval}&range={range_period}"
+    quote = urllib.parse.quote
+    url = f"https://query2.finance.yahoo.com/v8/finance/chart/{quote(yahoo_sym, safe='^.-')}?interval={quote(interval)}&range={quote(range_period)}"
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MarketLens/1.0"}
 
     try:
@@ -1392,11 +1427,11 @@ async def fetch_intraday_chart(
                         "fiftyTwoWeekLow": meta.get("fiftyTwoWeekLow"),
                         "longName": meta.get("longName")
                         or friendly_symbol.strip().upper(),
-                        "provider": "NSE/BSE Telemetry (Live)",
+                        "provider": PROVIDER,
                     },
                 }
-    except Exception:
-        pass
+    except Exception as exc:
+        _log_upstream_failure("chart fetch failed for %s", exc, yahoo_sym)
 
     return {
         "symbol": friendly_symbol.strip().upper(),
@@ -1524,12 +1559,11 @@ async def fetch_live_indian_mutual_funds() -> list[dict[str, Any]]:
                 data_list = d.get("data", [])
                 if data_list:
                     latest = data_list[0]
-                    nav = round(float(latest.get("nav", 100.0)), 2)
+                    nav = round(float(latest["nav"]), 2)
                     date = latest.get("date", "Latest")
 
-                    def get_cagr(
-                        days_back: int, years: float, fallback: float
-                    ) -> float:
+                    def get_cagr(days_back: int, years: float) -> float | None:
+                        """CAGR over the window, or None when the NAV history is too short."""
                         if len(data_list) > days_back:
                             try:
                                 past_nav = float(data_list[days_back].get("nav", 0))
@@ -1537,13 +1571,13 @@ async def fetch_live_indian_mutual_funds() -> list[dict[str, Any]]:
                                     return round(
                                         ((nav / past_nav) ** (1 / years) - 1) * 100, 2
                                     )
-                            except Exception:
-                                pass
-                        return fallback
+                            except (ValueError, TypeError):
+                                return None
+                        return None
 
-                    cagr_1y = get_cagr(250, 1.0, 18.5)
-                    cagr_3y = get_cagr(750, 3.0, 21.2)
-                    cagr_5y = get_cagr(1250, 5.0, 19.8)
+                    cagr_1y = get_cagr(250, 1.0)
+                    cagr_3y = get_cagr(750, 3.0)
+                    cagr_5y = get_cagr(1250, 5.0)
 
                     return {
                         "id": f"mf-{s['code']}",
@@ -1561,28 +1595,28 @@ async def fetch_live_indian_mutual_funds() -> list[dict[str, Any]]:
                         "aum": s["aum"],
                         "schemeCode": s["code"],
                         "status": "live",
-                        "provider": "AMFI India Live Feed",
+                        "provider": "mfapi.in (AMFI NAV data)",
                     }
-        except Exception:
-            pass
+        except Exception as exc:
+            _log_upstream_failure("mfapi fetch failed for scheme %s", exc, s["code"])
 
         return {
             "id": f"mf-{s['code']}",
             "name": s["name"],
             "category": s["category"],
             "fundHouse": s["fundHouse"],
-            "cagr1Y": 18.5,
-            "cagr3Y": 21.2,
-            "cagr5Y": 19.8,
-            "nav": 100.0,
-            "navDate": "Recent",
+            "cagr1Y": None,
+            "cagr3Y": None,
+            "cagr5Y": None,
+            "nav": None,
+            "navDate": None,
             "expenseRatio": s["expenseRatio"],
             "rating": s["rating"],
             "minSIP": s["minSIP"],
             "aum": s["aum"],
             "schemeCode": s["code"],
-            "status": "cached",
-            "provider": "AMFI Baseline",
+            "status": "unavailable",
+            "provider": "mfapi.in (unavailable)",
         }
 
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) MarketLens/1.0"}
@@ -1755,8 +1789,8 @@ async def fetch_live_stock_news(symbol: str) -> list[dict[str, Any]]:
                                 "isLive": True,
                             }
                         )
-    except Exception:
-        pass
+    except Exception as exc:
+        _log_upstream_failure("news fetch failed for %s", exc, clean_sym)
 
     if items:
         _NEWS_CACHE[clean_sym] = (now, items)

@@ -60,6 +60,16 @@ class ForecastEvaluationTests(unittest.TestCase):
         for i in range(40):
             self.assertEqual(features_full[i], features_sub[i])
 
+    def test_default_fingerprints_are_computed_not_placeholders(self) -> None:
+        bars = [
+            b for day in range(7, 12) for b in self._create_bars(date(2030, 1, day), 75)
+        ]
+        row = evaluate_chronological_forecast(bars).forecast_rows[0]
+        for digest in (row.bars_sha256, row.config_sha256, row.model_sha256):
+            self.assertNotIn(digest, {c * 64 for c in "abc"})
+        again = evaluate_chronological_forecast(bars).forecast_rows[0]
+        self.assertEqual(row.model_sha256, again.model_sha256)
+
     def test_labels_never_cross_session_boundaries(self) -> None:
         all_bars = [
             bar
