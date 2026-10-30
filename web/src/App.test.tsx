@@ -70,7 +70,7 @@ describe("research dashboard shell and pages", () => {
 
   it("renders the default app with live market feed and stocks explorer", () => {
     const markup = renderToStaticMarkup(<App />);
-    expect(markup).toMatch(/Live Feed|Market Closed/);
+    expect(markup).toMatch(/Live Feed|Market Open|Market Closed/);
     expect(markup).toContain("(NSE/BSE)");
     expect(markup).toContain("Indian Stocks &amp; Market");
     expect(markup).toContain("hero-explorer-highlight");

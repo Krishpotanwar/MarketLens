@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { priceText } from "../utils/dataStatus";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "../utils/apiBase";
 
 export interface SearchResultItem {
   symbol: string;

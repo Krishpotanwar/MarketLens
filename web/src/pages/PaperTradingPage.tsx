@@ -18,8 +18,7 @@ import {
 } from "../utils/marketHours";
 
 import { CONNECTING_LABEL, feedLabel, isOffline, OFFLINE_LABEL } from "../utils/dataStatus";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "../utils/apiBase";
 
 interface PaperTradingPageProps {
   initialSymbol?: string;

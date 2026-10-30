@@ -2,8 +2,7 @@ import { Fragment, useEffect, useState } from "react";
 import { GlobalSearchBar } from "./GlobalSearchBar";
 import { isUsableQuote } from "../utils/dataStatus";
 import { getMarketSessionStatus, type MarketStatus } from "../utils/marketHours";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "../utils/apiBase";
 
 export type PageTab =
   | "stocks"
@@ -54,7 +53,14 @@ export function Header({
         const data = await res.json();
         const next: Record<string, { ltp: number; pct: number }> = {};
         for (const q of data.quotes ?? []) {
-          if (isUsableQuote(q)) next[q.symbol] = { ltp: q.ltp, pct: q.change_percent ?? 0 };
+          if (isUsableQuote(q)) {
+            const sym = q.symbol;
+            const norm = sym.replace(/\s+/g, "").toUpperCase();
+            next[sym] = { ltp: q.ltp, pct: q.change_percent ?? 0 };
+            next[norm] = { ltp: q.ltp, pct: q.change_percent ?? 0 };
+            if (norm === "NIFTY50") next["NIFTY 50"] = { ltp: q.ltp, pct: q.change_percent ?? 0 };
+            if (norm === "BANKNIFTY") next["BANK NIFTY"] = { ltp: q.ltp, pct: q.change_percent ?? 0 };
+          }
         }
         if (alive) setTape(next);
       } catch {
@@ -100,7 +106,7 @@ export function Header({
         <div className="topbar-center command-bar-indices">
           <div className="indices-ribbon" role="region" aria-label="Market Indices Ribbon">
             {["NIFTY 50", "SENSEX"].map((name, i) => {
-              const q = tape[name];
+              const q = tape[name] || tape[name.replace(/\s+/g, "").toUpperCase()];
               return (
                 <Fragment key={name}>
                   {i > 0 && <span className="index-tape-divider" aria-hidden="true">|</span>}

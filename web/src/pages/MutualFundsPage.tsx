@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { TOP_INDIAN_MUTUAL_FUNDS } from "../data/mutualFundsData";
 import { calculateSIP, type MutualFundInfo } from "../types/funds";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "../utils/apiBase";
 
 // Shown whenever the NAV feed did not answer with usable data (not a response, an error, or an empty list).
 const NAV_UNAVAILABLE = "Sample NAVs · live feed unavailable";

@@ -11,8 +11,7 @@ import { MutualFundsPage } from "./pages/MutualFundsPage";
 import { IPODiscoveryPage } from "./pages/IPODiscoveryPage";
 import { AIStrategyLabPage } from "./pages/AIStrategyLabPage";
 import type { RunMetadataResponse } from "./types/api";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "./utils/apiBase";
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState<PageTab>("stocks");

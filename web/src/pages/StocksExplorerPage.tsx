@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import { CONNECTING_LABEL, feedLabel, isOffline, isUsableQuote, OFFLINE_LABEL, priceText } from "../utils/dataStatus";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "../utils/apiBase";
 
 /** The 52-week range bar: a real range, or a dash. Never a range worked out from the price. */
 export function WeekRangeBar({ ltp, low, high }: { ltp?: number | null; low?: number; high?: number }) {

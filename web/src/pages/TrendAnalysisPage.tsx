@@ -3,8 +3,7 @@ import { INITIAL_INDIAN_STOCKS } from "../data/indianMarketData";
 import type { StockTrendInfo } from "../types/paper";
 import { CONNECTING_LABEL, feedLabel, indexText, isOffline, OFFLINE_LABEL, priceText } from "../utils/dataStatus";
 import { chartTrend, rsi14 } from "../utils/indicators";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
+import { API_BASE } from "../utils/apiBase";
 
 interface TrendAnalysisPageProps {
   onSelectForTrade: (symbol: string) => void;

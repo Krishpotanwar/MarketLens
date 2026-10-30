@@ -19,6 +19,7 @@ import { annualVolatility, rsi14, sma, vwap } from "../utils/indicators";
 import { MonteCarloFanChart } from "../components/MonteCarloFanChart";
 import { TimelineBranchingTree } from "../components/TimelineBranchingTree";
 import { CorporateStrategyCard } from "../components/CorporateStrategyCard";
+import { API_BASE } from "../utils/apiBase";
 import type {
   AIEngineProvider,
   AIGatewayRequest,
@@ -40,8 +41,6 @@ export type StrategyPresetId =
   | "MEAN_REVERSION"
   | "BREAKOUT_MOMENTUM"
   | "CUSTOM";
-
-const API_BASE = import.meta.env.VITE_API_URL || "";
 
 const AI_PROVIDERS: { id: AIEngineProvider; label: string; desc: string }[] = [
   {
